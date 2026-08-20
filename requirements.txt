@@ -36,7 +36,6 @@ openpyxl==3.1.2
 # Background Tasks & Caching
 celery[redis]==5.3.6
 redis==5.0.1
-schedule==1.2.1
 
 # Storage & Cloud
 google-cloud-storage==2.14.0

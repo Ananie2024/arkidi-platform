@@ -31,7 +31,10 @@ class Settings(BaseSettings):
     DATABASE_PORT: int = Field(default=5432)
     DATABASE_NAME: str = Field(default="arkidi_db")
     DATABASE_USER: str = Field(default="arkidi_user")
-    DATABASE_PASSWORD: str = Field(default="arkidi_secure_password_dev_2026")
+    # DATABASE_PASSWORD is REQUIRED (no default) — a hardcoded credential would be
+    # checked into the repository and reused across environments. Supply it via
+    # .env or the environment.
+    DATABASE_PASSWORD: str
     DATABASE_ECHO: bool = Field(default=False)
     DATABASE_POOL_SIZE: int = Field(default=10)
     DATABASE_MAX_OVERFLOW: int = Field(default=20)
@@ -57,9 +60,11 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Security & Authentication
     # ------------------------------------------------------------------
-    SECRET_KEY: str = Field(
-        default="super_secure_arkidi_platform_archdiocese_of_kigali_secret_key_32bytes_min"
-    )
+    # SECRET_KEY is intentionally REQUIRED (no default). A hardcoded/published
+    # value here would silently sign real JWTs with a known secret, so the app
+    # must fail to start until a real key is provided via .env or the
+    # environment. Generate one with:  openssl rand -hex 32
+    SECRET_KEY: str
 
     @field_validator("SECRET_KEY", mode="before")
     @classmethod

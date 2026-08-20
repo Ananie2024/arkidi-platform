@@ -43,6 +43,11 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Root-level production env (gitignored — contains secrets)
+# Note: frontend/.env.production is intentionally NOT ignored (Vite loads it
+# automatically during production builds and it contains only public config).
+/.env.production
+
 # IDEs & OS
 .idea/
 .vscode/

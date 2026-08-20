@@ -21,9 +21,12 @@ services:
     image: redis:7-alpine
     container_name: arkidi-redis-prod
     restart: always
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-secure_redis_pass}
+    # Fail closed: REDIS_PASSWORD is a required variable in production.
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_prod_data:/data
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     networks:
       - arkidi-prod-network
 
@@ -33,7 +36,8 @@ services:
       dockerfile: Dockerfile
     container_name: arkidi-backend-prod
     restart: always
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+    # Default container command is uvicorn (see docker-entrypoint.sh); it also
+    # waits for Postgres and runs `alembic upgrade head` automatically.
     environment:
       ENVIRONMENT: production
       DATABASE_HOST: postgres
@@ -41,9 +45,11 @@ services:
       DATABASE_NAME: ${POSTGRES_DB}
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-secure_redis_pass}@redis:6379/0
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       CORS_ORIGINS: ${CORS_ORIGINS}
+      # Required for the default uvicorn target in docker-entrypoint.sh
+      BACKEND_WORKERS: ${BACKEND_WORKERS:-4}
     volumes:
       - backend_prod_uploads:/app/file-storage
     depends_on:
@@ -66,8 +72,34 @@ services:
       DATABASE_NAME: ${POSTGRES_DB}
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-secure_redis_pass}@redis:6379/0
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
+      RUN_MIGRATIONS: "false"
+    volumes:
+      - backend_prod_uploads:/app/file-storage
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - arkidi-prod-network
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arkidi-celery-beat-prod
+    restart: always
+    command: celery -A app.tasks.celery_app.celery_app beat --loglevel=info
+    environment:
+      ENVIRONMENT: production
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB}
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      SECRET_KEY: ${SECRET_KEY}
+      RUN_MIGRATIONS: "false"
     volumes:
       - backend_prod_uploads:/app/file-storage
     depends_on:

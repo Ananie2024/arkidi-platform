@@ -32,4 +32,9 @@ RUN mkdir -p /app/file-storage /app/logs /app/backups
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Entrypoint: waits for Postgres (bounded retries), applies `alembic upgrade
+# head`, then execs the real uvicorn command. See docker-entrypoint.sh.
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

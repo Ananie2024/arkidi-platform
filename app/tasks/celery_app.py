@@ -24,3 +24,9 @@ celery_app.conf.update(
         "app.tasks.archive_ocr",
     ),
 )
+
+# Intentionally empty for now: the periodic statistics/report schedules belong to
+# the aggregation work that is out of scope for this remediation pass. Keeping the
+# key defined (even empty) lets the celery-beat service start cleanly and signals
+# where new schedulers should be registered.
+celery_app.conf.beat_schedule = {}

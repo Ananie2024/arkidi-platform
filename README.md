@@ -47,9 +47,8 @@ Arkidi Platform is a unified, enterprise-grade modular monolith software system 
 cd arkidi-platform
 
 # Copy environment configurations
-cp .env.example .env
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+cp .env.example .env        # Backend: local development
+cp frontend/.env.example frontend/.env  # Frontend: local development
 ```
 
 ### 3. Run with Docker Compose
@@ -60,6 +59,27 @@ docker-compose up --build -d
 - **Backend API**: http://localhost:8000
 - **Interactive OpenAPI Docs (Swagger)**: http://localhost:8000/docs
 - **API Redoc**: http://localhost:8000/redoc
+
+---
+
+## 🚀 Quick Start (Production)
+
+### 1. Environment Setup
+```bash
+# Clone and navigate to project root
+cd arkidi-platform
+
+# Copy production environment configurations
+cp .env.production.example .env.production  # Backend: production (fill in real secrets)
+cp frontend/.env.production.example frontend/.env.production  # Frontend: production (update API URL)
+```
+
+Edit `.env.production` and replace all `<<PLACEHOLDER>>` values with real production secrets.
+
+### 2. Deploy with Docker Compose (Production)
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+```
 
 ---
 

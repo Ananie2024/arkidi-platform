@@ -7,7 +7,7 @@ Also hosts the historical sacramental ledger books and scanned page archive.
 """
 import uuid
 
-from sqlalchemy import String, Integer, Text, Enum as SQLEnum, ForeignKey
+from sqlalchemy import String, Integer, Text, Enum as SQLEnum, ForeignKey, CheckConstraint
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,6 +20,19 @@ class Document(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     __tablename__ = "documents"
 
+    __table_args__ = (
+        # At least one organisational scoping column must be set, unless the
+        # `classification` explicitly allows an unscoped / general document.
+        CheckConstraint(
+            "archdiocese_id IS NOT NULL OR deanery_id IS NOT NULL OR "
+            "parish_id IS NOT NULL OR commission_id IS NOT NULL OR "
+            "council_id IS NOT NULL OR meeting_id IS NOT NULL OR "
+            "priest_id IS NOT NULL OR parcel_id IS NOT NULL OR "
+            "classification IN ('GENERAL', 'DICOESAN', 'CURIA')",
+            name="ck_documents_scoping_required",
+        ),
+    )
+
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     document_type_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("document_types.id"), nullable=True
@@ -30,14 +43,14 @@ class Document(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     checksum_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Soft hierarchy scoping — one (or several) of these may be set
-    archdiocese_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    deanery_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    commission_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    council_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    meeting_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    priest_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    parcel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    archdiocese_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("archdioceses.id"), nullable=True)
+    deanery_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("deaneries.id"), nullable=True)
+    parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True)
+    commission_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("commissions.id"), nullable=True)
+    council_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("councils.id"), nullable=True)
+    meeting_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("meetings.id"), nullable=True)
+    priest_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("priests.id"), nullable=True)
+    parcel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("land_parcels.id"), nullable=True)
 
     uploaded_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     classification: Mapped[str] = mapped_column(String(50), default="OFFICIAL", nullable=False)

@@ -9,7 +9,9 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-arkidi_db}
       POSTGRES_USER: ${POSTGRES_USER:-arkidi_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arkidi_secure_password_dev_2026}
+      # Dev-only fallback so local `docker compose up` boots without a .env.
+      # Never use this in production; provide POSTGRES_PASSWORD explicitly.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-only-insecure-db-password-change-me}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -43,6 +45,9 @@ services:
 
   # ----------------------------------------------------------------------------
   # FastAPI Backend API Server
+  #
+  # The container ENTRYPOINT (docker-entrypoint.sh) waits for Postgres, applies
+  # `alembic upgrade head` automatically, then execs the default uvicorn command.
   # ----------------------------------------------------------------------------
   backend:
     build:
@@ -56,9 +61,11 @@ services:
       DATABASE_PORT: 5432
       DATABASE_NAME: ${POSTGRES_DB:-arkidi_db}
       DATABASE_USER: ${POSTGRES_USER:-arkidi_user}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-arkidi_secure_password_dev_2026}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-dev-only-insecure-db-password-change-me}
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: ${SECRET_KEY:-super_secure_arkidi_platform_archdiocese_of_kigali_secret_key_32bytes_min}
+      # Dev-only fallback so local `docker compose up` boots without a .env.
+      # Never use this value in production. Generate your own, e.g. openssl rand -hex 32
+      SECRET_KEY: ${SECRET_KEY:-dev-only-insecure-key-change-me-arkidi-local-development-only}
       CORS_ORIGINS: '["http://localhost:5173", "http://localhost:8000"]'
     ports:
       - "8000:8000"
@@ -89,9 +96,42 @@ services:
       DATABASE_PORT: 5432
       DATABASE_NAME: ${POSTGRES_DB:-arkidi_db}
       DATABASE_USER: ${POSTGRES_USER:-arkidi_user}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-arkidi_secure_password_dev_2026}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-dev-only-insecure-db-password-change-me}
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: ${SECRET_KEY:-super_secure_arkidi_platform_archdiocese_of_kigali_secret_key_32bytes_min}
+      SECRET_KEY: ${SECRET_KEY:-dev-only-insecure-key-change-me-please-use-local-development}
+      # The backend process owns the alembic migration step; workers just connect.
+      RUN_MIGRATIONS: "false"
+    volumes:
+      - ./:/app
+      - backend_uploads:/app/file-storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - arkidi-network
+
+  # ----------------------------------------------------------------------------
+  # Celery Beat (Scheduler for periodic background tasks)
+  # ----------------------------------------------------------------------------
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arkidi-celery-beat
+    command: celery -A app.tasks.celery_app.celery_app beat --loglevel=info
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB:-arkidi_db}
+      DATABASE_USER: ${POSTGRES_USER:-arkidi_user}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-dev-only-insecure-db-password-change-me}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-dev-only-insecure-key-change-me-arkidi-use-local-development}
+      RUN_MIGRATIONS: "false"
     volumes:
       - ./:/app
       - backend_uploads:/app/file-storage

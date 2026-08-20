@@ -3,6 +3,7 @@ Database Initial Seeding Script
 Populates initial Archdiocese, Deaneries, and Super Admin user
 """
 import asyncio
+import os
 from datetime import date
 
 from sqlalchemy import select
@@ -13,6 +14,11 @@ from app.models.deanery import Archdiocese, Deanery
 from app.models.parish import Parish
 from app.models.enums import UserRole
 from app.core.security import get_password_hash
+
+# Dev-only fallback for the seed admin account. This is NOT a real credential —
+# anything that hashes this placeholder is only usable in a local dev database.
+# Set ADMIN_SEED_PASSWORD to a real value when seeding any non-local environment.
+ADMIN_SEED_PASSWORD = os.environ.get("ADMIN_SEED_PASSWORD", "dev-only-insecure-admin-change-me")
 
 
 async def seed():
@@ -59,14 +65,14 @@ async def seed():
             admin = User(
                 email="chancellor@archidiocesekigali.org",
                 username="admin",
-                hashed_password=get_password_hash("ArkidiAdmin2026!"),
+                hashed_password=get_password_hash(ADMIN_SEED_PASSWORD),
                 full_name="Archdiocese Chancellor & Admin",
                 role=UserRole.SUPER_ADMIN,
                 is_active=True,
             )
             session.add(admin)
             await session.commit()
-            print("\u2713 Created Super Admin user (admin / ArkidiAdmin2026!)")
+            print(f"\u2713 Created Super Admin user (admin / {ADMIN_SEED_PASSWORD})")
         else:
             await session.commit()
 

@@ -46,3 +46,16 @@ async def read_current_user(
 ):
     """Return the decoded JWT payload of the currently authenticated user."""
     return ApiResponse.ok(data=payload)
+
+
+@router.post(
+    "/logout",
+    response_model=ApiResponse[dict],
+)
+async def logout(
+    db: AsyncSession = Depends(get_db),
+    payload: dict = Depends(get_current_user_payload),
+):
+    """Revoke the current access token so it can no longer authenticate."""
+    await AuthService(db).logout(payload)
+    return ApiResponse.ok(message="Logout successful", data={"detail": "token revoked"})

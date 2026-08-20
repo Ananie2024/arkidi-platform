@@ -21,9 +21,9 @@ class Survey(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     status: Mapped[str] = mapped_column(String(30), default="DRAFT", nullable=False)
     survey_schema: Mapped[dict | None] = mapped_column(JSONB, nullable=True)  # JSON schema of questions
 
-    archdiocese_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    deanery_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    archdiocese_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("archdioceses.id"), nullable=True)
+    deanery_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("deaneries.id"), nullable=True)
+    parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True)
 
     responses: Mapped[list["SurveyResponse"]] = relationship(  # type: ignore[name-defined]
         "SurveyResponse", back_populates="survey"
@@ -37,7 +37,7 @@ class SurveyResponse(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin)
 
     survey_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("surveys.id"), nullable=False)
     respondent_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    respondent_parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    respondent_parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True)
     submitted_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     answers: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 

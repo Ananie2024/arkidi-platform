@@ -4,6 +4,7 @@ JWT token creation, validation, and Argon2 password hashing
 """
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
+import uuid
 import jwt
 from passlib.context import CryptContext
 
@@ -35,18 +36,21 @@ def create_access_token(
     expires_delta: Optional[timedelta] = None,
 ) -> str:
     """Generate a signed JWT access token."""
+    now = datetime.now(timezone.utc)
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
+        expire = now + timedelta(
             minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
     to_encode: Dict[str, Any] = {
         "sub": str(subject),
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": now,
         "type": "access",
+        # Unique token ID so the Redis-backed revocation blacklist can target it.
+        "jti": str(uuid.uuid4()),
     }
     if claims:
         to_encode.update(claims)
@@ -64,18 +68,21 @@ def create_refresh_token(
     expires_delta: Optional[timedelta] = None,
 ) -> str:
     """Generate a signed JWT refresh token."""
+    now = datetime.now(timezone.utc)
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
+        expire = now + timedelta(
             days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS
         )
 
     to_encode: Dict[str, Any] = {
         "sub": str(subject),
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": now,
         "type": "refresh",
+        # Unique token ID so the Redis-backed blacklist can revoke this token too.
+        "jti": str(uuid.uuid4()),
     }
 
     encoded_jwt = jwt.encode(
