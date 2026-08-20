@@ -1,0 +1,134 @@
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL 16 with PostGIS 3.4 Spatial Extensions
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: arkidi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-arkidi_db}
+      POSTGRES_USER: ${POSTGRES_USER:-arkidi_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arkidi_secure_password_dev_2026}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-arkidi_user} -d ${POSTGRES_DB:-arkidi_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - arkidi-network
+
+  # ----------------------------------------------------------------------------
+  # Redis 7 Cache & Task Broker
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: arkidi-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - arkidi-network
+
+  # ----------------------------------------------------------------------------
+  # FastAPI Backend API Server
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arkidi-backend
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB:-arkidi_db}
+      DATABASE_USER: ${POSTGRES_USER:-arkidi_user}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-arkidi_secure_password_dev_2026}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-super_secure_arkidi_platform_archdiocese_of_kigali_secret_key_32bytes_min}
+      CORS_ORIGINS: '["http://localhost:5173", "http://localhost:8000"]'
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - backend_uploads:/app/file-storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - arkidi-network
+
+  # ----------------------------------------------------------------------------
+  # Celery Worker (Background tasks: Reports, OCR, PDF generation)
+  # ----------------------------------------------------------------------------
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arkidi-celery-worker
+    command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB:-arkidi_db}
+      DATABASE_USER: ${POSTGRES_USER:-arkidi_user}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-arkidi_secure_password_dev_2026}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-super_secure_arkidi_platform_archdiocese_of_kigali_secret_key_32bytes_min}
+    volumes:
+      - ./:/app
+      - backend_uploads:/app/file-storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - arkidi-network
+
+  # ----------------------------------------------------------------------------
+  # React + Vite Frontend
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: arkidi-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/v1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - arkidi-network
+
+networks:
+  arkidi-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_uploads:

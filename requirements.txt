@@ -1,0 +1,48 @@
+# Core FastAPI & ASGI
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic[email]==2.5.3
+pydantic-settings==2.1.0
+email-validator==2.3.0
+python-multipart==0.0.6
+aiofiles==23.2.1
+httpx==0.26.0
+
+# Database & ORM
+sqlalchemy==2.0.25
+geoalchemy2==0.14.3
+alembic==1.13.1
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+cryptography==42.0.0
+
+# GIS & Spatial Processing
+numpy==1.26.4
+shapely==2.0.2
+pyproj==3.6.1
+
+# Authentication & Security
+PyJWT==2.8.0
+passlib[bcrypt]==1.7.4
+argon2-cffi==23.1.0
+slowapi==0.1.9
+
+# Reporting & Certificates
+reportlab==4.4.9
+qrcode[pil]==7.4.2
+pillow==10.2.0
+openpyxl==3.1.2
+
+# Background Tasks & Caching
+celery[redis]==5.3.6
+redis==5.0.1
+schedule==1.2.1
+
+# Storage & Cloud
+google-cloud-storage==2.14.0
+b2sdk==2.10.0
+
+# Configuration & Logging
+python-dotenv==1.0.0
+pyyaml==6.0.1
+python-json-logger==2.0.7

@@ -1,0 +1,48 @@
+{
+  "app": {
+    "title": "Plateforme Arkidi",
+    "archdiocese": "Archidiocèse de Kigali",
+    "tagline": "Archives Numériques, Gestion Paroissiale & Système Statistique"
+  },
+  "nav": {
+    "dashboard": "Tableau de Bord",
+    "geography": "Hiérarchie Diocésaine",
+    "faithful": "Fidèles & Familles",
+    "sacraments": "Sacrements & Registres",
+    "clergy": "Clergé & Religieux",
+    "liturgy": "Messes & Intentions",
+    "finance": "Finances & Dîmes",
+    "ministries": "Commissions & Chorales",
+    "land_assets": "Gestion Foncière (SIG)",
+    "archive": "Archives Numériques",
+    "statistics": "Statistiques Pontificales",
+    "settings": "Paramètres",
+    "logout": "Déconnexion"
+  },
+  "common": {
+    "search": "Rechercher...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "create": "Nouveau",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "loading": "Chargement des données...",
+    "no_data": "Aucun enregistrement trouvé",
+    "status": "Statut",
+    "actions": "Actions",
+    "date": "Date",
+    "parish": "Paroisse",
+    "deanery": "Doyenné",
+    "language": "Langue",
+    "success": "Opération réussie",
+    "error": "Une erreur est survenue"
+  },
+  "sacraments": {
+    "baptism": "Baptême",
+    "first_communion": "Première Communion",
+    "confirmation": "Confirmation",
+    "matrimony": "Mariage",
+    "holy_orders": "Ordre Sacré",
+    "certificate": "Délivrer Certificat"
+  }
+}

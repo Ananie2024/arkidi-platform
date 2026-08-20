@@ -1,0 +1,48 @@
+{
+  "app": {
+    "title": "Arkidi Platform",
+    "archdiocese": "Archdiocese of Kigali",
+    "tagline": "Digital Archive, Parish Management & Statistical System"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "geography": "Diocesan Hierarchy",
+    "faithful": "Faithful & Families",
+    "sacraments": "Sacraments & Registers",
+    "clergy": "Clergy & Religious",
+    "liturgy": "Masses & Intentions",
+    "finance": "Finance & Tithes",
+    "ministries": "Commissions & Choirs",
+    "land_assets": "Land Intelligence (GIS)",
+    "archive": "Digital Archive",
+    "statistics": "Pontifical Statistics",
+    "settings": "Settings",
+    "logout": "Sign Out"
+  },
+  "common": {
+    "search": "Search...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "create": "Create New",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading data...",
+    "no_data": "No records found",
+    "status": "Status",
+    "actions": "Actions",
+    "date": "Date",
+    "parish": "Parish",
+    "deanery": "Deanery",
+    "language": "Language",
+    "success": "Operation successful",
+    "error": "An error occurred"
+  },
+  "sacraments": {
+    "baptism": "Baptism",
+    "first_communion": "First Communion",
+    "confirmation": "Confirmation",
+    "matrimony": "Matrimony",
+    "holy_orders": "Holy Orders",
+    "certificate": "Issue Certificate"
+  }
+}

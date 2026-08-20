@@ -1,0 +1,48 @@
+{
+  "app": {
+    "title": "Arkidi Platform",
+    "archdiocese": "Arikidiyosezi ya Kigali",
+    "tagline": "Ububiko bw'Inyandiko, Imicungire ya Paruwasi n'Imibare Mpuzamatorero"
+  },
+  "nav": {
+    "dashboard": "Ibiro Bikuru",
+    "geography": "Imiterere ya Arikidiyosezi",
+    "faithful": "Abakristu n'Imiryango",
+    "sacraments": "Amasakaramentu n'Ibitabo",
+    "clergy": "Abasaserodoti n'Abihayimana",
+    "liturgy": "Imisa n'Ibitambo",
+    "finance": "Umutungo n'Amaturo",
+    "ministries": "Komisiyo na Korali",
+    "land_assets": "Ubutaka n'Imitungo (GIS)",
+    "archive": "Ububiko bwa Kera",
+    "statistics": "Imibare ya Vatikani",
+    "settings": "Igenamiterere",
+    "logout": "Gusohoka"
+  },
+  "common": {
+    "search": "Shakisha...",
+    "save": "Bika",
+    "cancel": "Kureka",
+    "create": "Kwandika Gishya",
+    "edit": "Guhindura",
+    "delete": "Gusiba",
+    "loading": "Biratunganywa...",
+    "no_data": "Nta makuru yabonetse",
+    "status": "Imiterere",
+    "actions": "Ibikorwa",
+    "date": "Itariki",
+    "parish": "Paruwasi",
+    "deanery": "Doyenne",
+    "language": "Ururimi",
+    "success": "Byakozwe neza",
+    "error": "Habaye ikosa"
+  },
+  "sacraments": {
+    "baptism": "Batisimu",
+    "first_communion": "Ukaristiya ya Mbere",
+    "confirmation": "Gukomezwa",
+    "matrimony": "Ugushyingirwa",
+    "holy_orders": "Ubupadiri",
+    "certificate": "Gutanga Icyemezo"
+  }
+}
