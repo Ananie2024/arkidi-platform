@@ -23,13 +23,13 @@ export const API_ENDPOINTS = {
     issueCertificate: '/sacraments/certificates/issue',
   },
   clergy: {
-    list: '/clergy',
-    detail: (id: string) => `/clergy/${id}`,
-    create: '/clergy',
+    list: '/clergy/priests',
+    detail: (id: string) => `/clergy/priests/${id}`,
+    create: '/clergy/priests',
     assignments: '/clergy/assignments',
   },
   liturgy: {
-    masses: '/liturgy/masses',
+    masses: '/liturgy/mass-schedules',
     intentions: '/liturgy/intentions',
   },
   finance: {
@@ -37,8 +37,8 @@ export const API_ENDPOINTS = {
     summary: '/finance/summary',
   },
   ministries: {
-    list: '/ministries',
-    create: '/ministries',
+    list: '/ministries/',
+    create: '/ministries/',
   },
   landAssets: {
     parcels: '/land-assets/parcels',

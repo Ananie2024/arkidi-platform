@@ -1,32 +1,27 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
 import { Plus } from 'lucide-react';
-
-interface ParishItem {
-  id: string;
-  code: string;
-  name: string;
-  patron_saint: string;
-  district: string;
-  sector: string;
-}
+import { Parish, domainApi } from '../../core/api/domain';
 
 export const ParishListPage: React.FC = () => {
-  const dummyParishes: ParishItem[] = [
-    { id: '1', code: 'PAR-STM', name: 'Cathédrale Saint Michel', patron_saint: 'Saint Michel Archange', district: 'Nyarugenge', sector: 'Kiyovu' },
-    { id: '2', code: 'PAR-STF', name: 'Paroisse Sainte Famille', patron_saint: 'Sainte Famille', district: 'Nyarugenge', sector: 'Muhima' },
-    { id: '3', code: 'PAR-RGP', name: 'Paroisse Regina Pacis', patron_saint: 'Regina Pacis', district: 'Gasabo', sector: 'Remera' },
-    { id: '4', code: 'PAR-KCK', name: 'Paroisse Saint Joseph', patron_saint: 'Saint Joseph', district: 'Kicukiro', sector: 'Kicukiro' },
-  ];
+  const [searchParams] = useSearchParams();
+  const deaneryId = searchParams.get('deanery');
 
-  const columns: Column<ParishItem>[] = [
+  const parishesQuery = useQuery({
+    queryKey: ['parishes', deaneryId],
+    queryFn: () => domainApi.listParishes(deaneryId),
+  });
+
+  const columns: Column<Parish>[] = [
     { header: 'Parish Code', accessor: 'code' },
     { header: 'Parish Name', accessor: 'name' },
-    { header: 'Patron Saint', accessor: 'patron_saint' },
-    { header: 'District', accessor: 'district' },
-    { header: 'Sector', accessor: 'sector' },
+    { header: 'Patron Saint', accessor: (row) => row.patron_saint || '-' },
+    { header: 'District', accessor: (row) => row.district || '-' },
+    { header: 'Sector', accessor: (row) => row.sector || '-' },
     {
       header: 'Actions',
       accessor: (row) => (
@@ -50,7 +45,12 @@ export const ParishListPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table columns={columns} data={dummyParishes} />
+        <Table
+          columns={columns}
+          data={parishesQuery.data || []}
+          isLoading={parishesQuery.isLoading}
+          emptyMessage={parishesQuery.isError ? 'Unable to load parishes from the API.' : 'No parishes found.'}
+        />
       </Card>
     </div>
   );

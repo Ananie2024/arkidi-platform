@@ -14,16 +14,6 @@ interface MatrimonyItem {
 }
 
 export const MatrimonyRegisterPage: React.FC = () => {
-  const dummyMatrimonies: MatrimonyItem[] = [
-    {
-      id: '1',
-      act_number: 'Act 014',
-      celebration_date: '2026-01-10',
-      groom_name: 'Jean-Baptiste Mugisha',
-      bride_name: 'Marie-Claire Uwase',
-      priest_celebrant: 'Abbé Curé',
-    },
-  ];
 
   const columns: Column<MatrimonyItem>[] = [
     { header: 'Act #', accessor: 'act_number' },
@@ -46,8 +36,9 @@ export const MatrimonyRegisterPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table columns={columns} data={dummyMatrimonies} />
+        <Table columns={columns} data={[]} emptyMessage="No register list endpoint is available yet." />
       </Card>
     </div>
   );
 };
+

@@ -1,44 +1,26 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../components/common/Card';
 import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
 import { CalendarPlus } from 'lucide-react';
-
-interface MassScheduleItem {
-  id: string;
-  date: string;
-  start_time: string;
-  language: string;
-  celebrant_name: string;
-  liturgical_feast: string;
-}
+import { MassSchedule, domainApi } from '../../core/api/domain';
 
 export const LiturgyPage: React.FC = () => {
-  const dummyMasses: MassScheduleItem[] = [
-    {
-      id: '1',
-      date: '2026-08-23',
-      start_time: '09:00',
-      language: 'Kinyarwanda',
-      celebrant_name: 'Abbé Curé Jean',
-      liturgical_feast: '21st Sunday in Ordinary Time',
-    },
-    {
-      id: '2',
-      date: '2026-08-23',
-      start_time: '11:00',
-      language: 'French',
-      celebrant_name: 'Abbé Vicaire Paul',
-      liturgical_feast: '21st Sunday in Ordinary Time',
-    },
-  ];
+  const parishesQuery = useQuery({ queryKey: ['parishes'], queryFn: () => domainApi.listParishes() });
+  const parishId = parishesQuery.data?.[0]?.id;
+  const massesQuery = useQuery({
+    queryKey: ['mass-schedules', parishId],
+    queryFn: () => domainApi.listMassSchedules(parishId as string),
+    enabled: Boolean(parishId),
+  });
 
-  const columns: Column<MassScheduleItem>[] = [
-    { header: 'Mass Date', accessor: 'date' },
+  const columns: Column<MassSchedule>[] = [
+    { header: 'Mass Date', accessor: 'mass_date' },
     { header: 'Start Time', accessor: 'start_time' },
     { header: 'Language', accessor: 'language' },
-    { header: 'Celebrant', accessor: 'celebrant_name' },
-    { header: 'Liturgical Feast', accessor: 'liturgical_feast' },
+    { header: 'Celebrant', accessor: (row) => row.celebrant_name || '-' },
+    { header: 'Liturgical Feast', accessor: (row) => row.liturgical_feast || '-' },
   ];
 
   return (
@@ -46,9 +28,7 @@ export const LiturgyPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Mass Schedules & Intentions</h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Mass scheduling across centrales and the parish mass intentions ledger (Ibitambo bya Misa)
-          </p>
+          <p className="text-xs text-gray-500 mt-0.5">Mass scheduling across centrales and the parish mass intentions ledger</p>
         </div>
         <Button size="sm">
           <CalendarPlus className="w-4 h-4 mr-1.5" /> Schedule Mass
@@ -56,7 +36,12 @@ export const LiturgyPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table columns={columns} data={dummyMasses} />
+        <Table
+          columns={columns}
+          data={massesQuery.data || []}
+          isLoading={parishesQuery.isLoading || massesQuery.isLoading}
+          emptyMessage={parishesQuery.isError || massesQuery.isError ? 'Unable to load mass schedules from the API.' : 'No mass schedules found for the current parish.'}
+        />
       </Card>
     </div>
   );

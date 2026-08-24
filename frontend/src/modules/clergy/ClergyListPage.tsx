@@ -1,56 +1,32 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../components/common/Card';
 import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Plus } from 'lucide-react';
-
-interface ClergyItem {
-  id: string;
-  name: string;
-  title: string;
-  role: string;
-  parish: string;
-  ordination_date: string;
-  status: string;
-}
+import { Priest, domainApi } from '../../core/api/domain';
 
 export const ClergyListPage: React.FC = () => {
-  const dummyClergy: ClergyItem[] = [
-    {
-      id: '1',
-      name: 'Antoine Cardinal Kambanda',
-      title: 'Son Éminence',
-      role: 'Archevêque de Kigali',
-      parish: 'Archevêché de Kigali',
-      ordination_date: '1990-09-08',
-      status: 'ACTIVE_DUTY',
-    },
-    {
-      id: '2',
-      name: 'Abbé Jean-Marie Vianney',
-      title: 'Padiri',
-      role: 'Curé de Paroisse',
-      parish: 'Sainte Famille',
-      ordination_date: '2005-07-16',
-      status: 'ACTIVE_DUTY',
-    },
-  ];
+  const clergyQuery = useQuery({
+    queryKey: ['priests'],
+    queryFn: domainApi.listPriests,
+  });
 
-  const columns: Column<ClergyItem>[] = [
+  const columns: Column<Priest>[] = [
     {
       header: 'Clergy Name & Title',
       accessor: (row) => (
         <div>
           <span className="text-xs text-brand-600 font-semibold">{row.title} </span>
-          <span className="text-sm font-medium text-gray-900">{row.name}</span>
+          <span className="text-sm font-medium text-gray-900">{row.last_name} {row.first_name}</span>
         </div>
       ),
     },
-    { header: 'Current Role', accessor: 'role' },
-    { header: 'Current Assignment / Parish', accessor: 'parish' },
-    { header: 'Ordination Date', accessor: 'ordination_date' },
-    { header: 'Status', accessor: () => <Badge variant="success">Active Duty</Badge> },
+    { header: 'Current Role', accessor: (row) => row.current_role || '-' },
+    { header: 'Current Assignment / Parish', accessor: (row) => row.current_parish_id || '-' },
+    { header: 'Ordination Date', accessor: (row) => row.ordination_date || '-' },
+    { header: 'Status', accessor: (row) => <Badge variant={row.status === 'ACTIVE_DUTY' ? 'success' : 'neutral'}>{row.status}</Badge> },
     {
       header: 'Actions',
       accessor: (row) => (
@@ -74,7 +50,12 @@ export const ClergyListPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table columns={columns} data={dummyClergy} />
+        <Table
+          columns={columns}
+          data={clergyQuery.data || []}
+          isLoading={clergyQuery.isLoading}
+          emptyMessage={clergyQuery.isError ? 'Unable to load clergy records from the API.' : 'No clergy records found.'}
+        />
       </Card>
     </div>
   );

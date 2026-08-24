@@ -1,30 +1,21 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../components/common/Card';
 import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
 import { Plus } from 'lucide-react';
-
-interface DeaneryItem {
-  id: string;
-  name: string;
-  code: string;
-  vicar_forane_name: string;
-  parishes_count: number;
-}
+import { Deanery, domainApi } from '../../core/api/domain';
 
 export const GeographyPage: React.FC = () => {
-  const dummyDeaneries: DeaneryItem[] = [
-    { id: '1', name: 'Doyenné Saint Michel', code: 'DOY-STM', vicar_forane_name: 'Mgr. Vicaire Épiscopal', parishes_count: 8 },
-    { id: '2', name: 'Doyenné Sainte Famille', code: 'DOY-STF', vicar_forane_name: 'Abbé Curé Doyen', parishes_count: 9 },
-    { id: '3', name: 'Doyenné Kicukiro', code: 'DOY-KCK', vicar_forane_name: 'Abbé Curé Doyen', parishes_count: 9 },
-    { id: '4', name: 'Doyenné Nyamata', code: 'DOY-NYM', vicar_forane_name: 'Abbé Curé Doyen', parishes_count: 8 },
-  ];
+  const deaneriesQuery = useQuery({
+    queryKey: ['deaneries'],
+    queryFn: domainApi.listDeaneries,
+  });
 
-  const columns: Column<DeaneryItem>[] = [
+  const columns: Column<Deanery>[] = [
     { header: 'Deanery Code', accessor: 'code' },
-    { header: 'Deanery Name (Doyenné)', accessor: 'name' },
-    { header: 'Vicar Forane (Doyen)', accessor: 'vicar_forane_name' },
-    { header: 'Parishes Count', accessor: 'parishes_count' },
+    { header: 'Deanery Name', accessor: 'name' },
+    { header: 'Vicar Forane', accessor: (row) => row.vicar_forane_name || '-' },
     {
       header: 'Actions',
       accessor: (row) => (
@@ -48,7 +39,12 @@ export const GeographyPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table columns={columns} data={dummyDeaneries} />
+        <Table
+          columns={columns}
+          data={deaneriesQuery.data || []}
+          isLoading={deaneriesQuery.isLoading}
+          emptyMessage={deaneriesQuery.isError ? 'Unable to load deaneries from the API.' : 'No deaneries found.'}
+        />
       </Card>
     </div>
   );

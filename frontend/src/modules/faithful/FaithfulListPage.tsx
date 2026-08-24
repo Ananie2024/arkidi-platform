@@ -1,53 +1,31 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../components/common/Card';
 import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Search, UserPlus } from 'lucide-react';
 import { Faithful, CanonicalStatus } from '../../core/types/faithful.types';
+import { domainApi } from '../../core/api/domain';
 import { FaithfulCreateModal } from './FaithfulCreateModal';
 
 export const FaithfulListPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const dummyFaithful: Faithful[] = [
-    {
-      id: '1',
-      registration_number: 'PAR-STF-2026-001',
-      first_name: 'Jean-Baptiste',
-      last_name: 'Mugisha',
-      christian_name: 'Jean-Baptiste',
-      gender: 'MALE',
-      date_of_birth: '1990-04-12',
-      phone_number: '+250 788 123 456',
-      canonical_status: 'CANONICAL_MARRIAGE',
-      parish_id: '1',
-      created_at: '2026-01-15',
-    },
-    {
-      id: '2',
-      registration_number: 'PAR-STF-2026-002',
-      first_name: 'Marie-Claire',
-      last_name: 'Uwase',
-      christian_name: 'Marie-Claire',
-      gender: 'FEMALE',
-      date_of_birth: '1995-08-22',
-      phone_number: '+250 788 654 321',
-      canonical_status: 'CONFIRMED',
-      parish_id: '1',
-      created_at: '2026-01-20',
-    },
-  ];
+  const faithfulQuery = useQuery({
+    queryKey: ['faithful', searchQuery],
+    queryFn: () => domainApi.listFaithful(searchQuery || undefined),
+  });
 
   const getStatusBadge = (status: CanonicalStatus) => {
     switch (status) {
       case 'CANONICAL_MARRIAGE':
-        return <Badge variant="success">Mariage Canonique</Badge>;
+        return <Badge variant="success">Canonical Marriage</Badge>;
       case 'CONFIRMED':
-        return <Badge variant="info">Confirmé</Badge>;
+        return <Badge variant="info">Confirmed</Badge>;
       case 'BAPTIZED':
-        return <Badge variant="neutral">Baptisé</Badge>;
+        return <Badge variant="neutral">Baptized</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -77,6 +55,10 @@ export const FaithfulListPage: React.FC = () => {
     },
   ];
 
+  const emptyMessage = faithfulQuery.isError
+    ? 'Unable to load faithful records from the API.'
+    : 'No faithful records found.';
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -101,7 +83,12 @@ export const FaithfulListPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table columns={columns} data={dummyFaithful} />
+        <Table
+          columns={columns}
+          data={faithfulQuery.data?.items || []}
+          isLoading={faithfulQuery.isLoading}
+          emptyMessage={emptyMessage}
+        />
       </Card>
 
       <FaithfulCreateModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />

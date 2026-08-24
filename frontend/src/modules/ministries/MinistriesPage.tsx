@@ -1,44 +1,23 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../components/common/Card';
 import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Plus } from 'lucide-react';
-
-interface MinistryItem {
-  id: string;
-  name: string;
-  category: string;
-  leader_name: string;
-  meeting_schedule: string;
-  is_active: boolean;
-}
+import { Ministry, domainApi } from '../../core/api/domain';
 
 export const MinistriesPage: React.FC = () => {
-  const dummyMinistries: MinistryItem[] = [
-    {
-      id: '1',
-      name: 'Commission Catéchèse',
-      category: 'COMMISSION',
-      leader_name: 'Diot. Emmanuel Nkusi',
-      meeting_schedule: 'Every Sunday 16:00',
-      is_active: true,
-    },
-    {
-      id: '2',
-      name: 'Légion de Marie',
-      category: 'ECCLESIAL_MOVEMENT',
-      leader_name: 'Sr. Marie Goretti',
-      meeting_schedule: 'Every Saturday 15:00',
-      is_active: true,
-    },
-  ];
+  const ministriesQuery = useQuery({
+    queryKey: ['ministries'],
+    queryFn: domainApi.listMinistries,
+  });
 
-  const columns: Column<MinistryItem>[] = [
+  const columns: Column<Ministry>[] = [
     { header: 'Ministry / Commission', accessor: 'name' },
     { header: 'Category', accessor: 'category' },
-    { header: 'Leader', accessor: 'leader_name' },
-    { header: 'Meeting Schedule', accessor: 'meeting_schedule' },
+    { header: 'Leader', accessor: (row) => row.leader_name || '-' },
+    { header: 'Meeting Schedule', accessor: (row) => row.meeting_schedule || '-' },
     { header: 'Status', accessor: (row) => (row.is_active ? <Badge variant="success">Active</Badge> : <Badge variant="neutral">Inactive</Badge>) },
   ];
 
@@ -47,9 +26,7 @@ export const MinistriesPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Pastoral Ministries & Lay Apostolate</h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Pastoral councils, commissions, choirs and Catholic Action movements
-          </p>
+          <p className="text-xs text-gray-500 mt-0.5">Pastoral councils, commissions, choirs and Catholic Action movements</p>
         </div>
         <Button size="sm">
           <Plus className="w-4 h-4 mr-1.5" /> New Ministry
@@ -57,7 +34,12 @@ export const MinistriesPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table columns={columns} data={dummyMinistries} />
+        <Table
+          columns={columns}
+          data={ministriesQuery.data || []}
+          isLoading={ministriesQuery.isLoading}
+          emptyMessage={ministriesQuery.isError ? 'Unable to load ministries from the API.' : 'No ministries found.'}
+        />
       </Card>
     </div>
   );

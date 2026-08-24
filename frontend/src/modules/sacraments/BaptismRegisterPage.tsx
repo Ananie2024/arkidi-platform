@@ -6,22 +6,6 @@ import { Plus } from 'lucide-react';
 import { BaptismRecord } from '../../core/types/sacrament.types';
 
 export const BaptismRegisterPage: React.FC = () => {
-  const dummyBaptisms: BaptismRecord[] = [
-    {
-      id: '1',
-      parish_id: '1',
-      faithful_id: '1',
-      registry_year: 2026,
-      volume_number: 'Vol 24',
-      page_number: 'P. 12',
-      act_number: 'Act 045',
-      celebration_date: '2026-02-01',
-      minister_name: 'Abbé Curé Jean',
-      godfather_name: 'Paul Habineza',
-      godmother_name: 'Jeanne Mukamana',
-      created_at: '2026-02-01',
-    },
-  ];
 
   const columns: Column<BaptismRecord>[] = [
     { header: 'Act #', accessor: 'act_number' },
@@ -44,8 +28,9 @@ export const BaptismRegisterPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table columns={columns} data={dummyBaptisms} />
+        <Table columns={columns} data={[]} emptyMessage="No register list endpoint is available yet." />
       </Card>
     </div>
   );
 };
+

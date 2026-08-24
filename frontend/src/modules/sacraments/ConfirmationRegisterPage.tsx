@@ -14,16 +14,6 @@ interface ConfirmationItem {
 }
 
 export const ConfirmationRegisterPage: React.FC = () => {
-  const dummyConfirmations: ConfirmationItem[] = [
-    {
-      id: '1',
-      act_number: 'Act 108',
-      volume_page: 'Vol 15, P. 40',
-      celebration_date: '2025-11-23',
-      administering_bishop: 'S.E. Mgr. Antoine Kambanda',
-      sponsor_name: 'Claude Ndayisaba',
-    },
-  ];
 
   const columns: Column<ConfirmationItem>[] = [
     { header: 'Act #', accessor: 'act_number' },
@@ -46,8 +36,9 @@ export const ConfirmationRegisterPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table columns={columns} data={dummyConfirmations} />
+        <Table columns={columns} data={[]} emptyMessage="No register list endpoint is available yet." />
       </Card>
     </div>
   );
 };
+
