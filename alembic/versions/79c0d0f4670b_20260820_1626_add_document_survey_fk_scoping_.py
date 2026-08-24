@@ -43,8 +43,10 @@ def upgrade() -> None:
     op.create_foreign_key('survey_responses_respondent_parish_id_fkey', 'survey_responses', 'parishes', ['respondent_parish_id'], ['id'])
 
     # --------------------------------------------------------------------
-    # CHECK constraint on documents: at least one scoping column must be set,
-    # OR `classification` explicitly allows an unscoped/general document.
+    # CHECK constraint on documents: at least one scoping FK must be set.
+    # We deliberately avoid a classification-based escape hatch here because
+    # Document.classification is a free-form String (default 'OFFICIAL') with no
+    # taxonomy enum defined; an allow-list would reject the default value.
     # --------------------------------------------------------------------
     op.create_check_constraint(
         'ck_documents_scoping_required',
@@ -52,8 +54,7 @@ def upgrade() -> None:
         "archdiocese_id IS NOT NULL OR deanery_id IS NOT NULL OR "
         "parish_id IS NOT NULL OR commission_id IS NOT NULL OR "
         "council_id IS NOT NULL OR meeting_id IS NOT NULL OR "
-        "priest_id IS NOT NULL OR parcel_id IS NOT NULL OR "
-        "classification IN ('GENERAL', 'DICOESAN', 'CURIA')",
+        "priest_id IS NOT NULL OR parcel_id IS NOT NULL",
     )
 
 

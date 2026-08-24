@@ -21,14 +21,17 @@ class Document(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "documents"
 
     __table_args__ = (
-        # At least one organisational scoping column must be set, unless the
-        # `classification` explicitly allows an unscoped / general document.
+        # Every document must be scoped to at least one organisational entity.
+        # We deliberately do NOT offer a classification-based escape hatch here:
+        # Document.classification is a free-form String (default "OFFICIAL") with
+        # no taxonomy defined yet, so any allow-list would silently reject the
+        # default. Until a real classification enum exists, this constraint just
+        # guarantees the scoping FK columns are populated.
         CheckConstraint(
             "archdiocese_id IS NOT NULL OR deanery_id IS NOT NULL OR "
             "parish_id IS NOT NULL OR commission_id IS NOT NULL OR "
             "council_id IS NOT NULL OR meeting_id IS NOT NULL OR "
-            "priest_id IS NOT NULL OR parcel_id IS NOT NULL OR "
-            "classification IN ('GENERAL', 'DICOESAN', 'CURIA')",
+            "priest_id IS NOT NULL OR parcel_id IS NOT NULL",
             name="ck_documents_scoping_required",
         ),
     )
