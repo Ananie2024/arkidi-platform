@@ -13,6 +13,9 @@ import { LoadingSpinner } from './components/common/LoadingSpinner';
 // dynamic import, which keeps the initial bundle small and removes the
 // bundle-size warning from large chart/GIS/QR dependencies.
 // ---------------------------------------------------------------------------
+const HomePage = lazy(() =>
+  import('./pages/HomePage').then((m) => ({ default: m.HomePage }))
+);
 const LoginPage = lazy(() =>
   import('./modules/auth/LoginPage').then((m) => ({ default: m.LoginPage }))
 );
@@ -90,6 +93,7 @@ export default function App() {
           <Suspense fallback={<LoadingSpinner className="min-h-screen" />}>
             <Routes>
               {/* Public routes */}
+              <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 

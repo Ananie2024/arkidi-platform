@@ -66,7 +66,8 @@ services:
       # Dev-only fallback so local `docker compose up` boots without a .env.
       # Never use this value in production. Generate your own, e.g. openssl rand -hex 32
       SECRET_KEY: ${SECRET_KEY:-dev-only-insecure-key-change-me-arkidi-local-development-only}
-      CORS_ORIGINS: '["http://localhost:5173", "http://localhost:8000"]'
+      CORS_ORIGINS: '["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8000"]'
+      CORS_ORIGIN_REGEX: 'http://(localhost|127\.0\.0\.1)(:\d+)?'
     ports:
       - "8000:8000"
     volumes:
@@ -155,7 +156,9 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_BASE_URL: http://localhost:8000/api/v1
+      VITE_API_BASE_URL: /api/v1
+      # Vite dev proxy target — inside Docker the backend resolves by service name.
+      VITE_PROXY_TARGET: http://backend:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
