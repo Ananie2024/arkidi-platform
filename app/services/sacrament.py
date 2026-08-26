@@ -26,7 +26,6 @@ from app.schemas.sacrament import (
     CertificateResponse,
 )
 from app.models.sacrament import CertificateIssue
-from app.core.exceptions import SacramentRecordNotFoundException
 from app.utils.qr import generate_qr_code_base64
 
 
@@ -34,13 +33,25 @@ class SacramentsService:
     def __init__(self, db: AsyncSession):
         self.repo = SacramentsRepository(db)
 
+    async def list_baptisms(self, parish_id: uuid.UUID | None = None) -> list[BaptismResponse]:
+        records = await self.repo.list_baptisms(parish_id=parish_id)
+        return [BaptismResponse.model_validate(record) for record in records]
+
     async def record_baptism(self, data: BaptismCreate) -> BaptismResponse:
         record = await self.repo.create_baptism(data)
         return BaptismResponse.model_validate(record)
 
+    async def list_confirmations(self, parish_id: uuid.UUID | None = None) -> list[ConfirmationResponse]:
+        records = await self.repo.list_confirmations(parish_id=parish_id)
+        return [ConfirmationResponse.model_validate(record) for record in records]
+
     async def record_confirmation(self, data: ConfirmationCreate) -> ConfirmationResponse:
         record = await self.repo.create_confirmation(data)
         return ConfirmationResponse.model_validate(record)
+
+    async def list_matrimonies(self, parish_id: uuid.UUID | None = None) -> list[MatrimonyResponse]:
+        records = await self.repo.list_matrimonies(parish_id=parish_id)
+        return [MatrimonyResponse.model_validate(record) for record in records]
 
     async def record_matrimony(self, data: MatrimonyCreate) -> MatrimonyResponse:
         record = await self.repo.create_matrimony(data)
@@ -94,3 +105,5 @@ class SacramentsService:
             qr_code_base64=generate_qr_code_base64(verification_url),
             created_at=saved.created_at,
         )
+
+

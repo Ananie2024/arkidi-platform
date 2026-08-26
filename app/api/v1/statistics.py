@@ -1,7 +1,7 @@
 """
-Statistics Module FastAPI Endpoints — Annual Reports & Annuario Pontificio
+Statistics Module FastAPI Endpoints - Annual Reports & Annuario Pontificio
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db
@@ -16,6 +16,15 @@ router = APIRouter(prefix="/statistics", tags=["Statistics & Reports"])
 async def submit_parish_report(data: AnnualStatisticCreate, db: AsyncSession = Depends(get_db)):
     service = StatisticsService(db)
     return ApiResponse.ok(data=await service.submit_parish_report(data), message="Parish statistic submitted")
+
+
+@router.get("/parish-reports", response_model=ApiResponse[list[AnnualStatisticResponse]])
+async def list_parish_reports(
+    year: int | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    service = StatisticsService(db)
+    return ApiResponse.ok(data=await service.list_parish_reports(year=year))
 
 
 @router.get("/annuario-pontificio", response_model=ApiResponse[AnnuarioPontificioReport])

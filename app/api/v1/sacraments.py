@@ -2,7 +2,7 @@
 Sacraments Module FastAPI Endpoints
 """
 import uuid
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_current_user_payload
 from app.schemas.sacrament import (
@@ -30,6 +30,31 @@ from app.utils.response import ApiResponse
 
 router = APIRouter(prefix="/sacraments", tags=["Sacraments & Canonical Registers"])
 
+@router.get("/baptism", response_model=ApiResponse[list[BaptismResponse]])
+async def list_baptisms(
+    parish_id: uuid.UUID | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    service = SacramentsService(db)
+    return ApiResponse.ok(data=await service.list_baptisms(parish_id=parish_id))
+
+
+@router.get("/confirmation", response_model=ApiResponse[list[ConfirmationResponse]])
+async def list_confirmations(
+    parish_id: uuid.UUID | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    service = SacramentsService(db)
+    return ApiResponse.ok(data=await service.list_confirmations(parish_id=parish_id))
+
+
+@router.get("/matrimony", response_model=ApiResponse[list[MatrimonyResponse]])
+async def list_matrimonies(
+    parish_id: uuid.UUID | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    service = SacramentsService(db)
+    return ApiResponse.ok(data=await service.list_matrimonies(parish_id=parish_id))
 
 @router.post("/baptism", response_model=ApiResponse[BaptismResponse], status_code=status.HTTP_201_CREATED)
 async def record_baptism(data: BaptismCreate, db: AsyncSession = Depends(get_db)):
@@ -106,3 +131,4 @@ async def issue_certificate(
     issuer_id = uuid.UUID(user_payload["sub"])
     cert = await service.issue_certificate(req, issued_by_user_id=issuer_id)
     return ApiResponse.ok(data=cert, message="Certificate generated successfully")
+

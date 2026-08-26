@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint + tests)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # PostGIS image so geoalchemy2/Geometry tests can run against a clean DB.
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: arkidi_db
+          POSTGRES_USER: arkidi_user
+          POSTGRES_PASSWORD: arkidi_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arkidi_user -d arkidi_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      ENVIRONMENT: testing
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_NAME: arkidi_db
+      DATABASE_USER: arkidi_user
+      DATABASE_PASSWORD: arkidi_test_password
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/1
+      CELERY_RESULT_BACKEND: redis://localhost:6379/2
+      SECRET_KEY: ci-secret-key-for-tests-only-0123456789abcdef
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements-dev.txt
+
+      - name: Run Alembic migrations against the clean database
+        run: alembic upgrade head
+
+      - name: Lint (ruff)
+        run: ruff check app tests --exclude alembic/versions
+
+      - name: Run backend tests
+        run: pytest -p no:cacheprovider -p no:warnings -q
+
+  frontend:
+    name: Frontend (typecheck + lint + tests + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (tsc)
+        run: npx tsc -b
+
+      - name: Lint (eslint)
+        run: npm run lint
+
+      - name: Run component/route tests (vitest)
+        run: npm test
+
+      - name: Production build (code-split bundles)
+        run: npm run build

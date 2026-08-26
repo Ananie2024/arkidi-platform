@@ -42,6 +42,30 @@ class SacramentsRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def list_baptisms(self, parish_id: Optional[uuid.UUID] = None) -> List[BaptismRecord]:
+        stmt = select(BaptismRecord).where(BaptismRecord.is_deleted.is_(False))
+        if parish_id:
+            stmt = stmt.where(BaptismRecord.parish_id == parish_id)
+        stmt = stmt.order_by(BaptismRecord.celebration_date.desc(), BaptismRecord.act_number.desc())
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_confirmations(self, parish_id: Optional[uuid.UUID] = None) -> List[ConfirmationRecord]:
+        stmt = select(ConfirmationRecord).where(ConfirmationRecord.is_deleted.is_(False))
+        if parish_id:
+            stmt = stmt.where(ConfirmationRecord.parish_id == parish_id)
+        stmt = stmt.order_by(ConfirmationRecord.celebration_date.desc(), ConfirmationRecord.act_number.desc())
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_matrimonies(self, parish_id: Optional[uuid.UUID] = None) -> List[MatrimonyRecord]:
+        stmt = select(MatrimonyRecord).where(MatrimonyRecord.is_deleted.is_(False))
+        if parish_id:
+            stmt = stmt.where(MatrimonyRecord.parish_id == parish_id)
+        stmt = stmt.order_by(MatrimonyRecord.celebration_date.desc(), MatrimonyRecord.act_number.desc())
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
     async def create_baptism(self, data: BaptismCreate) -> BaptismRecord:
         record = BaptismRecord(**data.model_dump())
         self.db.add(record)

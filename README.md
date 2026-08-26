@@ -93,3 +93,87 @@ Arkidi Platform is structured as a clean **Modular Monolith**:
 - `frontend/src/i18n/`: Tri-lingual translation keys (EN, FR, RW).
 
 See `ARCHITECTURE.md` for full architectural documentation.
+
+---
+
+## Production Deployment (TLS, API proxy, backup, health)
+
+### 1. Prepare environment
+
+```bash
+cp .env.production.example .env.production    # fill in real secrets/domains
+cp frontend/.env.production.example frontend/.env.production
+```
+
+Set at minimum: `SECRET_KEY`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`,
+`CORS_ORIGINS`, `SERVER_NAME`, `SSL_CERT_PATH`, `SSL_KEY_PATH`.
+
+### 2. TLS certificates
+
+The frontend Nginx container terminates TLS. Place your certificate chain and
+private key on the host and bind-mount them (paths must match `SSL_CERT_PATH` /
+`SSL_KEY_PATH`):
+
+```yaml
+# docker-compose.prod.yml -> frontend service
+volumes:
+  - /etc/letsencrypt/live/app.arkidi.org/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro
+  - /etc/letsencrypt/live/app.arkidi.org/privkey.pem:/etc/nginx/certs/privkey.pem:ro
+```
+
+For local testing only, generate a self-signed pair:
+
+```bash
+mkdir -p tls/certs
+openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
+  -keyout tls/certs/privkey.pem -out tls/certs/fullchain.pem \
+  -subj "/CN=app.arkidi.org"
+```
+
+### 3. Deploy
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+- `https://app.arkidi.org` -> SPA (HTTP redirects to HTTPS)
+- `https://app.arkidi.org/api/v1/...` -> reverse-proxied to the FastAPI backend
+- `https://app.arkidi.org/health` -> backend liveness/readiness probe
+
+Every service ships a Docker healthcheck; the frontend waits for the backend to
+be `service_healthy` before starting, and the backend waits for Postgres and
+Redis.
+
+### 4. Backup / restore
+
+Scheduled backups are provided by the `backup` service in
+`docker-compose.prod.yml` (custom-format `pg_dump`, kept in the
+`postgres_prod_backups` volume, pruned after `BACKUP_KEEP_DAYS`). One-off dumps:
+
+```bash
+# backup
+DB_HOST=localhost DB_PORT=5432 DB_NAME=arkidi_db \
+DB_USER=arkidi_user DB_PASSWORD=secret ./scripts/backup.sh
+
+# restore (into an existing target database)
+DB_HOST=localhost DB_PORT=5432 DB_NAME=arkidi_db \
+DB_USER=arkidi_user DB_PASSWORD=secret \
+./scripts/restore.sh ./backups/arkidi_20260824_120000.dump
+```
+
+Verify a backup before trusting it:
+
+```bash
+pg_restore --list ./backups/arkidi_*.dump | head -20
+```
+
+### 5. Operations health checks
+
+- `GET /health` reports `status` (healthy|degraded) plus per-dependency
+  `checks.database` and `checks.redis` probes.
+- Liveness/uptime monitors should hit `/health` on port 443 with SNI
+  `SERVER_NAME`.
+- Token revocation uses Redis (`revoked_token:*` keys). In
+  `SECURITY_CRITICAL_MODE=true` (production default) a Redis outage causes
+  revocation to **fail closed** and alert via logs rather than silently
+  leaving tokens valid.

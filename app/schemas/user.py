@@ -20,6 +20,11 @@ class TokenResponse(BaseModel):
     expires_in: int
 
 
+class RefreshRequest(BaseModel):
+    """Request body for the public refresh-token rotation endpoint."""
+    refresh_token: str
+
+
 class UserBase(BaseModel):
     email: EmailStr
     username: str

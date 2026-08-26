@@ -85,8 +85,10 @@ async def get_ancestors(
         chain["parish_id"] = parish_id
 
     if parish_id is not None:
+        chain["parish_id"] = parish_id
         parish = await db.get(Parish, parish_id)
         if parish is None:
+            chain["parish_id"] = None
             return chain
         deanery_id = parish.deanery_id
         chain["deanery_id"] = deanery_id

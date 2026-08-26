@@ -16,6 +16,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/login", response_model=ApiResponse[TokenResponse])
 async def login(credentials: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Authenticate user and issue access + refresh JWT tokens."""
+    print(f"DEBUG LOGIN: received={credentials.model_dump()}", flush=True)
     service = AuthService(db)
     tokens = await service.authenticate(credentials)
     return ApiResponse.ok(data=tokens, message="Login successful")

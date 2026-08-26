@@ -59,3 +59,9 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+
+# TLS certificates (bind-mounted at deploy time; never commit real certs)
+tls/certs/
+# Local database dumps / backups
+backups/
+*.dump

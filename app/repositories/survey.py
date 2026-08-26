@@ -5,6 +5,8 @@ import uuid
 from typing import List, Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.parish import Parish
+from app.models.priest import Priest
 from app.models.survey import AnnualParishStatistic
 from app.schemas.common import AnnualStatisticCreate
 
@@ -26,6 +28,26 @@ class StatisticsRepository:
         self.db.add(stat)
         await self.db.flush()
         return stat
+
+    async def list_statistics(self, year: Optional[int] = None) -> List[AnnualParishStatistic]:
+        stmt = select(AnnualParishStatistic).order_by(
+            AnnualParishStatistic.report_year.desc(),
+            AnnualParishStatistic.created_at.desc(),
+        )
+        if year is not None:
+            stmt = stmt.where(AnnualParishStatistic.report_year == year)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def count_parishes(self) -> int:
+        stmt = select(func.count()).select_from(Parish).where(Parish.is_deleted.is_(False))
+        result = await self.db.execute(stmt)
+        return int(result.scalar_one() or 0)
+
+    async def count_active_priests(self) -> int:
+        stmt = select(func.count()).select_from(Priest).where(Priest.is_deleted.is_(False))
+        result = await self.db.execute(stmt)
+        return int(result.scalar_one() or 0)
 
     async def get_archdiocesan_totals(self, year: int) -> dict:
         stmt = select(

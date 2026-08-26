@@ -1,3 +1,12 @@
+# Arkidi Platform — Production Compose Overlay
+# Use with the base file:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Requires .env.production (template: .env.production.example):
+#   POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD,
+#   REDIS_PASSWORD, SECRET_KEY, CORS_ORIGINS,
+#   SERVER_NAME, SSL_CERT_PATH, SSL_KEY_PATH,
+#   BACKUP_KEEP_DAYS, BACKUP_INTERVAL_HOURS
 services:
   postgres:
     image: postgis/postgis:16-3.4
@@ -21,12 +30,19 @@ services:
     image: redis:7-alpine
     container_name: arkidi-redis-prod
     restart: always
-    # Fail closed: REDIS_PASSWORD is a required variable in production.
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    # Fail closed: REDIS_PASSWORD is required in production.
+    command: >
+      sh -c 'if [ -z "$REDIS_PASSWORD" ]; then echo "REDIS_PASSWORD required" >&2; exit 1; fi;
+             exec redis-server --appendonly yes --requirepass "$REDIS_PASSWORD"'
     volumes:
       - redis_prod_data:/data
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - arkidi-prod-network
 
@@ -36,8 +52,8 @@ services:
       dockerfile: Dockerfile
     container_name: arkidi-backend-prod
     restart: always
-    # Default container command is uvicorn (see docker-entrypoint.sh); it also
-    # waits for Postgres and runs `alembic upgrade head` automatically.
+    # Default container command is uvicorn (see docker-entrypoint.sh); it also waits
+    # for Postgres then runs `alembic upgrade head` automatically.
     environment:
       ENVIRONMENT: production
       DATABASE_HOST: postgres
@@ -48,13 +64,21 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       CORS_ORIGINS: ${CORS_ORIGINS}
-      # Required for the default uvicorn target in docker-entrypoint.sh
+      # Used by the default uvicorn target in docker-entrypoint.sh
       BACKEND_WORKERS: ${BACKEND_WORKERS:-4}
     volumes:
       - backend_prod_uploads:/app/file-storage
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     networks:
       - arkidi-prod-network
 
@@ -78,8 +102,10 @@ services:
     volumes:
       - backend_prod_uploads:/app/file-storage
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - arkidi-prod-network
 
@@ -103,10 +129,13 @@ services:
     volumes:
       - backend_prod_uploads:/app/file-storage
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - arkidi-prod-network
+
 
   frontend:
     build:
@@ -117,8 +146,61 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      # Consumed by frontend/docker-entrypoint.sh to render nginx.conf
+      SERVER_NAME: ${SERVER_NAME:-localhost}
+      SSL_CERT_PATH: ${SSL_CERT_PATH:-/etc/nginx/certs/fullchain.pem}
+      SSL_KEY_PATH: ${SSL_KEY_PATH:-/etc/nginx/certs/privkey.pem}
+    # TLS certificates: bind-mount real certificates, e.g.
+    #   - /etc/letsencrypt/live/app.arkidi.org/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro
+    #   - /etc/letsencrypt/live/app.arkidi.org/privkey.pem:/etc/nginx/certs/privkey.pem:ro
+    volumes:
+      - ./tls/certs:/etc/nginx/certs:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - arkidi-prod-network
+
+  # Scheduled Postgres dumps into a dedicated volume. Override the interval with
+  # BACKUP_INTERVAL_HOURS (default 24) and retention with BACKUP_KEEP_DAYS (default 14).
+  backup:
+    image: postgis/postgis:16-3.4
+    container_name: arkidi-backup-prod
+    restart: always
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_DIR: /backups
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+    volumes:
+      - postgres_prod_backups:/backups
+    command: >
+      /bin/bash -c '
+      set -eu;
+      while true; do
+        ts=$(date +%Y%m%d_%H%M%S);
+        file="${BACKUP_DIR}/arkidi_${ts}.dump";
+        echo "[backup] dumping ${POSTGRES_DB} to ${file}";
+        pg_dump --no-owner --no-acl -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}"
+                -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Fc > "${file}";
+        echo "[backup] pruning backups older than ${BACKUP_KEEP_DAYS} days";
+        find "${BACKUP_DIR}" -name "arkidi_*.dump" -mtime "+${BACKUP_KEEP_DAYS}" -delete;
+        echo "[backup] next in ${BACKUP_INTERVAL_HOURS}h";
+        sleep "$((BACKUP_INTERVAL_HOURS * 3600))";
+      done'
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - arkidi-prod-network
 
@@ -128,5 +210,6 @@ networks:
 
 volumes:
   postgres_prod_data:
+  postgres_prod_backups:
   redis_prod_data:
   backend_prod_uploads:
