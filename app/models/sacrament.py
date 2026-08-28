@@ -3,10 +3,10 @@ Sacraments Module SQLAlchemy Models
 Official Catholic Sacramental Registers and Canonical Records
 """
 import uuid
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
-from sqlalchemy import String, Date, Text, Enum as SQLEnum, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String, Date, DateTime, Text, Enum as SQLEnum, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
@@ -21,6 +21,21 @@ class SacramentType(str, Enum):
     RELIGIOUS_PROFESSION = "RELIGIOUS_PROFESSION"
     ANOINTING_OF_THE_SICK = "ANOINTING_OF_THE_SICK"
     CHRISTIAN_FUNERAL = "CHRISTIAN_FUNERAL"
+
+
+class AmendmentStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
+class AmendmentType(str, Enum):
+    CLERICAL_ERROR = "CLERICAL_ERROR"
+    NAME_RECTIFICATION = "NAME_RECTIFICATION"
+    DATE_RECTIFICATION = "DATE_RECTIFICATION"
+    CANONICAL_DECREE = "CANONICAL_DECREE"
+    ADNOTATIO_MARGINALIS = "ADNOTATIO_MARGINALIS"
+    OTHER = "OTHER"
 
 
 class BaptismRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -201,3 +216,34 @@ class CertificateIssue(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     verification_token: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     qr_code_payload: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class SacramentalAmendment(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
+    """Audited, structured canonical correction / amendment for sacramental registers."""
+    __tablename__ = "sacramental_amendments"
+
+    sacrament_type: Mapped[SacramentType] = mapped_column(
+        SQLEnum(SacramentType, name="sacrament_type_enum"),
+        nullable=False,
+    )
+    record_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    amendment_type: Mapped[AmendmentType] = mapped_column(
+        SQLEnum(AmendmentType, name="amendment_type_enum"),
+        default=AmendmentType.CLERICAL_ERROR,
+        nullable=False,
+    )
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    field_changes: Mapped[dict] = mapped_column(JSONB, nullable=False)  # e.g. {"minister_name": {"old": "Père A", "new": "Père B"}}
+    supporting_document_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+
+    status: Mapped[AmendmentStatus] = mapped_column(
+        SQLEnum(AmendmentStatus, name="amendment_status_enum"),
+        default=AmendmentStatus.PENDING,
+        nullable=False,
+    )
+
+    requested_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    reviewed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+

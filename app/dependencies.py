@@ -46,6 +46,14 @@ async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    fid = payload.get("fid")
+    if fid and await is_token_revoked(f"family:{fid}"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token family has been revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return payload
 
 

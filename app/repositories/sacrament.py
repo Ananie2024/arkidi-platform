@@ -2,10 +2,12 @@
 Sacraments Module Database Repository
 """
 import uuid
-from typing import List, Optional
+from datetime import datetime, timezone
+from typing import Any, List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.sacrament import (
+    SacramentType,
     BaptismRecord,
     ConfirmationRecord,
     MatrimonyRecord,
@@ -15,6 +17,9 @@ from app.models.sacrament import (
     AnointingOfTheSickRecord,
     ChristianFuneralRecord,
     CertificateIssue,
+    SacramentalAmendment,
+    AmendmentStatus,
+    AmendmentType,
 )
 from app.schemas.sacrament import (
     BaptismCreate,
@@ -25,6 +30,7 @@ from app.schemas.sacrament import (
     ReligiousProfessionCreate,
     AnointingOfTheSickCreate,
     ChristianFuneralCreate,
+    AmendmentRequestCreate,
 )
 
 
@@ -123,3 +129,77 @@ class SacramentsRepository:
         stmt = select(CertificateIssue).where(CertificateIssue.verification_token == token)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    # -----------------------------------------------------------------------
+    # Sacramental Amendment Workflow Methods
+    # -----------------------------------------------------------------------
+
+    def get_model_for_sacrament(self, sacrament_type: SacramentType):
+        mapping = {
+            SacramentType.BAPTISM: BaptismRecord,
+            SacramentType.CONFIRMATION: ConfirmationRecord,
+            SacramentType.MATRIMONY: MatrimonyRecord,
+            SacramentType.FIRST_COMMUNION: FirstCommunionRecord,
+            SacramentType.HOLY_ORDERS: HolyOrdersRecord,
+            SacramentType.RELIGIOUS_PROFESSION: ReligiousProfessionRecord,
+            SacramentType.ANOINTING_OF_THE_SICK: AnointingOfTheSickRecord,
+            SacramentType.CHRISTIAN_FUNERAL: ChristianFuneralRecord,
+        }
+        return mapping.get(sacrament_type)
+
+    async def get_record_by_type_and_id(
+        self,
+        sacrament_type: SacramentType,
+        record_id: uuid.UUID,
+    ) -> Optional[Any]:
+        model_cls = self.get_model_for_sacrament(sacrament_type)
+        if not model_cls:
+            return None
+        stmt = select(model_cls).where(model_cls.id == record_id, model_cls.is_deleted.is_(False))
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def create_amendment(
+        self,
+        data: AmendmentRequestCreate,
+        requested_by_user_id: Optional[uuid.UUID] = None,
+    ) -> SacramentalAmendment:
+        amendment = SacramentalAmendment(
+            sacrament_type=data.sacrament_type,
+            record_id=data.record_id,
+            amendment_type=data.amendment_type,
+            reason=data.reason,
+            field_changes=data.field_changes,
+            supporting_document_id=data.supporting_document_id,
+            status=AmendmentStatus.PENDING,
+            requested_by_user_id=requested_by_user_id,
+        )
+        self.db.add(amendment)
+        await self.db.flush()
+        return amendment
+
+    async def get_amendment_by_id(self, amendment_id: uuid.UUID) -> Optional[SacramentalAmendment]:
+        stmt = select(SacramentalAmendment).where(
+            SacramentalAmendment.id == amendment_id,
+            SacramentalAmendment.is_deleted.is_(False),
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def list_amendments(
+        self,
+        sacrament_type: Optional[SacramentType] = None,
+        record_id: Optional[uuid.UUID] = None,
+        status: Optional[str] = None,
+    ) -> List[SacramentalAmendment]:
+        stmt = select(SacramentalAmendment).where(SacramentalAmendment.is_deleted.is_(False))
+        if sacrament_type is not None:
+            stmt = stmt.where(SacramentalAmendment.sacrament_type == sacrament_type)
+        if record_id is not None:
+            stmt = stmt.where(SacramentalAmendment.record_id == record_id)
+        if status is not None:
+            stmt = stmt.where(SacramentalAmendment.status == status)
+
+        stmt = stmt.order_by(SacramentalAmendment.created_at.desc())
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, get_current_user_payload, require_roles
 from app.models.enums import UserRole
-from app.schemas.user import LoginRequest, TokenResponse, UserCreate, UserResponse
+from app.schemas.user import LoginRequest, RefreshRequest, TokenResponse, UserCreate, UserResponse
 from app.services.auth import AuthService
 from app.utils.response import ApiResponse
 
@@ -16,10 +16,17 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/login", response_model=ApiResponse[TokenResponse])
 async def login(credentials: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Authenticate user and issue access + refresh JWT tokens."""
-    print(f"DEBUG LOGIN: received={credentials.model_dump()}", flush=True)
     service = AuthService(db)
     tokens = await service.authenticate(credentials)
     return ApiResponse.ok(data=tokens, message="Login successful")
+
+
+@router.post("/refresh", response_model=ApiResponse[TokenResponse])
+async def refresh_token(request: RefreshRequest, db: AsyncSession = Depends(get_db)):
+    """Rotate refresh token and issue a fresh token pair."""
+    service = AuthService(db)
+    tokens = await service.refresh(request.refresh_token)
+    return ApiResponse.ok(data=tokens, message="Token refreshed successfully")
 
 
 @router.post(

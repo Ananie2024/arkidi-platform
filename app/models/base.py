@@ -2,12 +2,25 @@
 SQLAlchemy Declarative Base and shared mixins.
 All Arkidi ORM models inherit from :class:`Base` and the provided mixins.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from sqlalchemy import DateTime, Boolean, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+def _utcnow() -> datetime:
+    """Timezone-aware UTC now used as a client-side default/onupdate value.
+
+    Supplying a Python-side value for ``created_at``/``updated_at`` (in addition
+    to the ``server_default``) means the ORM populates the columns on the client
+    during INSERT/UPDATE. Without it, the columns are treated as pure server
+    defaults, are expired after a flush, and a later synchronous read (e.g. when
+    building a Pydantic response inside a service) triggers a lazy SELECT that
+    raises ``sqlalchemy.exc.MissingGreenlet`` in async code.
+    """
+    return datetime.now(timezone.utc)
 
 
 class Base(DeclarativeBase):
@@ -21,13 +34,15 @@ class TimestampMixin:
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
+        default=_utcnow,
         server_default=func.now(),
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
+        default=_utcnow,
+        onupdate=_utcnow,
         server_default=func.now(),
-        onupdate=func.now(),
         nullable=False,
     )
 

@@ -20,6 +20,7 @@ router = APIRouter(prefix="/clergy", tags=["Clergy & Appointments"])
 async def list_priests(
     parish_id: Optional[uuid.UUID] = None,
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     """List priests, optionally filtered by current parish."""
     service = ClergyService(db)
@@ -27,7 +28,11 @@ async def list_priests(
 
 
 @router.get("/priests/{priest_id}", response_model=ApiResponse[PriestResponse])
-async def get_priest(priest_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_priest(
+    priest_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
     service = ClergyService(db)
     return ApiResponse.ok(data=await service.get_priest(priest_id))
 

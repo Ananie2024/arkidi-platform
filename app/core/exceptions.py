@@ -22,11 +22,27 @@ class ArkidiBaseException(Exception):
 
 class EntityNotFoundException(ArkidiBaseException):
     """Raised when a requested resource is not found."""
-    def __init__(self, entity_name: str, identifier: Any):
+    def __init__(self, message_or_entity: str, identifier: Optional[Any] = None):
+        if identifier is not None:
+            message = f"{message_or_entity} with identifier '{identifier}' was not found."
+            details = {"entity": message_or_entity, "identifier": str(identifier)}
+        else:
+            message = message_or_entity
+            details = {}
         super().__init__(
-            message=f"{entity_name} with identifier '{identifier}' was not found.",
+            message=message,
             status_code=status.HTTP_404_NOT_FOUND,
-            details={"entity": entity_name, "identifier": str(identifier)},
+            details=details,
+        )
+
+
+class ValidationException(ArkidiBaseException):
+    """Raised when request payload or business rule validation fails."""
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=details or {},
         )
 
 

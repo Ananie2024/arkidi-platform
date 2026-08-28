@@ -34,6 +34,7 @@ def create_access_token(
     subject: str | Any,
     claims: Optional[Dict[str, Any]] = None,
     expires_delta: Optional[timedelta] = None,
+    family_id: Optional[str] = None,
 ) -> str:
     """Generate a signed JWT access token."""
     now = datetime.now(timezone.utc)
@@ -52,6 +53,8 @@ def create_access_token(
         # Unique token ID so the Redis-backed revocation blacklist can target it.
         "jti": str(uuid.uuid4()),
     }
+    if family_id:
+        to_encode["fid"] = str(family_id)
     if claims:
         to_encode.update(claims)
 
@@ -66,6 +69,7 @@ def create_access_token(
 def create_refresh_token(
     subject: str | Any,
     expires_delta: Optional[timedelta] = None,
+    family_id: Optional[str] = None,
 ) -> str:
     """Generate a signed JWT refresh token."""
     now = datetime.now(timezone.utc)
@@ -84,6 +88,8 @@ def create_refresh_token(
         # Unique token ID so the Redis-backed blacklist can revoke this token too.
         "jti": str(uuid.uuid4()),
     }
+    if family_id:
+        to_encode["fid"] = str(family_id)
 
     encoded_jwt = jwt.encode(
         to_encode,

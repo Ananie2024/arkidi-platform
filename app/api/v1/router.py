@@ -16,6 +16,9 @@ from app.api.v1.ministries import router as ministries_router
 from app.api.v1.land import router as land_router
 from app.api.v1.archive import router as archive_router
 from app.api.v1.statistics import router as statistics_router
+from app.api.v1.surveys import router as surveys_router
+from app.api.v1.documents import router as documents_router
+from app.api.v1.governance import router as governance_router
 
 api_v1_router = APIRouter()
 
@@ -32,3 +35,6 @@ api_v1_router.include_router(ministries_router)
 api_v1_router.include_router(land_router)
 api_v1_router.include_router(archive_router)
 api_v1_router.include_router(statistics_router)
+api_v1_router.include_router(surveys_router)
+api_v1_router.include_router(documents_router)
+api_v1_router.include_router(governance_router)

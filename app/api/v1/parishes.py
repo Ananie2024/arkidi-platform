@@ -25,6 +25,7 @@ router = APIRouter(prefix="/geography", tags=["Ecclesiastical Geography"])
 async def list_parishes(
     deanery_id: Optional[uuid.UUID] = None,
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     """List parishes, optionally filtered by deanery."""
     service = ParishService(db)
@@ -33,7 +34,11 @@ async def list_parishes(
 
 
 @router.get("/parishes/{parish_id}", response_model=ApiResponse[ParishResponse])
-async def get_parish(parish_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_parish(
+    parish_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
     """Get single parish detail."""
     service = ParishService(db)
     item = await service.get_parish_by_id(parish_id)
@@ -57,7 +62,11 @@ async def create_parish(
 
 
 @router.get("/parishes/{parish_id}/centrales", response_model=ApiResponse[List[CentraleResponse]])
-async def list_centrales(parish_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def list_centrales(
+    parish_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
     """List sub-parishes/centrales belonging to a parish."""
     service = ParishService(db)
     items = await service.get_centrales(parish_id)
@@ -65,7 +74,11 @@ async def list_centrales(parish_id: uuid.UUID, db: AsyncSession = Depends(get_db
 
 
 @router.get("/centrales/{centrale_id}/scc", response_model=ApiResponse[List[SCCResponse]])
-async def list_scc(centrale_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def list_scc(
+    centrale_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
     """List Small Christian Communities (Imiryango-remezo) belonging to a centrale."""
     service = ParishService(db)
     items = await service.get_scc_list(centrale_id)

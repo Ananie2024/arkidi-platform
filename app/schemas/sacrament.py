@@ -3,12 +3,14 @@ Sacraments Module Pydantic v2 Schemas
 """
 import uuid
 from datetime import date, datetime
-from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from typing import Optional, Dict, Any
+from pydantic import BaseModel, ConfigDict, Field
 from app.models.sacrament import (
     SacramentType,
     HolyOrdersOrderType,
     ReligiousProfessionType,
+    AmendmentStatus,
+    AmendmentType,
 )
 
 
@@ -226,3 +228,44 @@ class CertificateResponse(BaseModel):
     verification_token: str
     qr_code_base64: str
     created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Sacramental Amendment Workflow Schemas
+# ---------------------------------------------------------------------------
+
+class AmendmentRequestCreate(BaseModel):
+    sacrament_type: SacramentType
+    record_id: uuid.UUID
+    amendment_type: AmendmentType = AmendmentType.CLERICAL_ERROR
+    reason: str = Field(min_length=5, description="Canonical justification for correction")
+    field_changes: dict = Field(
+        ...,
+        description="Structured dictionary of field modifications with old and new values",
+    )
+    supporting_document_id: Optional[uuid.UUID] = None
+
+
+class AmendmentReviewRequest(BaseModel):
+    action: str = Field(pattern="^(APPROVE|REJECT)$", description="'APPROVE' or 'REJECT'")
+    review_notes: Optional[str] = None
+
+
+class SacramentalAmendmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    sacrament_type: SacramentType
+    record_id: uuid.UUID
+    amendment_type: AmendmentType
+    reason: str
+    field_changes: dict
+    supporting_document_id: Optional[uuid.UUID] = None
+    status: AmendmentStatus
+    requested_by_user_id: Optional[uuid.UUID] = None
+    reviewed_by_user_id: Optional[uuid.UUID] = None
+    reviewed_at: Optional[datetime] = None
+    review_notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+

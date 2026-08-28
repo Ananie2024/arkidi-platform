@@ -19,13 +19,18 @@ router = APIRouter(prefix="/land-assets", tags=["Land Assets & Parcels"])
 async def list_parcels(
     parish_id: Optional[uuid.UUID] = Query(default=None),
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     service = LandAssetsService(db)
     return ApiResponse.ok(data=await service.list_parcels(parish_id=parish_id))
 
 
 @router.get("/parcels/{parcel_id}", response_model=ApiResponse[LandParcelResponse])
-async def get_parcel(parcel_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_parcel(
+    parcel_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
     service = LandAssetsService(db)
     return ApiResponse.ok(data=await service.get_parcel(parcel_id))
 

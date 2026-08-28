@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   geography: {
     deaneries: '/geography/deaneries',
     parishes: '/geography/parishes',
+    parishDetail: (parishId: string) => `/geography/parishes/${parishId}`,
     centrales: (parishId: string) => `/geography/parishes/${parishId}/centrales`,
     scc: (centraleId: string) => `/geography/centrales/${centraleId}/scc`,
   },

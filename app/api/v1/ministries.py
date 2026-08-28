@@ -19,6 +19,7 @@ router = APIRouter(prefix="/ministries", tags=["Ministries & Commissions"])
 async def list_ministries(
     parish_id: Optional[uuid.UUID] = Query(default=None),
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     service = MinistriesService(db)
     return ApiResponse.ok(data=await service.list_ministries(parish_id=parish_id))

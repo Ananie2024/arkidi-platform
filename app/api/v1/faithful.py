@@ -5,7 +5,8 @@ import uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.dependencies import get_db
+from app.dependencies import get_db, require_roles
+from app.models.enums import UserRole
 from app.schemas.faithful import (
     FaithfulCreate,
     FaithfulResponse,
@@ -26,6 +27,7 @@ async def list_faithful(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     """List registered parishioners with search, parish filtering and pagination."""
     service = FaithfulService(db)
@@ -35,7 +37,11 @@ async def list_faithful(
 
 
 @router.get("/{faithful_id}", response_model=ApiResponse[FaithfulResponse])
-async def get_faithful(faithful_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_faithful(
+    faithful_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
     """Get complete profile of a parishioner."""
     service = FaithfulService(db)
     data = await service.get_faithful_by_id(faithful_id)
@@ -43,7 +49,11 @@ async def get_faithful(faithful_id: uuid.UUID, db: AsyncSession = Depends(get_db
 
 
 @router.post("", response_model=ApiResponse[FaithfulResponse], status_code=status.HTTP_201_CREATED)
-async def create_faithful(data: FaithfulCreate, db: AsyncSession = Depends(get_db)):
+async def create_faithful(
+    data: FaithfulCreate,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
+):
     """Register a new faithful in the parish directory."""
     service = FaithfulService(db)
     created = await service.create_faithful(data)
@@ -51,7 +61,11 @@ async def create_faithful(data: FaithfulCreate, db: AsyncSession = Depends(get_d
 
 
 @router.post("/families", response_model=ApiResponse[FamilyResponse], status_code=status.HTTP_201_CREATED)
-async def create_family(data: FamilyCreate, db: AsyncSession = Depends(get_db)):
+async def create_family(
+    data: FamilyCreate,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
+):
     """Register a new household/family."""
     service = FaithfulService(db)
     created = await service.create_family(data)

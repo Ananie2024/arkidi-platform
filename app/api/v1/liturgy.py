@@ -24,6 +24,7 @@ async def list_mass_schedules(
     parish_id: uuid.UUID,
     for_date: Optional[date] = Query(default=None),
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     service = MassService(db)
     return ApiResponse.ok(data=await service.get_mass_schedules(parish_id, for_date))
@@ -37,7 +38,7 @@ async def list_mass_schedules(
 async def schedule_mass(
     data: MassScheduleCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.ARCHBISHOP])),
+    _: dict = Depends(require_roles([UserRole.PARISH_PRIEST, UserRole.PARISH_VICAR])),
 ):
     service = MassService(db)
     return ApiResponse.ok(data=await service.schedule_mass(data), message="Mass schedule created")
@@ -48,13 +49,18 @@ async def list_intentions(
     parish_id: uuid.UUID,
     target_date: Optional[date] = Query(default=None),
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     service = IntentionService(db)
     return ApiResponse.ok(data=await service.get_intentions(parish_id, target_date))
 
 
 @router.get("/intentions/{intention_id}", response_model=ApiResponse[MassIntentionResponse])
-async def get_intention(intention_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_intention(
+    intention_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
     service = IntentionService(db)
     return ApiResponse.ok(data=await service.get_intention(intention_id))
 
@@ -67,6 +73,7 @@ async def get_intention(intention_id: uuid.UUID, db: AsyncSession = Depends(get_
 async def register_intention(
     data: MassIntentionCreate,
     db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
 ):
     service = IntentionService(db)
     return ApiResponse.ok(data=await service.register_intention(data), message="Intention registered")

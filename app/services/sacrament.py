@@ -3,7 +3,12 @@ Sacraments Module Business Logic Service
 """
 import uuid
 import secrets
+from datetime import datetime, timezone
+from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, status
+
+from app.core.exceptions import EntityNotFoundException, ValidationException
 from app.repositories.sacrament import SacramentsRepository
 from app.schemas.sacrament import (
     BaptismCreate,
@@ -24,13 +29,18 @@ from app.schemas.sacrament import (
     ChristianFuneralResponse,
     CertificateRequest,
     CertificateResponse,
+    AmendmentRequestCreate,
+    AmendmentReviewRequest,
+    SacramentalAmendmentResponse,
 )
-from app.models.sacrament import CertificateIssue
+from app.models.sacrament import CertificateIssue, SacramentType, AmendmentStatus
+from app.models.audit_log import AuditLog
 from app.utils.qr import generate_qr_code_base64
 
 
 class SacramentsService:
     def __init__(self, db: AsyncSession):
+        self.db = db
         self.repo = SacramentsRepository(db)
 
     async def list_baptisms(self, parish_id: uuid.UUID | None = None) -> list[BaptismResponse]:
@@ -106,4 +116,138 @@ class SacramentsService:
             created_at=saved.created_at,
         )
 
+    # -----------------------------------------------------------------------
+    # Sacramental Amendment Workflow
+    # -----------------------------------------------------------------------
 
+    async def request_amendment(
+        self,
+        data: AmendmentRequestCreate,
+        requested_by_user_id: Optional[uuid.UUID] = None,
+    ) -> SacramentalAmendmentResponse:
+        """Submit a formal canonical amendment request for a sacramental record."""
+        target_record = await self.repo.get_record_by_type_and_id(
+            sacrament_type=data.sacrament_type,
+            record_id=data.record_id,
+        )
+        if not target_record:
+            raise EntityNotFoundException(
+                f"Target {data.sacrament_type.value} record '{data.record_id}' not found."
+            )
+
+        # Validate that requested fields exist on target record
+        for field_name in data.field_changes.keys():
+            if not hasattr(target_record, field_name):
+                raise ValidationException(
+                    f"Field '{field_name}' does not exist on {data.sacrament_type.value} record."
+                )
+
+        amendment = await self.repo.create_amendment(
+            data=data,
+            requested_by_user_id=requested_by_user_id,
+        )
+        return SacramentalAmendmentResponse.model_validate(amendment)
+
+    async def list_amendments(
+        self,
+        sacrament_type: Optional[SacramentType] = None,
+        record_id: Optional[uuid.UUID] = None,
+        amendment_status: Optional[str] = None,
+    ) -> List[SacramentalAmendmentResponse]:
+        items = await self.repo.list_amendments(
+            sacrament_type=sacrament_type,
+            record_id=record_id,
+            status=amendment_status,
+        )
+        return [SacramentalAmendmentResponse.model_validate(a) for a in items]
+
+    async def get_amendment(self, amendment_id: uuid.UUID) -> SacramentalAmendmentResponse:
+        amendment = await self.repo.get_amendment_by_id(amendment_id)
+        if not amendment:
+            raise EntityNotFoundException("Sacramental amendment not found.")
+        return SacramentalAmendmentResponse.model_validate(amendment)
+
+    async def review_amendment(
+        self,
+        amendment_id: uuid.UUID,
+        review: AmendmentReviewRequest,
+        reviewer_id: uuid.UUID,
+    ) -> SacramentalAmendmentResponse:
+        """Approve or reject a sacramental amendment. On approval, safely updates record and appends marginal note."""
+        amendment = await self.repo.get_amendment_by_id(amendment_id)
+        if not amendment:
+            raise EntityNotFoundException("Sacramental amendment not found.")
+
+        if amendment.status != AmendmentStatus.PENDING:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Amendment is already in '{amendment.status.value}' status and cannot be reviewed again.",
+            )
+
+        now = datetime.now(timezone.utc)
+
+        if review.action == "APPROVE":
+            target_record = await self.repo.get_record_by_type_and_id(
+                sacrament_type=amendment.sacrament_type,
+                record_id=amendment.record_id,
+            )
+            if not target_record:
+                raise EntityNotFoundException("Target sacramental record to amend was not found.")
+
+            # Apply field modifications
+            for field_name, change_val in amendment.field_changes.items():
+                new_val = change_val.get("new") if isinstance(change_val, dict) else change_val
+                if hasattr(target_record, field_name):
+                    setattr(target_record, field_name, new_val)
+
+            # Append canonical adnotatio marginalis
+            if hasattr(target_record, "marginal_notes"):
+                existing_notes = target_record.marginal_notes or ""
+                date_str = now.strftime("%Y-%m-%d %H:%M UTC")
+                marginal_annotation = (
+                    f"\n[Canonical Amendment Approved on {date_str} by {reviewer_id}: "
+                    f"{amendment.reason}]"
+                )
+                target_record.marginal_notes = (existing_notes + marginal_annotation).strip()
+
+            # Record Audit Log
+            audit = AuditLog(
+                user_id=reviewer_id,
+                action="SACRAMENTAL_AMENDMENT_APPROVED",
+                entity_name=amendment.sacrament_type.value,
+                entity_id=str(amendment.record_id),
+                details={
+                    "amendment_id": str(amendment.id),
+                    "reason": amendment.reason,
+                    "changes": amendment.field_changes,
+                    "review_notes": review.review_notes,
+                },
+            )
+            self.db.add(audit)
+
+            amendment.status = AmendmentStatus.APPROVED
+            amendment.reviewed_by_user_id = reviewer_id
+            amendment.reviewed_at = now
+            amendment.review_notes = review.review_notes
+
+        elif review.action == "REJECT":
+            audit = AuditLog(
+                user_id=reviewer_id,
+                action="SACRAMENTAL_AMENDMENT_REJECTED",
+                entity_name=amendment.sacrament_type.value,
+                entity_id=str(amendment.record_id),
+                details={
+                    "amendment_id": str(amendment.id),
+                    "reason": amendment.reason,
+                    "review_notes": review.review_notes,
+                },
+            )
+            self.db.add(audit)
+
+            amendment.status = AmendmentStatus.REJECTED
+            amendment.reviewed_by_user_id = reviewer_id
+            amendment.reviewed_at = now
+            amendment.review_notes = review.review_notes
+
+        await self.db.flush()
+        return SacramentalAmendmentResponse.model_validate(amendment)

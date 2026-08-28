@@ -20,6 +20,12 @@ export interface Parish {
   name: string;
   code: string;
   patron_saint?: string | null;
+establishment_date?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   district?: string | null;
   sector?: string | null;
   created_at: string;
@@ -30,6 +36,13 @@ export interface Priest {
   first_name: string;
   last_name: string;
   title: string;
+  clergy_type: string;
+  date_of_birth?: string | null;
+  ordaining_bishop?: string | null;
+  congregation?: string | null;
+  phone_number?: string | null;
+  email?: string | null;
+  biography?: string | null;
   status: string;
   ordination_date?: string | null;
   current_parish_id?: string | null;
@@ -135,6 +148,9 @@ async function getData<T>(url: string, params?: Record<string, unknown>): Promis
 export const domainApi = {
   listDeaneries: () => getData<Deanery[]>(API_ENDPOINTS.geography.deaneries),
   listParishes: (deaneryId?: string | null) => getData<Parish[]>(API_ENDPOINTS.geography.parishes, deaneryId ? { deanery_id: deaneryId } : undefined),
+getParish: (id: string) => getData<Parish>(API_ENDPOINTS.geography.parishDetail(id)),
+  getFaithful: (id: string) => getData<Faithful>(API_ENDPOINTS.faithful.detail(id)),
+  getPriest: (id: string) => getData<Priest>(API_ENDPOINTS.clergy.detail(id)),
   listFaithful: (search?: string) => getData<PaginatedResult<Faithful>>(API_ENDPOINTS.faithful.list, search ? { search } : undefined),
   listPriests: () => getData<Priest[]>(API_ENDPOINTS.clergy.list),
   listDonations: (parishId: string) => getData<Donation[]>(API_ENDPOINTS.finance.donations, { parish_id: parishId }),

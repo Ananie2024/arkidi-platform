@@ -17,6 +17,11 @@ venv.bak/
 backups/
 file-storage/
 logs/
+# Local dev log & scratch artifacts (junk that must never be committed)
+/queryex
+/backend.log
+/frontend/frontend.log
+*.log
 
 # Testing & Coverage
 .coverage

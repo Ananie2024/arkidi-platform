@@ -16,7 +16,11 @@ router = APIRouter(prefix="/archive", tags=["Archive & Canonical Registers"])
 
 
 @router.get("/books", response_model=ApiResponse[list[ArchiveLedgerBookResponse]])
-async def list_books(parish_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def list_books(
+    parish_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
     service = ArchiveService(db)
     return ApiResponse.ok(data=await service.list_books(parish_id))
 
@@ -36,7 +40,11 @@ async def create_book(
 
 
 @router.get("/books/{book_id}/pages", response_model=ApiResponse[List[ScannedPageResponse]])
-async def list_pages(book_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def list_pages(
+    book_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
     service = ArchiveService(db)
     return ApiResponse.ok(data=await service.list_pages(book_id))
 
