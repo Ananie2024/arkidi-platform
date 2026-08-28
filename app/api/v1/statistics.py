@@ -1,12 +1,21 @@
 """
 Statistics Module FastAPI Endpoints - Annual Reports & Annuario Pontificio
 """
+import uuid
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
-from app.schemas.common import AnnualStatisticCreate, AnnualStatisticResponse, AnnuarioPontificioReport
+from app.schemas.common import (
+    AnnualStatisticCreate,
+    AnnualStatisticResponse,
+    AnnuarioPontificioReport,
+)
+from app.schemas.indicators import IndicatorConfigView, IndicatorResult
+from app.services.indicators import AggregationService
 from app.services.statistics import StatisticsService
 from app.utils.response import ApiResponse
 
@@ -41,3 +50,38 @@ async def annuario_pontificio(
 ):
     service = StatisticsService(db)
     return ApiResponse.ok(data=await service.generate_annuario_pontificio(year))
+
+
+@router.get("/indicators", response_model=ApiResponse[list[IndicatorConfigView]])
+async def list_indicators(
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
+    """List the configuration-driven statistic indicators.
+
+    Every indicator is declarative config (``app/services/indicators.py::
+    INDICATORS``); adding a new statistics family is a config entry, not a
+    hand-written method.
+    """
+    return ApiResponse.ok(data=AggregationService(db).list_indicators())
+
+
+@router.get("/indicators/{key}", response_model=ApiResponse[IndicatorResult])
+async def compute_indicator(
+    key: str,
+    archdiocese_id: uuid.UUID | None = Query(default=None),
+    deanery_id: uuid.UUID | None = Query(default=None),
+    start_date: date | None = Query(default=None),
+    end_date: date | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
+    """Compute one registered statistic indicator within an org scope."""
+    result = await AggregationService(db).compute(
+        key,
+        archdiocese_id=archdiocese_id,
+        deanery_id=deanery_id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    return ApiResponse.ok(data=result)

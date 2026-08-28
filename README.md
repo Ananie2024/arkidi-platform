@@ -167,6 +167,37 @@ Verify a backup before trusting it:
 pg_restore --list ./backups/arkidi_*.dump | head -20
 ```
 
+Run the end-to-end restore drill (backs up the real DB, restores into a throwaway
+scratch DB, verifies the round-trip, drops the scratch DB — never touches live
+data). See `docs/backup-restore-drill.md`:
+
+```bash
+DB_HOST=localhost DB_PORT=5432 DB_NAME=arkidi_db \
+DB_USER=arkidi_user DB_PASSWORD=secret \
+./scripts/restore_drill.sh
+```
+
+The restore drill provisions PostGIS in its scratch database through an admin
+role (`DB_ADMIN_USER`/`DB_ADMIN_PASSWORD`, which default to the application
+credentials). When running under a least-privilege **non-superuser** application
+role (recommended for production), provision that role once and point the admin
+vars at the DBA account:
+
+```bash
+DB_ADMIN_USER=postgres DB_ADMIN_PASSWORD=secret \
+APP_ROLE=arkidi_app APP_ROLE_PASSWORD=secret \
+./scripts/provision_app_role.sh
+
+DB_HOST=localhost DB_PORT=5432 DB_NAME=arkidi_db \
+DB_USER=arkidi_app DB_PASSWORD=secret \
+DB_ADMIN_USER=postgres DB_ADMIN_PASSWORD=secret \
+./scripts/restore_drill.sh
+```
+
+The CI pipeline runs migrations, the full test suite, and the restore drill under
+a genuine non-superuser role so PostGIS/privilege regressions cannot hide behind
+the Docker image's default superuser.
+
 ### 5. Operations health checks
 
 - `GET /health` reports `status` (healthy|degraded) plus per-dependency

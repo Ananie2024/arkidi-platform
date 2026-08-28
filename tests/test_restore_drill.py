@@ -11,6 +11,16 @@ scratch database which is dropped afterwards.
 The test is skipped when the required Postgres client tools are unavailable,
 when the configured DB role lacks the ``CREATEDB`` privilege, or when the source
 database is unreachable (e.g. local CI without a Postgres service).
+
+A freshly created scratch database has no PostGIS, and a non-superuser
+application role cannot ``CREATE EXTENSION postgis`` (it is a non-trusted
+extension). The test therefore provisions PostGIS in the scratch DB through the
+privileged admin role (``DATABASE_ADMIN_USER``/``DATABASE_ADMIN_PASSWORD``,
+defaulting to the application role when that role is a superuser) and restores
+with a filtered ``--use-list`` that skips the PostGIS-infrastructure TOC entries.
+This exercises the production-realistic non-superuser path so the bug this test
+guards (geometry-backed tables failing to restore) cannot hide behind a
+superuser Docker-image default again.
 """
 import os
 import shutil
@@ -33,6 +43,14 @@ def _find_tools():
 def _env(database: str) -> dict:
     env = os.environ.copy()
     env["PGPASSWORD"] = settings.DATABASE_PASSWORD
+    env["PGCLIENTENCODING"] = "UTF8"
+    return env
+
+
+def _env_admin(database: str) -> dict:
+    """Env using the privileged admin role (defaults to the app role)."""
+    env = os.environ.copy()
+    env["PGPASSWORD"] = settings.effective_admin_password
     env["PGCLIENTENCODING"] = "UTF8"
     return env
 
@@ -120,6 +138,27 @@ def _table_count(tools: dict, database: str) -> int:
     return int(res.stdout.strip())
 
 
+def _geometry_count(tools: dict, database: str) -> int:
+    """Count geometry/geography columns — guards the PostGIS-in-restore gap."""
+    res = _run(
+        [
+            tools["psql"],
+            "-h", settings.DATABASE_HOST,
+            "-p", str(settings.DATABASE_PORT),
+            "-U", settings.DATABASE_USER,
+            "-d", database,
+            "-t", "-A",
+            "-c",
+            "SELECT count(*) FROM information_schema.columns "
+            "WHERE table_schema = 'public' AND udt_name IN ('geometry', 'geography')",
+        ],
+        env=_env(database),
+    )
+    if res.returncode != 0:
+        raise AssertionError(f"geometry-count query failed on {database}: {res.stderr}")
+    return int(res.stdout.strip())
+
+
 @pytest.mark.integration
 def test_restore_drill_end_to_end():
     tools = _find_tools()
@@ -181,6 +220,35 @@ def test_restore_drill_end_to_end():
             )
             assert createdb.returncode == 0, f"CREATE DATABASE failed: {createdb.stderr}"
 
+            # --- 2a. Provision PostGIS in the scratch DB (via the admin role).
+            # A freshly created DB has no PostGIS and a non-superuser app role
+            # cannot `CREATE EXTENSION postgis`, so this uses the privileged
+            # admin role (defaults to the app role when it is a superuser).
+            provision = _run(
+                [
+                    tools["psql"],
+                    "-h", settings.DATABASE_HOST,
+                    "-p", str(settings.DATABASE_PORT),
+                    "-U", settings.effective_admin_user,
+                    "-d", scratch,
+                    "-c", "CREATE EXTENSION IF NOT EXISTS postgis",
+                ],
+                env=_env_admin(scratch),
+            )
+            assert provision.returncode == 0, f"CREATE EXTENSION postgis failed: {provision.stderr}"
+            grant = _run(
+                [
+                    tools["psql"],
+                    "-h", settings.DATABASE_HOST,
+                    "-p", str(settings.DATABASE_PORT),
+                    "-U", settings.effective_admin_user,
+                    "-d", scratch,
+                    "-c", f"GRANT CREATE ON SCHEMA public TO {settings.DATABASE_USER}",
+                ],
+                env=_env_admin(scratch),
+            )
+            assert grant.returncode == 0, f"GRANT CREATE on public schema failed: {grant.stderr}"
+
             # --- 2b. Restore file-storage tarball; verify bytes round-trip ---
             restored_fs = os.path.join(workdir, "restored_file_storage")
             os.makedirs(restored_fs, exist_ok=True)
@@ -191,11 +259,29 @@ def test_restore_drill_end_to_end():
             with open(restored_probe, "rb") as fh:
                 assert fh.read() == probe_bytes, "file-storage bytes did not round-trip"
 
-            # --- 3. Restore into scratch (mirrors restore.sh flags) ---
+            # --- 3. Restore into scratch (mirrors restore.sh) ---
+            # Build a filtered pg_restore list so the PostGIS-infrastructure TOC
+            # entries (CREATE/COMMENT ON the postgis extension and the
+            # spatial_ref_sys COPY) are skipped; those are owned by PostGIS and
+            # cannot be written by a non-superuser application role.
+            list_path = os.path.join(workdir, "restore.list")
+            filtered_list_path = os.path.join(workdir, "restore.filtered.list")
+            list_res = _run(
+                [tools["pg_restore"], "--list", "-f", list_path, dump_path],
+                env=_env(scratch),
+            )
+            assert list_res.returncode == 0, f"pg_restore --list failed: {list_res.stderr}"
+            with open(list_path, encoding="utf-8", errors="replace") as fh:
+                entries = [ln for ln in fh
+                           if ln.strip() and "postgis" not in ln.lower()
+                           and "spatial_ref_sys" not in ln.lower()]
+            with open(filtered_list_path, "w", encoding="utf-8") as fh:
+                fh.writelines(entries)
             restore_res = _run(
                 [
                     tools["pg_restore"],
                     "--no-owner", "--no-acl", "--clean", "--if-exists",
+                    "--use-list", filtered_list_path,
                     "-h", settings.DATABASE_HOST,
                     "-p", str(settings.DATABASE_PORT),
                     "-U", settings.DATABASE_USER,
@@ -206,11 +292,19 @@ def test_restore_drill_end_to_end():
             )
             assert restore_res.returncode == 0, f"pg_restore failed: {restore_res.stderr}"
 
-            # --- 4. Verify: table graph + representative row counts match source ---
+            # --- 4. Verify: table graph + geometry columns + row counts match ---
             src_tables = _table_count(tools, settings.DATABASE_NAME)
             restored_tables = _table_count(tools, scratch)
             assert restored_tables == src_tables, (
                 f"restored table count {restored_tables} != source {src_tables}"
+            )
+
+            # Guard the PostGIS gap: geometry-backed tables must have restored columns.
+            src_geo = _geometry_count(tools, settings.DATABASE_NAME)
+            restored_geo = _geometry_count(tools, scratch)
+            assert restored_geo == src_geo and restored_geo > 0, (
+                f"geometry columns did not restore (source={src_geo}, restored={restored_geo}); "
+                "PostGIS was not enabled in the scratch DB."
             )
 
             for table in ("users", "faithful"):

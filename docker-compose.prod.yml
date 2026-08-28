@@ -82,13 +82,13 @@ services:
     networks:
       - arkidi-prod-network
 
-  celery-worker:
+    celery-worker:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: arkidi-celery-prod
     restart: always
-    command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info --concurrency=4
+    command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info --concurrency=4 -Q default,archive
     environment:
       ENVIRONMENT: production
       DATABASE_HOST: postgres
@@ -96,11 +96,29 @@ services:
       DATABASE_NAME: ${POSTGRES_DB}
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_ADMIN_USER: ${DATABASE_ADMIN_USER:-postgres}
+      DATABASE_ADMIN_PASSWORD: ${DATABASE_ADMIN_PASSWORD:-${POSTGRES_PASSWORD}}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
+      # Backup & cloud config (consumed by app/tasks/backups.py + backup.sh)
+      BACKUP_BASE_PATH: ${BACKUP_BASE_PATH:-/app/backups}
+      GCS_ENABLED: ${GCS_ENABLED:-false}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
+      GCS_CREDENTIALS_PATH: ${GCS_CREDENTIALS_PATH:-}
+      B2_ENABLED: ${B2_ENABLED:-false}
+      B2_BUCKET_NAME: ${B2_BUCKET_NAME:-}
+      # Alerting (consumed by app/utils/alerts.py)
+      SMTP_SERVER: ${SMTP_SERVER:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      EMAIL_SENDER: ${EMAIL_SENDER:-}
+      ALERT_RECIPIENTS: ${ALERT_RECIPIENTS:-}
       RUN_MIGRATIONS: "false"
     volumes:
       - backend_prod_uploads:/app/file-storage
+      - backend_prod_backups:/app/backups
     depends_on:
       postgres:
         condition: service_healthy
@@ -123,11 +141,29 @@ services:
       DATABASE_NAME: ${POSTGRES_DB}
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_ADMIN_USER: ${DATABASE_ADMIN_USER:-postgres}
+      DATABASE_ADMIN_PASSWORD: ${DATABASE_ADMIN_PASSWORD:-${POSTGRES_PASSWORD}}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
+      # Backup & cloud config (consumed by app/tasks/backups.py + backup.sh)
+      BACKUP_BASE_PATH: ${BACKUP_BASE_PATH:-/app/backups}
+      GCS_ENABLED: ${GCS_ENABLED:-false}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
+      GCS_CREDENTIALS_PATH: ${GCS_CREDENTIALS_PATH:-}
+      B2_ENABLED: ${B2_ENABLED:-false}
+      B2_BUCKET_NAME: ${B2_BUCKET_NAME:-}
+      # Alerting (consumed by app/utils/alerts.py)
+      SMTP_SERVER: ${SMTP_SERVER:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      EMAIL_SENDER: ${EMAIL_SENDER:-}
+      ALERT_RECIPIENTS: ${ALERT_RECIPIENTS:-}
       RUN_MIGRATIONS: "false"
     volumes:
       - backend_prod_uploads:/app/file-storage
+      - backend_prod_backups:/app/backups
     depends_on:
       postgres:
         condition: service_healthy
@@ -167,42 +203,23 @@ services:
     networks:
       - arkidi-prod-network
 
-  # Scheduled Postgres dumps into a dedicated volume. Override the interval with
-  # BACKUP_INTERVAL_HOURS (default 24) and retention with BACKUP_KEEP_DAYS (default 14).
-  backup:
-    image: postgis/postgis:16-3.4
-    container_name: arkidi-backup-prod
-    restart: always
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      BACKUP_DIR: /backups
-      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
-      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
-    volumes:
-      - postgres_prod_backups:/backups
-    command: >
-      /bin/bash -c '
-      set -eu;
-      while true; do
-        ts=$(date +%Y%m%d_%H%M%S);
-        file="${BACKUP_DIR}/arkidi_${ts}.dump";
-        echo "[backup] dumping ${POSTGRES_DB} to ${file}";
-        pg_dump --no-owner --no-acl -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}"
-                -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Fc > "${file}";
-        echo "[backup] pruning backups older than ${BACKUP_KEEP_DAYS} days";
-        find "${BACKUP_DIR}" -name "arkidi_*.dump" -mtime "+${BACKUP_KEEP_DAYS}" -delete;
-        echo "[backup] next in ${BACKUP_INTERVAL_HOURS}h";
-        sleep "$((BACKUP_INTERVAL_HOURS * 3600))";
-      done'
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - arkidi-prod-network
+  # ------------------------------------------------------------------
+  # Backups & Restore Drills
+  # ------------------------------------------------------------------
+  # Scheduled backups and weekly restore drills are now orchestrated by
+  # Celery Beat (celery-beat service above) via:
+  #   * app/tasks/backups.py -> backup.run_nightly_backup      (daily 01:30)
+  #   * app/tasks/backups.py -> backup.run_weekly_restore_drill (Sun 03:30)
+  #
+  # backup.sh produces a local pg_dump + file-storage tarball and uploads
+  # to GCS/B2 via scripts/cloud_upload.py when enabled.
+  # The backup artefacts are persisted to the backend_prod_backups volume
+  # mounted on the celery-worker container (see above).
+  #
+  # The previous standalone `backup` service (postgis/postgis image with a
+  # sleep-loop cron) has been removed: scheduling now lives in one place
+  # (beat_schedule in app/tasks/celery_app.py) and runs inside the Python
+  # image where google-cloud-storage / b2sdk are installed.
 
 networks:
   arkidi-prod-network:
@@ -210,6 +227,6 @@ networks:
 
 volumes:
   postgres_prod_data:
-  postgres_prod_backups:
   redis_prod_data:
   backend_prod_uploads:
+  backend_prod_backups:

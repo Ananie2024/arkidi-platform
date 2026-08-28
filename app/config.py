@@ -39,6 +39,30 @@ class Settings(BaseSettings):
     DATABASE_POOL_SIZE: int = Field(default=10)
     DATABASE_MAX_OVERFLOW: int = Field(default=20)
 
+    # Optional *privileged* database role used ONLY for provisioning steps that a
+    # non-superuser application role cannot perform itself, namely:
+    #   * `CREATE EXTENSION postgis` in a freshly created scratch database
+    #     (PostGIS is a non-trusted extension, so only a superuser / extension
+    #     owner can create it), and
+    #   * granting the application role CREATE/USAGE on the ``public`` schema of
+    #     that database so a restore or migration can create its own objects.
+    #
+    # When the configured DATABASE_USER is itself a superuser (the default for
+    # the official postgis/postgis Docker image and for simple local setups),
+    # these default to the application credentials and no extra configuration is
+    # required. In a production-realistic non-superuser deployment, set these to
+    # the DBA/superuser role (e.g. the container's `postgres` account).
+    DATABASE_ADMIN_USER: str | None = Field(default=None)
+    DATABASE_ADMIN_PASSWORD: str | None = Field(default=None)
+
+    @property
+    def effective_admin_user(self) -> str:
+        return self.DATABASE_ADMIN_USER or self.DATABASE_USER
+
+    @property
+    def effective_admin_password(self) -> str:
+        return self.DATABASE_ADMIN_PASSWORD or self.DATABASE_PASSWORD
+
     @computed_field  # type: ignore[misc]
     @property
     def DATABASE_URL(self) -> str:
@@ -128,6 +152,19 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     DEFAULT_LANGUAGE: str = Field(default="en")
     SUPPORTED_LANGUAGES: List[str] = Field(default=["en", "fr", "rw"])
+
+    # ------------------------------------------------------------------
+    # Email / SMTP Notifications
+    # ------------------------------------------------------------------
+    SMTP_SERVER: Optional[str] = Field(default=None)
+    SMTP_PORT: int = Field(default=587)
+    SMTP_USER: Optional[str] = Field(default=None)
+    SMTP_PASSWORD: Optional[str] = Field(default=None)
+    SMTP_USE_TLS: bool = Field(default=True)
+    EMAIL_SENDER: Optional[str] = Field(default="noreply@archidiocesekigali.org")
+    # Comma-separated list of recipients for backup / restore-drill failure
+    # alerts.  When empty, alerts fall back to EMAIL_SENDER.
+    ALERT_RECIPIENTS: Optional[str] = Field(default=None)
 
     # ------------------------------------------------------------------
     # Logging

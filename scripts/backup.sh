@@ -41,3 +41,29 @@ echo "[backup] Done: ${OUT} ($(du -h "${OUT}" | cut -f1))"
 if [ -f "${FILES_TARBALL}" ]; then
     echo "[backup] Done: ${FILES_TARBALL} ($(du -h "${FILES_TARBALL}" | cut -f1))"
 fi
+
+# ------------------------------------------------------------------
+# Cloud offsite replication (google-cloud-storage / b2sdk)
+# ------------------------------------------------------------------
+# After the local artefacts are written, upload them to the configured
+# cloud backend(s) for real geographic redundancy.  scripts/cloud_upload.py
+# reads the same GCS_ENABLED / B2_ENABLED settings from app.config.Settings
+# (driven by environment variables).  When no provider is enabled the script
+# is a no-op and exits 0, so local-only backups keep working unchanged.
+#
+# PYTHONPATH must include the app root so that ``import app.config`` resolves
+# inside cloud_upload.py.  In Docker the working directory is /app already.
+CLOUD_UPLOAD_PY="${CLOUD_UPLOAD_PY:-$(dirname "$0")/cloud_upload.py}"
+if [ -f "${CLOUD_UPLOAD_PY}" ] && command -v python3 >/dev/null 2>&1; then
+    echo "[backup] Attempting cloud upload of local artefacts ..."
+    # upload the DB dump (and file-storage tarball if it was created)
+    python3 "${CLOUD_UPLOAD_PY}" "${OUT}" || \
+        echo "[backup] WARNING: cloud upload of DB dump failed (continuing)." >&2
+    if [ -f "${FILES_TARBALL}" ]; then
+        python3 "${CLOUD_UPLOAD_PY}" "${FILES_TARBALL}" || \
+            echo "[backup] WARNING: cloud upload of file-storage tarball failed (continuing)." >&2
+    fi
+    echo "[backup] Cloud upload step complete."
+else
+    echo "[backup] Skipping cloud upload (cloud_upload.py or python3 not available)."
+fi

@@ -127,3 +127,36 @@ async def get_descendant_parish_ids(
 
     result = await db.execute(stmt)
     return list(result.scalars().all())
+
+async def get_parish_ancestry_map(
+    db: AsyncSession,
+    parish_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, dict[str, Optional[uuid.UUID]]]:
+    """Resolve the deanery/archdiocese ancestry of many parishes in one query.
+
+    Returns ``{parish_id: {"parish_id": …, "deanery_id": …, "archdiocese_id": …}}``.
+    This is the bulk counterpart of :func:`get_ancestors` for consumers that
+    already hold a set of parishes (e.g. the statistics aggregation engine after
+    a :func:`get_descendant_parish_ids` rollup) and need a group-by bucket per
+    row without running a ``get_ancestors`` call per parish.
+
+    Parishes that cannot be joined to a deanery (orphan rows) are dropped — the
+    caller is expected to handle missing buckets itself.
+    """
+    if not parish_ids:
+        return {}
+
+    stmt = (
+        select(Parish.id, Parish.deanery_id, Deanery.archdiocese_id)
+        .join(Deanery, Deanery.id == Parish.deanery_id)
+        .where(Parish.id.in_(parish_ids))
+    )
+    result = await db.execute(stmt)
+    return {
+        parish_id: {
+            "parish_id": parish_id,
+            "deanery_id": deanery_id,
+            "archdiocese_id": archdiocese_id,
+        }
+        for parish_id, deanery_id, archdiocese_id in result.all()
+    }

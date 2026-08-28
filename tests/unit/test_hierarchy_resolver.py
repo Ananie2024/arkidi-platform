@@ -13,6 +13,7 @@ from app.models.parish import Parish, Centrale, SmallChristianCommunity
 from app.services.org.hierarchy_resolver import (
     get_ancestors,
     get_descendant_parish_ids,
+    get_parish_ancestry_map,
 )
 
 
@@ -167,3 +168,45 @@ async def test_get_descendant_parish_ids_no_scope(org_chain):
     db, *_ = org_chain
 
     assert await get_descendant_parish_ids(db) == []
+
+
+@pytest.mark.asyncio
+async def test_get_parish_ancestry_map_resolves_chain(org_chain):
+    """The bulk helper maps a parish to its deanery and archdiocese in one call."""
+    db, archdiocese, deanery, parish, *_ = org_chain
+
+    mapping = await get_parish_ancestry_map(db, [parish.id])
+
+    assert mapping[parish.id]["parish_id"] == parish.id
+    assert mapping[parish.id]["deanery_id"] == deanery.id
+    assert mapping[parish.id]["archdiocese_id"] == archdiocese.id
+
+
+@pytest.mark.asyncio
+async def test_get_parish_ancestry_map_multiple(org_chain):
+    """Two parishes under the same deanery share the same ancestry buckets."""
+    db, archdiocese, deanery, parish, *_ = org_chain
+
+    parish2 = Parish(
+        deanery_id=deanery.id, name="Parish Two", code=_unique_code("PAR")
+    )
+    db.add(parish2)
+    await db.flush()
+
+    mapping = await get_parish_ancestry_map(db, [parish.id, parish2.id])
+
+    assert set(mapping) == {parish.id, parish2.id}
+    assert mapping[parish.id]["deanery_id"] == mapping[parish2.id]["deanery_id"] == deanery.id
+    assert (
+        mapping[parish.id]["archdiocese_id"]
+        == mapping[parish2.id]["archdiocese_id"]
+        == archdiocese.id
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_parish_ancestry_map_empty(org_chain):
+    """Supplying no parish ids returns an empty map without querying."""
+    db, *_ = org_chain
+
+    assert await get_parish_ancestry_map(db, []) == {}

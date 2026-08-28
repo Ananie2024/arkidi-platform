@@ -11,20 +11,26 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend (lint + tests)
+    name: Backend (lint + tests under non-superuser role)
     runs-on: ubuntu-latest
     services:
       postgres:
         # PostGIS image so geoalchemy2/Geometry tests can run against a clean DB.
+        # POSTGRES_USER is deliberately the superuser `postgres`; we then create a
+        # NON-superuser application role and run migrations + the whole test suite
+        # (including the restore drill) under it. This ensures the exact
+        # production-realistic failure mode (e.g. `permission denied to create
+        # extension "postgis"`) is exercised in CI instead of being silently
+        # masked by the image's default-superuser POSTGRES_USER.
         image: postgis/postgis:16-3.4
         env:
           POSTGRES_DB: arkidi_db
-          POSTGRES_USER: arkidi_user
-          POSTGRES_PASSWORD: arkidi_test_password
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_superuser_password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U arkidi_user -d arkidi_db"
+          --health-cmd "pg_isready -U postgres -d arkidi_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -42,8 +48,13 @@ jobs:
       DATABASE_HOST: localhost
       DATABASE_PORT: 5432
       DATABASE_NAME: arkidi_db
-      DATABASE_USER: arkidi_user
-      DATABASE_PASSWORD: arkidi_test_password
+      # Non-superuser application role (created in the provisioning step below).
+      DATABASE_USER: arkidi_app
+      DATABASE_PASSWORD: ci_app_password
+      # Privileged role used ONLY to provision PostGIS in the restore drill's
+      # scratch database (a non-superuser cannot CREATE EXTENSION postgis).
+      DATABASE_ADMIN_USER: postgres
+      DATABASE_ADMIN_PASSWORD: ci_superuser_password
       REDIS_URL: redis://localhost:6379/0
       CELERY_BROKER_URL: redis://localhost:6379/1
       CELERY_RESULT_BACKEND: redis://localhost:6379/2
@@ -61,13 +72,27 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements-dev.txt
 
-      - name: Run Alembic migrations against the clean database
+      - name: Provision non-superuser application role
+        env:
+          PGPASSWORD: ci_superuser_password
+        run: |
+          psql -v ON_ERROR_STOP=1 -h localhost -p 5432 -U postgres -d arkidi_db <<'SQL'
+          CREATE ROLE arkidi_app LOGIN NOSUPERUSER NOCREATEROLE CREATEDB PASSWORD 'ci_app_password';
+          GRANT CONNECT ON DATABASE arkidi_db TO arkidi_app;
+          GRANT CREATE, USAGE ON SCHEMA public TO arkidi_app;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO arkidi_app;
+          SQL
+          # Sanity-check the role really is NOT a superuser (the whole point).
+          psql -t -A -h localhost -p 5432 -U postgres -d arkidi_db \
+            -c "SELECT 'rolsuper=' || rolsuper || ' rolcreatedb=' || rolcreatedb FROM pg_roles WHERE rolname='arkidi_app'"
+
+      - name: Run Alembic migrations against the clean database (as non-superuser)
         run: alembic upgrade head
 
       - name: Lint (ruff)
         run: ruff check app tests --exclude alembic/versions
 
-      - name: Run backend tests
+      - name: Run backend tests (as non-superuser, incl. restore drill)
         run: pytest -p no:cacheprovider -p no:warnings -q
 
   frontend:

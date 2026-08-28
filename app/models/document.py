@@ -6,8 +6,9 @@ Parish, Deanery, Commission, Council, Meeting, Clergy person, Land parcel, etc.
 Also hosts the historical sacramental ledger books and scanned page archive.
 """
 import uuid
+from datetime import datetime
 
-from sqlalchemy import String, Integer, Text, Enum as SQLEnum, ForeignKey, CheckConstraint
+from sqlalchemy import String, Integer, Text, Enum as SQLEnum, ForeignKey, CheckConstraint, DateTime
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,6 +35,14 @@ class Document(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
             "priest_id IS NOT NULL OR parcel_id IS NOT NULL",
             name="ck_documents_scoping_required",
         ),
+        # disposition_status is constrained to a known set of states tracked
+        # by the retention / archivist-review scheduler (see
+        # app.tasks.archive_retention).
+        CheckConstraint(
+            "disposition_status IS NULL OR disposition_status IN "
+            "('ACTIVE', 'DUE_FOR_REVIEW', 'DISPOSED', 'PRESERVE_INDEFINITELY')",
+            name="ck_documents_disposition_status",
+        ),
     )
 
     title: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -58,6 +67,22 @@ class Document(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     uploaded_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     classification: Mapped[str] = mapped_column(String(50), default="OFFICIAL", nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # ------------------------------------------------------------------
+    # Retention & Disposition Scheduling
+    # ------------------------------------------------------------------
+    # retention_flagged_at is set by app.tasks.archive_retention when the
+    # document's DocumentType.retention_years deadline has passed, signalling
+    # an archivist that the document is due for manual disposition review.
+    retention_flagged_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+    # disposition_status tracks where a document sits in its retention lifecycle.
+    # Valid values are constrained by ck_documents_disposition_status above.
+    disposition_status: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, default="ACTIVE",
+        comment="ACTIVE|DUE_FOR_REVIEW|DISPOSED|PRESERVE_INDEFINITELY",
+    )
 
 
 class ArchiveLedgerBook(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):

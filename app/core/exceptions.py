@@ -180,6 +180,25 @@ class IntentionNotFoundException(ArkidiBaseException):
         )
 
 
+class IndicatorNotFoundException(ArkidiBaseException):
+    """Raised when a statistic indicator key is not registered."""
+    def __init__(self, key: Any):
+        super().__init__(
+            message=f"Statistic indicator '{key}' is not registered.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            details={"indicator_key": str(key)},
+        )
+
+
+class IndicatorScopeRequiredException(ArkidiBaseException):
+    """Raised when an indicator is computed without any organisational scope."""
+    def __init__(self, message: str = "An archdiocese_id or deanery_id scope is required to compute an indicator."):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
 def setup_exception_handlers(app: FastAPI) -> None:
     """Registers custom exception handlers on FastAPI application."""
 

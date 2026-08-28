@@ -6,6 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies (including GIS libraries: GDAL, GEOS, PROJ)
+# postgresql-client provides pg_dump / pg_restore / psql needed by the
+# Celery backup & restore-drill tasks (see app/tasks/backups.py).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -15,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libproj-dev \
     curl \
     git \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

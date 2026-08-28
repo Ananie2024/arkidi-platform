@@ -21,6 +21,14 @@ class DocumentTypeBase(BaseModel):
     description: Optional[str] = Field(default=None, max_length=500)
     category: str = Field(default="GENERAL", max_length=50)
     is_active: bool = True
+    retention_years: Optional[int] = Field(
+        default=None, ge=0,
+        description="Years to retain documents of this type from creation date. Null = indefinite.",
+    )
+    disposition_action: Optional[str] = Field(
+        default=None, max_length=50,
+        description="Action when retention expires: DESTROY|TRANSFER|MANUAL_REVIEW|PRESERVE_INDEFINITELY.",
+    )
 
 
 class DocumentTypeCreate(DocumentTypeBase):
@@ -34,6 +42,8 @@ class DocumentTypeUpdate(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = None
     is_active: Optional[bool] = None
+    retention_years: Optional[int] = Field(default=None, ge=0)
+    disposition_action: Optional[str] = Field(default=None, max_length=50)
 
 
 class DocumentTypeResponse(DocumentTypeBase):
@@ -53,6 +63,10 @@ class DocumentBase(BaseModel):
     document_type_id: Optional[uuid.UUID] = None
     classification: str = Field(default="OFFICIAL", max_length=50)
     notes: Optional[str] = None
+    disposition_status: Optional[str] = Field(
+        default=None, max_length=50,
+        description="ACTIVE|DUE_FOR_REVIEW|DISPOSED|PRESERVE_INDEFINITELY",
+    )
 
     # Organisational hierarchy scoping
     archdiocese_id: Optional[uuid.UUID] = None
@@ -96,6 +110,7 @@ class DocumentUpdate(BaseModel):
     document_type_id: Optional[uuid.UUID] = None
     classification: Optional[str] = None
     notes: Optional[str] = None
+    disposition_status: Optional[str] = Field(default=None, max_length=50)
     archdiocese_id: Optional[uuid.UUID] = None
     deanery_id: Optional[uuid.UUID] = None
     parish_id: Optional[uuid.UUID] = None
@@ -115,6 +130,7 @@ class DocumentResponse(DocumentBase):
     mime_type: Optional[str] = None
     checksum_sha256: Optional[str] = None
     uploaded_by_user_id: Optional[uuid.UUID] = None
+    retention_flagged_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
