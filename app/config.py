@@ -130,6 +130,21 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = Field(default="redis://localhost:6379/2")
 
     # ------------------------------------------------------------------
+    # OCR (Tesseract) — Scanned Canonical Registers
+    # ------------------------------------------------------------------
+    # The archive OCR worker (app.tasks.archive_ocr) runs the real Tesseract
+    # engine over scanned ledger page images so the digital archive becomes
+    # full-text searchable beyond metadata. Set OCR_ENABLED=false on hosts
+    # where the tesseract binary cannot be installed; the task then degrades
+    # to indexing any pre-attached OCR text without extraction.
+    OCR_ENABLED: bool = Field(default=True)
+    # Tesseract language pack(s); requires the matching tesseract-ocr-<lang>
+    # system package to be installed on the worker image.
+    OCR_LANGUAGE: str = Field(default="eng+fra")
+    OCR_DPI: int = Field(default=300)
+    OCR_TIMEOUT_SECONDS: int = Field(default=120)
+
+    # ------------------------------------------------------------------
     # File Storage & Archival
     # ------------------------------------------------------------------
     FILE_STORAGE_PATH: str = Field(default="./file-storage")

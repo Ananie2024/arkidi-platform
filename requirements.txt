@@ -37,6 +37,11 @@ openpyxl==3.1.2
 celery[redis]==5.3.6
 redis==5.0.1
 
+# OCR (Tesseract) — real text extraction for scanned canonical registers.
+# Requires the `tesseract-ocr` system binary on the host/worker image
+# (see Dockerfile: tesseract-ocr + tesseract-ocr-fra language packs).
+pytesseract==0.3.13
+
 # Storage & Cloud
 google-cloud-storage==2.14.0
 b2sdk==2.10.0

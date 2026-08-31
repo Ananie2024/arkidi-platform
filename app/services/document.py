@@ -2,6 +2,7 @@
 Document & Archive Module Business Logic Service
 """
 import hashlib
+import logging
 import uuid
 from typing import List, Optional
 from fastapi import UploadFile
@@ -24,7 +25,10 @@ from app.schemas.document import (
     DocumentTypeResponse,
     DocumentBase,
 )
+from app.tasks.archive_ocr import process_ocr_page
 from app.utils.file_storage import storage_service
+
+logger = logging.getLogger("arkidi.services.document")
 
 
 class ArchiveService:
@@ -41,6 +45,16 @@ class ArchiveService:
 
     async def add_page(self, data: ScannedPageCreate) -> ScannedPageResponse:
         page = await self.repo.add_scanned_page(data)
+        # Kick off the real Tesseract OCR extraction asynchronously so the
+        # scanned page becomes full-text searchable without blocking the API
+        # response. A broker outage must never fail the archival upload, so
+        # enqueueing failures are only logged.
+        try:
+            process_ocr_page.delay(str(page.id))
+        except Exception:  # noqa: BLE001 - broker/connection failures
+            logger.warning(
+                "Could not enqueue OCR task for scanned page %s", page.id, exc_info=True
+            )
         return ScannedPageResponse.model_validate(page)
 
     async def list_pages(self, book_id: uuid.UUID) -> List[ScannedPageResponse]:

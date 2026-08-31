@@ -15,6 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdal-dev \
     libgeos-dev \
     libproj-dev \
+    # Tesseract OCR engine + language packs for the archive OCR worker
+    # (app/tasks/archive_ocr.py). `eng` ships inside the tesseract-ocr
+    # package; `fra` covers the French-language historical ledgers.
+    tesseract-ocr \
+    tesseract-ocr-fra \
     curl \
     git \
     postgresql-client \
