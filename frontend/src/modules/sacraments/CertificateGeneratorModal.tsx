@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -10,6 +11,7 @@ interface ModalProps {
 }
 
 export const CertificateGeneratorModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
 
   const handleGenerate = (e: React.FormEvent) => {
@@ -18,22 +20,22 @@ export const CertificateGeneratorModal: React.FC<ModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Generate Canonical Sacramental Certificate" maxWidth="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('sacraments.cert_title')} maxWidth="lg">
       {!generatedToken ? (
         <form className="space-y-4" onSubmit={handleGenerate}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sacrament Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('sacraments.cert_sacrament_type')}</label>
             <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-brand-500">
-              <option value="BAPTISM">Certificate of Baptism (Extrait d'acte de Baptême)</option>
-              <option value="CONFIRMATION">Certificate of Confirmation</option>
-              <option value="MATRIMONY">Certificate of Canonical Marriage</option>
+              <option value="BAPTISM">{t('sacraments.cert_baptism_option')}</option>
+              <option value="CONFIRMATION">{t('sacraments.cert_confirmation_option')}</option>
+              <option value="MATRIMONY">{t('sacraments.cert_matrimony_option')}</option>
             </select>
           </div>
-          <Input label="Faithful Registration Number / Name" placeholder="PAR-STF-2026-001" required />
-          <Input label="Reason for Issuance" placeholder="Marriage preparation, canonical suitability, etc." />
+          <Input label={t('sacraments.cert_faithful_label')} placeholder="PAR-STF-2026-001" required />
+          <Input label={t('sacraments.cert_reason_label')} placeholder="Marriage preparation, canonical suitability, etc." />
           <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
-            <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Generate Certificate & QR Code</Button>
+            <Button variant="outline" type="button" onClick={onClose}>{t('common.cancel')}</Button>
+            <Button type="submit">{t('sacraments.cert_generate')}</Button>
           </div>
         </form>
       ) : (
@@ -42,15 +44,15 @@ export const CertificateGeneratorModal: React.FC<ModalProps> = ({ isOpen, onClos
             <QRCodeSVG value={`https://arkidi.archidiocesekigali.org/verify/${generatedToken}`} size={160} />
           </div>
           <div>
-            <div className="text-xs text-gray-500 font-medium">Certificate Serial Number</div>
+            <div className="text-xs text-gray-500 font-medium">{t('sacraments.cert_serial')}</div>
             <div className="text-base font-mono font-bold text-brand-600">{generatedToken}</div>
           </div>
           <p className="text-xs text-gray-500">
-            QR verification code generated. You can now download or print the official PDF certificate.
+            {t('sacraments.cert_success_body')}
           </p>
           <div className="flex justify-center gap-3 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setGeneratedToken(null)}>Issue Another</Button>
-            <Button size="sm" onClick={onClose}>Download PDF Certificate</Button>
+            <Button variant="outline" size="sm" onClick={() => setGeneratedToken(null)}>{t('sacraments.cert_issue_another')}</Button>
+            <Button size="sm" onClick={onClose}>{t('sacraments.cert_download_pdf')}</Button>
           </div>
         </div>
       )}

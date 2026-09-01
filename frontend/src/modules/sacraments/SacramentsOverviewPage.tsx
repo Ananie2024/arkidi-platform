@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/common/Button';
 import { Scroll, Heart, Award, Shield, FileCheck } from 'lucide-react';
 import { CertificateGeneratorModal } from './CertificateGeneratorModal';
 
 export const SacramentsOverviewPage: React.FC = () => {
+  const { t } = useTranslation();
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
 
   const sacramentCards = [
-    { title: 'Baptism Register', desc: 'Registre des Baptêmes / Igitabo cya Batisimu', link: '/sacraments/baptism', icon: Scroll, color: 'text-blue-600 bg-blue-50' },
-    { title: 'Confirmation Register', desc: 'Registre des Confirmations / Gukomezwa', link: '/sacraments/confirmation', icon: Award, color: 'text-amber-600 bg-amber-50' },
-    { title: 'Matrimony Register', desc: 'Registre des Mariages / Ugushyingirwa', link: '/sacraments/matrimony', icon: Heart, color: 'text-rose-600 bg-rose-50' },
-    { title: 'Holy Orders & Vows', desc: 'Registre des Ordinations et Vœux Religieux', link: '/sacraments', icon: Shield, color: 'text-purple-600 bg-purple-50' },
+    { title: t('sacraments.card_baptism'), desc: t('sacraments.card_baptism_desc'), link: '/sacraments/baptism', icon: Scroll, color: 'text-blue-600 bg-blue-50' },
+    { title: t('sacraments.card_confirmation'), desc: t('sacraments.card_confirmation_desc'), link: '/sacraments/confirmation', icon: Award, color: 'text-amber-600 bg-amber-50' },
+    { title: t('sacraments.card_matrimony'), desc: t('sacraments.card_matrimony_desc'), link: '/sacraments/matrimony', icon: Heart, color: 'text-rose-600 bg-rose-50' },
+    { title: t('sacraments.card_holy_orders'), desc: t('sacraments.card_holy_orders_desc'), link: '/sacraments', icon: Shield, color: 'text-purple-600 bg-purple-50' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Canonical Sacramental Registers</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Catholic registers, Act numbers, Volume tracking and QR Certificate issuance</p>
+          <h1 className="text-xl font-bold text-gray-900">{t('sacraments.overview_title')}</h1>
+          <p className="text-xs text-gray-500 mt-0.5">{t('sacraments.overview_subtitle')}</p>
         </div>
         <Button size="sm" onClick={() => setIsCertModalOpen(true)}>
-          <FileCheck className="w-4 h-4 mr-1.5" /> Issue QR Certificate
+          <FileCheck className="w-4 h-4 mr-1.5" /> {t('sacraments.issue_qr')}
         </Button>
       </div>
 

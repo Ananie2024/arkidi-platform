@@ -6,7 +6,6 @@ import secrets
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status
 
 from app.core.exceptions import EntityNotFoundException, ValidationException
 from app.repositories.sacrament import SacramentsRepository
@@ -132,14 +131,16 @@ class SacramentsService:
         )
         if not target_record:
             raise EntityNotFoundException(
-                f"Target {data.sacrament_type.value} record '{data.record_id}' not found."
+                "errors.target_record_not_found",
+                message_params={"type": data.sacrament_type.value, "record_id": str(data.record_id)},
             )
 
         # Validate that requested fields exist on target record
         for field_name in data.field_changes.keys():
             if not hasattr(target_record, field_name):
                 raise ValidationException(
-                    f"Field '{field_name}' does not exist on {data.sacrament_type.value} record."
+                    "errors.field_not_valid",
+                    message_params={"field": field_name, "type": data.sacrament_type.value},
                 )
 
         amendment = await self.repo.create_amendment(
@@ -164,7 +165,7 @@ class SacramentsService:
     async def get_amendment(self, amendment_id: uuid.UUID) -> SacramentalAmendmentResponse:
         amendment = await self.repo.get_amendment_by_id(amendment_id)
         if not amendment:
-            raise EntityNotFoundException("Sacramental amendment not found.")
+            raise EntityNotFoundException("errors.sacramental_amendment_not_found")
         return SacramentalAmendmentResponse.model_validate(amendment)
 
     async def review_amendment(
@@ -176,12 +177,12 @@ class SacramentsService:
         """Approve or reject a sacramental amendment. On approval, safely updates record and appends marginal note."""
         amendment = await self.repo.get_amendment_by_id(amendment_id)
         if not amendment:
-            raise EntityNotFoundException("Sacramental amendment not found.")
+            raise EntityNotFoundException("errors.sacramental_amendment_not_found")
 
         if amendment.status != AmendmentStatus.PENDING:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Amendment is already in '{amendment.status.value}' status and cannot be reviewed again.",
+            raise ValidationException(
+                "errors.amendment_not_pending",
+                message_params={"status": amendment.status.value},
             )
 
         now = datetime.now(timezone.utc)
@@ -192,7 +193,7 @@ class SacramentsService:
                 record_id=amendment.record_id,
             )
             if not target_record:
-                raise EntityNotFoundException("Target sacramental record to amend was not found.")
+                raise EntityNotFoundException("errors.target_amend_record_not_found")
 
             # Apply field modifications
             for field_name, change_val in amendment.field_changes.items():

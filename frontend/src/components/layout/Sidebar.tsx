@@ -41,12 +41,12 @@ export const Sidebar: React.FC = () => {
       {/* Brand Header */}
       <div className="p-4 border-b border-gray-100 flex items-center gap-3">
         <div className="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-          ☩
+          {'\u2629'}
         </div>
         <div>
-          <div className="font-bold text-gray-900 text-sm tracking-wide">ARKIDI</div>
+          <div className="font-bold text-gray-900 text-sm tracking-wide">{t('layout.brand')}</div>
           <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">
-            Archdiocese of Kigali
+            {t('layout.archdiocese')}
           </div>
         </div>
       </div>
@@ -76,7 +76,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Footer Info */}
       <div className="p-4 border-t border-gray-100 text-[11px] text-gray-400 text-center">
-        Arkidi Platform v1.0 &copy; 2026
+        {t('layout.version')}
       </div>
     </aside>
   );

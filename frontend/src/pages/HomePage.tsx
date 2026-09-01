@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Map,
@@ -24,47 +25,42 @@ interface ReadOnlySection {
   description: string;
 }
 
-const readOnlySections: ReadOnlySection[] = [
-  {
-    icon: Landmark,
-    title: 'Diocese & Parishes',
-    description:
-      'Discover the parishes and ecclesiastical territory of the Archdiocese of Kigali through our public directory.',
-  },
-  {
-    icon: Users,
-    title: 'Faithful',
-    description:
-      'Public information about the community and pastoral care offered across the archdiocese.',
-  },
-  {
-    icon: Cross,
-    title: 'Sacraments',
-    description:
-      'General information about the administration of Baptism, Confirmation and Matrimony.',
-  },
-  {
-    icon: Library,
-    title: 'Clergy & Ministries',
-    description:
-      'Overview of the clergy, religious and pastoral ministries serving the local Church.',
-  },
-  {
-    icon: ScrollText,
-    title: 'Archives & History',
-    description:
-      'Historical records and documentation preserved by the Diocesan Archives.',
-  },
-  {
-    icon: Map,
-    title: 'Geography',
-    description:
-      'Explore the geographical footprint and territorial organization of the archdiocese.',
-  },
-];
-
 export const HomePage: React.FC = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
+
+  const readOnlySections: ReadOnlySection[] = [
+    {
+      icon: Landmark,
+      title: t('home.sections.diocese_title'),
+      description: t('home.sections.diocese_description'),
+    },
+    {
+      icon: Users,
+      title: t('home.sections.faithful_title'),
+      description: t('home.sections.faithful_description'),
+    },
+    {
+      icon: Cross,
+      title: t('home.sections.sacraments_title'),
+      description: t('home.sections.sacraments_description'),
+    },
+    {
+      icon: Library,
+      title: t('home.sections.ministries_title'),
+      description: t('home.sections.ministries_description'),
+    },
+    {
+      icon: ScrollText,
+      title: t('home.sections.archives_title'),
+      description: t('home.sections.archives_description'),
+    },
+    {
+      icon: Map,
+      title: t('home.sections.geography_title'),
+      description: t('home.sections.geography_description'),
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -73,12 +69,12 @@ export const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-brand-500 text-white text-lg font-bold shadow-sm">
-              ☩
+              {'\u2629'}
             </div>
             <div>
-              <h1 className="text-sm font-bold text-gray-900 leading-tight">Arkidi Platform</h1>
+              <h1 className="text-sm font-bold text-gray-900 leading-tight">{t('home.title')}</h1>
               <p className="text-[11px] text-gray-500 leading-tight">
-                Archdiocese of Kigali &bull; Archidiocèse de Kigali
+                {t('home.header_subtitle')}
               </p>
             </div>
           </div>
@@ -92,7 +88,7 @@ export const HomePage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 text-white text-sm font-medium hover:bg-gray-900 transition-colors"
               >
                 <LayoutDashboard className="w-4 h-4" />
-                Go to Dashboard
+                {t('home.go_to_dashboard')}
               </Link>
             ) : (
               <Link
@@ -100,7 +96,7 @@ export const HomePage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-600 transition-colors"
               >
                 <LogIn className="w-4 h-4" />
-                Sign in
+                {t('home.sign_in')}
               </Link>
             )}
           </div>
@@ -112,15 +108,13 @@ export const HomePage: React.FC = () => {
         <section className="bg-gradient-to-b from-brand-50 to-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-brand-500 text-white text-4xl font-bold mb-6 shadow-lg">
-              ☩
+              {'\u2629'}
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-4">
-              Welcome to the Arkidi Platform
+              {t('home.welcome_title')}
             </h2>
             <p className="max-w-2xl mx-auto text-base text-gray-600 mb-8">
-              The public portal of the Archdiocese of Kigali Ecclesiastical Management System.
-              Browse general information about the archdiocese here; staff and administrators
-              can sign in to manage records.
+              {t('home.welcome_body')}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               {isLoading ? null : isAuthenticated ? (
@@ -129,7 +123,7 @@ export const HomePage: React.FC = () => {
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-800 text-white text-base font-medium hover:bg-gray-900 transition-colors"
                 >
                   <LayoutDashboard className="w-5 h-5" />
-                  Open my Dashboard
+                  {t('home.open_dashboard')}
                 </Link>
               ) : (
                 <Link
@@ -137,7 +131,7 @@ export const HomePage: React.FC = () => {
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-brand-500 text-white text-base font-medium hover:bg-brand-600 transition-colors shadow-md"
                 >
                   <LogIn className="w-5 h-5" />
-                  Staff &amp; Admin Sign in
+                  {t('home.staff_sign_in')}
                 </Link>
               )}
             </div>
@@ -146,9 +140,9 @@ export const HomePage: React.FC = () => {
 
         {/* Read-only information sections */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Discover the Archdiocese</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">{t('home.discover_title')}</h3>
           <p className="text-sm text-gray-500 mb-8">
-            Read-only information available to all visitors.
+            {t('home.discover_subtitle')}
           </p>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {readOnlySections.map((section) => {
@@ -172,10 +166,9 @@ export const HomePage: React.FC = () => {
         {/* Staff / admin call to action */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
           <div className="rounded-2xl bg-gray-900 text-white p-8 sm:p-10 text-center">
-            <h3 className="text-xl font-bold mb-2">Are you staff or an administrator?</h3>
+            <h3 className="text-xl font-bold mb-2">{t('home.cta_title')}</h3>
             <p className="text-sm text-gray-300 max-w-xl mx-auto mb-6">
-              Sign in to access the platform&apos;s internal tools for managing parishes,
-              records, finances and more.
+              {t('home.cta_body')}
             </p>
             {isAuthenticated ? (
               <Link
@@ -183,7 +176,7 @@ export const HomePage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-gray-900 text-base font-semibold hover:bg-gray-200 transition-colors"
               >
                 <LayoutDashboard className="w-5 h-5" />
-                Go to Dashboard
+                {t('home.go_to_dashboard')}
               </Link>
             ) : (
               <Link
@@ -191,7 +184,7 @@ export const HomePage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-brand-500 text-white text-base font-semibold hover:bg-brand-600 transition-colors"
               >
                 <LogIn className="w-5 h-5" />
-                Sign in to Arkidi
+                {t('home.sign_in_arkidi')}
               </Link>
             )}
           </div>
@@ -201,7 +194,7 @@ export const HomePage: React.FC = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-100 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-gray-400">
-          Archdiocese of Kigali Ecclesiastical Management System &bull; Arkidi Platform
+          {t('home.footer')}
         </div>
       </footer>
     </div>

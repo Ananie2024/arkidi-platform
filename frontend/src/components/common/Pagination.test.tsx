@@ -14,10 +14,8 @@ describe('Pagination', () => {
   it('renders the page indicator and navigation buttons', () => {
     render(<Pagination currentPage={2} totalPages={5} onPageChange={() => {}} />);
 
-    // "Page <b>2</b> of <b>5</b>" is split across elements, so match loosely.
-    expect(screen.getByText(/page/i)).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getByText('5')).toBeInTheDocument();
+    // "Page 2 of 5" is rendered as a single interpolated i18n string.
+    expect(screen.getByText('Page 2 of 5')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /previous/i })).toBeEnabled();
     expect(screen.getByRole('button', { name: /next/i })).toBeEnabled();
   });

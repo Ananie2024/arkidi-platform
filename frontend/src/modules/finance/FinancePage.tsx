@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../../components/common/Card';
 import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
@@ -8,6 +9,7 @@ import { PlusCircle } from 'lucide-react';
 import { Donation, domainApi } from '../../core/api/domain';
 
 export const FinancePage: React.FC = () => {
+  const { t } = useTranslation();
   const parishesQuery = useQuery({ queryKey: ['parishes'], queryFn: () => domainApi.listParishes() });
   const parishId = parishesQuery.data?.[0]?.id;
   const donationsQuery = useQuery({
@@ -17,24 +19,24 @@ export const FinancePage: React.FC = () => {
   });
 
   const columns: Column<Donation>[] = [
-    { header: 'Receipt #', accessor: 'receipt_number' },
-    { header: 'Donation Type', accessor: 'donation_type' },
-    { header: 'Donor', accessor: (row) => row.donor_name_override || '-' },
-    { header: 'Amount', accessor: (row) => `${row.amount.toLocaleString()} ${row.currency}` },
-    { header: 'Payment Method', accessor: 'payment_method' },
-    { header: 'Date', accessor: 'donation_date' },
-    { header: 'Status', accessor: () => <Badge variant="success">Recorded</Badge> },
+    { header: t('finance.col_receipt'), accessor: 'receipt_number' },
+    { header: t('finance.col_type'), accessor: 'donation_type' },
+    { header: t('finance.col_donor'), accessor: (row) => row.donor_name_override || '-' },
+    { header: t('finance.col_amount'), accessor: (row) => `${row.amount.toLocaleString()} ${row.currency}` },
+    { header: t('finance.col_payment_method'), accessor: 'payment_method' },
+    { header: t('finance.col_date'), accessor: 'donation_date' },
+    { header: t('finance.col_status'), accessor: () => <Badge variant="success">{t('finance.status_recorded')}</Badge> },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Parish & Archdiocesan Finance</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Tithes, campaign pledges, receipts and auditable contribution ledger</p>
+          <h1 className="text-xl font-bold text-gray-900">{t('finance.title')}</h1>
+          <p className="text-xs text-gray-500 mt-0.5">{t('finance.subtitle')}</p>
         </div>
         <Button size="sm">
-          <PlusCircle className="w-4 h-4 mr-1.5" /> Record Donation
+          <PlusCircle className="w-4 h-4 mr-1.5" /> {t('finance.record')}
         </Button>
       </div>
 
@@ -43,7 +45,7 @@ export const FinancePage: React.FC = () => {
           columns={columns}
           data={donationsQuery.data || []}
           isLoading={parishesQuery.isLoading || donationsQuery.isLoading}
-          emptyMessage={parishesQuery.isError || donationsQuery.isError ? 'Unable to load donations from the API.' : 'No donations found for the current parish.'}
+          emptyMessage={parishesQuery.isError || donationsQuery.isError ? t('finance.empty_error') : t('finance.empty_none')}
         />
       </Card>
     </div>

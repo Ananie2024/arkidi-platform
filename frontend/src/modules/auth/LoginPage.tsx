@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '../../core/api/client';
 import { API_ENDPOINTS } from '../../core/api/endpoints';
 import { useAuth } from '../../core/hooks/useAuth';
@@ -10,17 +11,21 @@ import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { LanguageSwitcher } from '../../components/common/LanguageSwitcher';
 
-const loginSchema = z.object({
-  username_or_email: z.string().min(1, 'Username or Email is required'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = {
+  username_or_email: string;
+  password: string;
+};
 
 export const LoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuth();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const loginSchema = z.object({
+    username_or_email: z.string().min(1, t('auth.login.username_required')),
+    password: z.string().min(1, t('auth.login.password_required')),
+  });
 
   const {
     register,
@@ -29,6 +34,10 @@ export const LoginPage: React.FC = () => {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  // Hoist register() bindings so the spread attributes stay lint-clean.
+  const usernameField = register('username_or_email');
+  const passwordField = register('password');
 
   const onSubmit = async (data: LoginFormData) => {
     setErrorMessage(null);
@@ -48,7 +57,7 @@ export const LoginPage: React.FC = () => {
         };
       };
       setErrorMessage(
-        error.response?.data?.error?.message || 'Authentication failed. Please check your credentials.'
+        error.response?.data?.error?.message || t('auth.login.auth_failed')
       );
     }
   };
@@ -62,11 +71,11 @@ export const LoginPage: React.FC = () => {
 
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-500 text-white text-3xl font-bold mb-4 shadow-md">
-            ☩
+            {'\u2629'}
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Arkidi Platform</h2>
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{t('auth.login.title')}</h2>
           <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider font-medium">
-            Archdiocese of Kigali &bull; Archidiocèse de Kigali
+            {t('auth.login.subtitle')}
           </p>
         </div>
 
@@ -78,37 +87,37 @@ export const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
-            label="Username or Email"
+            label={t('auth.login.username_or_email')}
             placeholder="admin@archidiocesekigali.org"
-            {...register('username_or_email')}
+            {...usernameField}
             error={errors.username_or_email?.message}
           />
 
           <Input
-            label="Password"
+            label={t('auth.login.password')}
             type="password"
             placeholder="••••••••"
-            {...register('password')}
+            {...passwordField}
             error={errors.password?.message}
           />
 
           <div className="flex items-center justify-between text-xs pt-1">
             <label className="flex items-center gap-1.5 text-gray-600 cursor-pointer">
               <input type="checkbox" className="rounded text-brand-500 focus:ring-brand-500" />
-              Remember me
+              {t('auth.login.remember_me')}
             </label>
             <a href="/forgot-password" className="text-brand-500 hover:text-brand-600 font-medium">
-              Forgot password?
+              {t('auth.login.forgot_password')}
             </a>
           </div>
 
           <Button type="submit" className="w-full mt-4" size="lg" isLoading={isSubmitting}>
-            Sign In to Arkidi
+            {t('auth.login.submit')}
           </Button>
         </form>
 
         <div className="mt-8 text-center text-xs text-gray-400">
-          Archdiocese of Kigali Ecclesiastical Management System
+          {t('auth.login.footer')}
         </div>
       </div>
     </div>

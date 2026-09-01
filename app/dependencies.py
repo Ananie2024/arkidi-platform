@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal
+from app.core.exceptions import PermissionDeniedException
 from app.core.security import decode_jwt_token
 from app.core.redis import is_token_revoked
 from app.models.enums import UserRole, has_role
@@ -42,7 +43,7 @@ async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> dict:
     if jti and await is_token_revoked(jti):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has been revoked",
+            detail="errors.token_revoked",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -50,7 +51,7 @@ async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> dict:
     if fid and await is_token_revoked(f"family:{fid}"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token family has been revoked",
+            detail="errors.token_family_revoked",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -62,9 +63,11 @@ def require_roles(allowed_roles: List[UserRole]):
     async def role_checker(payload: dict = Depends(get_current_user_payload)) -> dict:
         user_role = payload.get("role")
         if not user_role or not has_role(UserRole(user_role), allowed_roles):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access forbidden. Required roles: {[r.value for r in allowed_roles]}",
+            roles_str = ", ".join(r.value for r in allowed_roles)
+            raise PermissionDeniedException(
+                f"Access forbidden. Required roles: {roles_str}",
+                message_key="errors.access_forbidden_roles",
+                message_params={"roles": roles_str},
             )
         return payload
     return role_checker

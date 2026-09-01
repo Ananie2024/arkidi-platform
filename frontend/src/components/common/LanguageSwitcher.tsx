@@ -1,14 +1,16 @@
 import React from 'react';
 import { useLanguage } from '../../core/hooks/useLanguage';
+import { useTranslation } from 'react-i18next';
 import { Globe } from 'lucide-react';
 
 export const LanguageSwitcher: React.FC = () => {
   const { currentLanguage, changeLanguage } = useLanguage();
+  const { t } = useTranslation();
 
   const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'fr', label: 'Français' },
-    { code: 'rw', label: 'Ikinyarwanda' },
+    { code: 'en', label: t('layout.languages.en') },
+    { code: 'fr', label: t('layout.languages.fr') },
+    { code: 'rw', label: t('layout.languages.rw') },
   ];
 
   return (

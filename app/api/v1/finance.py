@@ -26,7 +26,7 @@ async def record_donation(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.PARISH_SECRETARY])),
 ):
     service = FinanceService(db)
-    return ApiResponse.ok(data=await service.record_donation(data), message="Donation recorded")
+    return ApiResponse.ok(data=await service.record_donation(data), message="success.donation_recorded")
 
 
 @router.get("/donations", response_model=ApiResponse[List[DonationResponse]])

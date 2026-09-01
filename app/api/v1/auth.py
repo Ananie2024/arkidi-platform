@@ -18,7 +18,7 @@ async def login(credentials: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Authenticate user and issue access + refresh JWT tokens."""
     service = AuthService(db)
     tokens = await service.authenticate(credentials)
-    return ApiResponse.ok(data=tokens, message="Login successful")
+    return ApiResponse.ok(data=tokens, message="success.login_successful")
 
 
 @router.post("/refresh", response_model=ApiResponse[TokenResponse])
@@ -26,7 +26,7 @@ async def refresh_token(request: RefreshRequest, db: AsyncSession = Depends(get_
     """Rotate refresh token and issue a fresh token pair."""
     service = AuthService(db)
     tokens = await service.refresh(request.refresh_token)
-    return ApiResponse.ok(data=tokens, message="Token refreshed successfully")
+    return ApiResponse.ok(data=tokens, message="success.token_refreshed")
 
 
 @router.post(
@@ -42,7 +42,7 @@ async def register(
     """Register a new system user (admin only)."""
     service = AuthService(db)
     created = await service.register_user(data)
-    return ApiResponse.ok(data=created, message="User registered successfully")
+    return ApiResponse.ok(data=created, message="success.user_registered")
 
 
 @router.get(
@@ -66,4 +66,4 @@ async def logout(
 ):
     """Revoke the current access token so it can no longer authenticate."""
     await AuthService(db).logout(payload)
-    return ApiResponse.ok(message="Logout successful", data={"detail": "token revoked"})
+    return ApiResponse.ok(message="success.logout_successful", data={"detail": "token revoked"})

@@ -4,7 +4,6 @@ Survey Module Business Logic Service
 import uuid
 from typing import Any, Dict, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status
 
 from app.core.exceptions import EntityNotFoundException, ValidationException
 from app.models.survey import Survey, SurveyResponse
@@ -48,7 +47,7 @@ class SurveyService:
     async def get_survey(self, survey_id: uuid.UUID) -> SurveyResponseSchema:
         survey = await self.repo.get_survey_by_id(survey_id)
         if not survey:
-            raise EntityNotFoundException("Survey not found.")
+            raise EntityNotFoundException("errors.survey_not_found")
         count = await self.repo.count_responses(survey_id)
         return self._to_survey_response(survey, response_count=count)
 
@@ -74,7 +73,7 @@ class SurveyService:
     async def update_survey(self, survey_id: uuid.UUID, data: SurveyUpdate) -> SurveyResponseSchema:
         survey = await self.repo.get_survey_by_id(survey_id)
         if not survey:
-            raise EntityNotFoundException("Survey not found.")
+            raise EntityNotFoundException("errors.survey_not_found")
         updated = await self.repo.update_survey(survey, data)
         count = await self.repo.count_responses(survey_id)
         return self._to_survey_response(updated, response_count=count)
@@ -82,7 +81,7 @@ class SurveyService:
     async def delete_survey(self, survey_id: uuid.UUID) -> None:
         survey = await self.repo.get_survey_by_id(survey_id)
         if not survey:
-            raise EntityNotFoundException("Survey not found.")
+            raise EntityNotFoundException("errors.survey_not_found")
         await self.repo.delete_survey(survey)
 
     async def submit_response(
@@ -93,12 +92,12 @@ class SurveyService:
     ) -> SurveyResponseRecord:
         survey = await self.repo.get_survey_by_id(survey_id)
         if not survey:
-            raise EntityNotFoundException("Survey not found.")
+            raise EntityNotFoundException("errors.survey_not_found")
 
         if survey.status != "ACTIVE":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cannot submit response to survey in '{survey.status}' status. Survey must be ACTIVE.",
+            raise ValidationException(
+                "errors.survey_inactive",
+                message_params={"status": survey.status},
             )
 
         # Validate required questions
@@ -107,7 +106,10 @@ class SurveyService:
             q_id = q.get("id")
             is_required = q.get("required", True)
             if is_required and (q_id not in data.answers or data.answers[q_id] is None or data.answers[q_id] == ""):
-                raise ValidationException(f"Missing required question answer: '{q.get('question_text', q_id)}'")
+                raise ValidationException(
+                    "errors.missing_required_answer",
+                    message_params={"question": q.get("question_text", q_id)},
+                )
 
         resp = await self.repo.create_response(
             survey_id=survey_id,
@@ -119,20 +121,20 @@ class SurveyService:
     async def list_responses(self, survey_id: uuid.UUID) -> List[SurveyResponseRecord]:
         survey = await self.repo.get_survey_by_id(survey_id)
         if not survey:
-            raise EntityNotFoundException("Survey not found.")
+            raise EntityNotFoundException("errors.survey_not_found")
         responses = await self.repo.list_responses(survey_id)
         return [SurveyResponseRecord.model_validate(r) for r in responses]
 
     async def get_response(self, survey_id: uuid.UUID, response_id: uuid.UUID) -> SurveyResponseRecord:
         resp = await self.repo.get_response_by_id(response_id)
         if not resp or resp.survey_id != survey_id:
-            raise EntityNotFoundException("Survey response not found.")
+            raise EntityNotFoundException("errors.survey_response_not_found")
         return SurveyResponseRecord.model_validate(resp)
 
     async def get_summary(self, survey_id: uuid.UUID) -> SurveySummaryResponse:
         survey = await self.repo.get_survey_by_id(survey_id)
         if not survey:
-            raise EntityNotFoundException("Survey not found.")
+            raise EntityNotFoundException("errors.survey_not_found")
 
         responses = await self.repo.list_responses(survey_id)
         questions_raw = (survey.survey_schema or {}).get("questions", [])

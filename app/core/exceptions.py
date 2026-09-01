@@ -1,23 +1,61 @@
 """
 Core Exception Definitions and Handlers
+
+All API-facing error messages are resolved through the backend i18n message
+catalog (``app/locales/<lang>/messages.json``) so they respect the language
+detected by ``LanguageMiddleware`` (``Accept-Language`` header or ``?lang=``).
 """
 from typing import Any, Dict, Optional
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
+from app.utils.i18n import get_translation, is_translation_key
+
 
 class ArkidiBaseException(Exception):
     """Base exception for all domain and application errors."""
+
     def __init__(
         self,
         message: str,
         status_code: int = status.HTTP_400_BAD_REQUEST,
         details: Optional[Dict[str, Any]] = None,
+        *,
+        message_key: Optional[str] = None,
+        message_params: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(message)
         self.message = message
         self.status_code = status_code
         self.details = details or {}
+        # A catalog key (e.g. "errors.parish_not_found") may be passed either
+        # explicitly or as the message string itself. Literal English text is
+        # kept as-is for full backward compatibility.
+        if message_key is not None:
+            self.message_key = message_key
+            self.message_params = message_params or {}
+        elif is_translation_key(message):
+            self.message_key = message
+            self.message_params = message_params or {}
+        else:
+            self.message_key = None
+            self.message_params = {}
+
+    def localize(self, lang: Optional[str] = None) -> str:
+        """Return the message for the active (or explicit) request language.
+
+        The English message stored on the exception is used as a fallback when
+        a translation key is missing from the catalog, so existing consumers
+        (logs, tests) keep seeing useful text.
+        """
+        if self.message_key is not None:
+            return get_translation(
+                self.message_key,
+                self.message_params,
+                default=self.message,
+                lang=lang,
+            )
+        return self.message
 
 
 class EntityNotFoundException(ArkidiBaseException):
@@ -26,32 +64,56 @@ class EntityNotFoundException(ArkidiBaseException):
         if identifier is not None:
             message = f"{message_or_entity} with identifier '{identifier}' was not found."
             details = {"entity": message_or_entity, "identifier": str(identifier)}
+            super().__init__(
+                message=message,
+                status_code=status.HTTP_404_NOT_FOUND,
+                details=details,
+                message_key="errors.entity_not_found",
+                message_params={"entity": message_or_entity, "identifier": str(identifier)},
+            )
         else:
-            message = message_or_entity
-            details = {}
-        super().__init__(
-            message=message,
-            status_code=status.HTTP_404_NOT_FOUND,
-            details=details,
-        )
+            # No identifier: the single argument is either a catalog key
+            # (e.g. "errors.survey_not_found") or a literal message. The base
+            # class resolves catalog keys against the request language.
+            super().__init__(
+                message=message_or_entity,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
 
 class ValidationException(ArkidiBaseException):
     """Raised when request payload or business rule validation fails."""
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        message: str,
+        details: Optional[Dict[str, Any]] = None,
+        *,
+        message_key: Optional[str] = None,
+        message_params: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
             message=message,
             status_code=status.HTTP_400_BAD_REQUEST,
             details=details or {},
+            message_key=message_key,
+            message_params=message_params,
         )
 
 
 class PermissionDeniedException(ArkidiBaseException):
     """Raised when user lacks required ecclesiastical or system privileges."""
-    def __init__(self, message: str = "Permission denied for this operation."):
+    def __init__(
+        self,
+        message: str = "Permission denied for this operation.",
+        *,
+        message_key: Optional[str] = None,
+        message_params: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
             message=message,
             status_code=status.HTTP_403_FORBIDDEN,
+            message_key=message_key or "errors.permission_denied",
+            message_params=message_params,
         )
 
 
@@ -62,6 +124,8 @@ class CanonicalRuleViolationException(ArkidiBaseException):
             message=f"Canonical Rule Violation: {rule_description}",
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             details={"type": "canonical_violation"},
+            message_key="errors.canonical_rule_violation",
+            message_params={"rule": rule_description},
         )
 
 
@@ -71,20 +135,40 @@ class CanonicalRuleViolationException(ArkidiBaseException):
 
 class InvalidCredentialsException(ArkidiBaseException):
     """Raised when authentication credentials are invalid."""
-    def __init__(self, message: str = "Invalid username or password."):
-        super().__init__(message=message, status_code=status.HTTP_401_UNAUTHORIZED)
+    def __init__(self, message: Optional[str] = None, *, message_key: Optional[str] = None, message_params: Optional[Dict[str, Any]] = None):
+        if message is None:
+            message = "Invalid username or password."
+            message_key = message_key or "errors.invalid_credentials"
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message_key=message_key,
+            message_params=message_params,
+        )
 
 
 class UserAlreadyExistsException(ArkidiBaseException):
     """Raised when registering a user whose email/username already exists."""
-    def __init__(self, message: str = "A user with this email or username already exists."):
-        super().__init__(message=message, status_code=status.HTTP_409_CONFLICT)
+    def __init__(self, message: Optional[str] = None, *, message_key: Optional[str] = None, message_params: Optional[Dict[str, Any]] = None):
+        if message is None:
+            message = "A user with this email or username already exists."
+            message_key = message_key or "errors.user_already_exists"
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_409_CONFLICT,
+            message_key=message_key,
+            message_params=message_params,
+        )
 
 
 class UserNotFoundException(ArkidiBaseException):
     """Raised when a user account is not found."""
     def __init__(self, message: str = "User account was not found."):
-        super().__init__(message=message, status_code=status.HTTP_404_NOT_FOUND)
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND,
+            message_key="errors.user_not_found",
+        )
 
 
 class FaithfulNotFoundException(ArkidiBaseException):
@@ -93,6 +177,8 @@ class FaithfulNotFoundException(ArkidiBaseException):
         super().__init__(
             message=f"Faithful with identifier '{identifier}' was not found.",
             status_code=status.HTTP_404_NOT_FOUND,
+            message_key="errors.faithful_not_found",
+            message_params={"identifier": str(identifier)},
         )
 
 
@@ -102,6 +188,8 @@ class DuplicateRegistrationNumberException(ArkidiBaseException):
         super().__init__(
             message=f"Registration number '{registration_number}' is already in use.",
             status_code=status.HTTP_409_CONFLICT,
+            message_key="errors.duplicate_registration_number",
+            message_params={"registration_number": str(registration_number)},
         )
 
 
@@ -111,6 +199,8 @@ class PriestNotFoundException(ArkidiBaseException):
         super().__init__(
             message=f"Priest with identifier '{identifier}' was not found.",
             status_code=status.HTTP_404_NOT_FOUND,
+            message_key="errors.priest_not_found",
+            message_params={"identifier": str(identifier)},
         )
 
 
@@ -120,6 +210,8 @@ class DeaneryNotFoundException(ArkidiBaseException):
         super().__init__(
             message=f"Deanery with identifier '{identifier}' was not found.",
             status_code=status.HTTP_404_NOT_FOUND,
+            message_key="errors.deanery_not_found",
+            message_params={"identifier": str(identifier)},
         )
 
 
@@ -129,6 +221,8 @@ class ParishNotFoundException(ArkidiBaseException):
         super().__init__(
             message=f"Parish with identifier '{identifier}' was not found.",
             status_code=status.HTTP_404_NOT_FOUND,
+            message_key="errors.parish_not_found",
+            message_params={"identifier": str(identifier)},
         )
 
 
@@ -138,6 +232,8 @@ class ParcelNotFoundException(ArkidiBaseException):
         super().__init__(
             message=f"Land parcel with identifier '{identifier}' was not found.",
             status_code=status.HTTP_404_NOT_FOUND,
+            message_key="errors.parcel_not_found",
+            message_params={"identifier": str(identifier)},
         )
 
 
@@ -147,13 +243,19 @@ class DuplicateUPIException(ArkidiBaseException):
         super().__init__(
             message=f"Land parcel UPI '{upi}' is already registered.",
             status_code=status.HTTP_409_CONFLICT,
+            message_key="errors.duplicate_upi",
+            message_params={"upi": str(upi)},
         )
 
 
 class SacramentRecordNotFoundException(ArkidiBaseException):
     """Raised when a sacrament registry record is not found."""
     def __init__(self, message: str = "Sacrament registry record was not found."):
-        super().__init__(message=message, status_code=status.HTTP_404_NOT_FOUND)
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND,
+            message_key="errors.sacrament_record_not_found",
+        )
 
 
 class CanonicalImpedimentException(ArkidiBaseException):
@@ -162,13 +264,19 @@ class CanonicalImpedimentException(ArkidiBaseException):
         super().__init__(
             message=f"Canonical Impediment: {reason}",
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            message_key="errors.canonical_impediment",
+            message_params={"reason": reason},
         )
 
 
 class CertificateInvalidException(ArkidiBaseException):
     """Raised when a certificate verification token is invalid."""
     def __init__(self, message: str = "Certificate verification token is invalid or expired."):
-        super().__init__(message=message, status_code=status.HTTP_400_BAD_REQUEST)
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message_key="errors.certificate_invalid",
+        )
 
 
 class IntentionNotFoundException(ArkidiBaseException):
@@ -177,6 +285,8 @@ class IntentionNotFoundException(ArkidiBaseException):
         super().__init__(
             message=f"Mass intention with identifier '{identifier}' was not found.",
             status_code=status.HTTP_404_NOT_FOUND,
+            message_key="errors.intention_not_found",
+            message_params={"identifier": str(identifier)},
         )
 
 
@@ -187,6 +297,8 @@ class IndicatorNotFoundException(ArkidiBaseException):
             message=f"Statistic indicator '{key}' is not registered.",
             status_code=status.HTTP_404_NOT_FOUND,
             details={"indicator_key": str(key)},
+            message_key="errors.indicator_not_found",
+            message_params={"key": str(key)},
         )
 
 
@@ -196,7 +308,14 @@ class IndicatorScopeRequiredException(ArkidiBaseException):
         super().__init__(
             message=message,
             status_code=status.HTTP_400_BAD_REQUEST,
+            message_key="errors.indicator_scope_required",
         )
+
+
+def _request_language(request: Request) -> Optional[str]:
+    """Language detected by ``LanguageMiddleware`` (falls back to the context var)."""
+    lang = getattr(request.state, "lang", None)
+    return lang or None
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
@@ -204,28 +323,37 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ArkidiBaseException)
     async def arkidi_exception_handler(request: Request, exc: ArkidiBaseException) -> JSONResponse:
+        lang = _request_language(request)
         return JSONResponse(
             status_code=exc.status_code,
             content={
                 "success": False,
                 "error": {
-                    "message": exc.message,
+                    "message": exc.localize(lang),
                     "type": exc.__class__.__name__,
                     "details": exc.details,
+                    "language": lang,
                 },
             },
         )
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+        lang = _request_language(request)
+        detail = exc.detail
+        if is_translation_key(detail):
+            message = get_translation(detail, default=str(detail), lang=lang)
+        else:
+            message = str(detail)
         return JSONResponse(
             status_code=exc.status_code,
             content={
                 "success": False,
                 "error": {
-                    "message": str(exc.detail),
+                    "message": message,
                     "type": "HTTPException",
                     "details": {},
+                    "language": lang,
                 },
             },
         )

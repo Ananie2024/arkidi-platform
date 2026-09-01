@@ -40,7 +40,7 @@ class GovernanceService:
     async def get_commission(self, commission_id: uuid.UUID) -> CommissionResponse:
         comm = await self.repo.get_commission_by_id(commission_id)
         if not comm:
-            raise EntityNotFoundException("Commission not found.")
+            raise EntityNotFoundException("errors.commission_not_found")
         return CommissionResponse.model_validate(comm)
 
     async def list_commissions(
@@ -63,14 +63,14 @@ class GovernanceService:
     async def update_commission(self, commission_id: uuid.UUID, data: CommissionUpdate) -> CommissionResponse:
         comm = await self.repo.get_commission_by_id(commission_id)
         if not comm:
-            raise EntityNotFoundException("Commission not found.")
+            raise EntityNotFoundException("errors.commission_not_found")
         updated = await self.repo.update_commission(comm, data)
         return CommissionResponse.model_validate(updated)
 
     async def delete_commission(self, commission_id: uuid.UUID) -> None:
         comm = await self.repo.get_commission_by_id(commission_id)
         if not comm:
-            raise EntityNotFoundException("Commission not found.")
+            raise EntityNotFoundException("errors.commission_not_found")
         await self.repo.delete_commission(comm)
 
     # -----------------------------------------------------------------------
@@ -84,7 +84,7 @@ class GovernanceService:
     async def get_council(self, council_id: uuid.UUID) -> CouncilResponse:
         council = await self.repo.get_council_by_id(council_id)
         if not council:
-            raise EntityNotFoundException("Council not found.")
+            raise EntityNotFoundException("errors.council_not_found")
         return CouncilResponse.model_validate(council)
 
     async def list_councils(
@@ -107,14 +107,14 @@ class GovernanceService:
     async def update_council(self, council_id: uuid.UUID, data: CouncilUpdate) -> CouncilResponse:
         council = await self.repo.get_council_by_id(council_id)
         if not council:
-            raise EntityNotFoundException("Council not found.")
+            raise EntityNotFoundException("errors.council_not_found")
         updated = await self.repo.update_council(council, data)
         return CouncilResponse.model_validate(updated)
 
     async def delete_council(self, council_id: uuid.UUID) -> None:
         council = await self.repo.get_council_by_id(council_id)
         if not council:
-            raise EntityNotFoundException("Council not found.")
+            raise EntityNotFoundException("errors.council_not_found")
         await self.repo.delete_council(council)
 
     # -----------------------------------------------------------------------
@@ -125,11 +125,11 @@ class GovernanceService:
         if data.council_id:
             council = await self.repo.get_council_by_id(data.council_id)
             if not council:
-                raise ValidationException("Referenced council does not exist.")
+                raise ValidationException("errors.referenced_council_not_found")
         if data.commission_id:
             commission = await self.repo.get_commission_by_id(data.commission_id)
             if not commission:
-                raise ValidationException("Referenced commission does not exist.")
+                raise ValidationException("errors.referenced_commission_not_found")
 
         meeting = await self.repo.create_meeting(data)
         return MeetingResponse.model_validate(meeting)
@@ -137,7 +137,7 @@ class GovernanceService:
     async def get_meeting(self, meeting_id: uuid.UUID) -> MeetingResponse:
         meeting = await self.repo.get_meeting_by_id(meeting_id)
         if not meeting:
-            raise EntityNotFoundException("Meeting not found.")
+            raise EntityNotFoundException("errors.meeting_not_found")
         return MeetingResponse.model_validate(meeting)
 
     async def list_meetings(
@@ -166,14 +166,14 @@ class GovernanceService:
     async def update_meeting(self, meeting_id: uuid.UUID, data: MeetingUpdate) -> MeetingResponse:
         meeting = await self.repo.get_meeting_by_id(meeting_id)
         if not meeting:
-            raise EntityNotFoundException("Meeting not found.")
+            raise EntityNotFoundException("errors.meeting_not_found")
         updated = await self.repo.update_meeting(meeting, data)
         return MeetingResponse.model_validate(updated)
 
     async def delete_meeting(self, meeting_id: uuid.UUID) -> None:
         meeting = await self.repo.get_meeting_by_id(meeting_id)
         if not meeting:
-            raise EntityNotFoundException("Meeting not found.")
+            raise EntityNotFoundException("errors.meeting_not_found")
         await self.repo.delete_meeting(meeting)
 
     # -----------------------------------------------------------------------
@@ -187,32 +187,32 @@ class GovernanceService:
     ) -> MeetingMinuteResponse:
         meeting = await self.repo.get_meeting_by_id(data.meeting_id)
         if not meeting:
-            raise EntityNotFoundException("Meeting not found.")
+            raise EntityNotFoundException("errors.meeting_not_found")
         minute = await self.repo.create_minute(data, recorded_by_user_id=recorded_by_user_id)
         return MeetingMinuteResponse.model_validate(minute)
 
     async def get_minute(self, minute_id: uuid.UUID) -> MeetingMinuteResponse:
         minute = await self.repo.get_minute_by_id(minute_id)
         if not minute:
-            raise EntityNotFoundException("Meeting minute not found.")
+            raise EntityNotFoundException("errors.meeting_minute_not_found")
         return MeetingMinuteResponse.model_validate(minute)
 
     async def list_minutes_for_meeting(self, meeting_id: uuid.UUID) -> List[MeetingMinuteResponse]:
         meeting = await self.repo.get_meeting_by_id(meeting_id)
         if not meeting:
-            raise EntityNotFoundException("Meeting not found.")
+            raise EntityNotFoundException("errors.meeting_not_found")
         minutes = await self.repo.list_minutes_for_meeting(meeting_id)
         return [MeetingMinuteResponse.model_validate(m) for m in minutes]
 
     async def update_minute(self, minute_id: uuid.UUID, data: MeetingMinuteUpdate) -> MeetingMinuteResponse:
         minute = await self.repo.get_minute_by_id(minute_id)
         if not minute:
-            raise EntityNotFoundException("Meeting minute not found.")
+            raise EntityNotFoundException("errors.meeting_minute_not_found")
         updated = await self.repo.update_minute(minute, data)
         return MeetingMinuteResponse.model_validate(updated)
 
     async def delete_minute(self, minute_id: uuid.UUID) -> None:
         minute = await self.repo.get_minute_by_id(minute_id)
         if not minute:
-            raise EntityNotFoundException("Meeting minute not found.")
+            raise EntityNotFoundException("errors.meeting_minute_not_found")
         await self.repo.delete_minute(minute)

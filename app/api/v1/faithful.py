@@ -57,7 +57,7 @@ async def create_faithful(
     """Register a new faithful in the parish directory."""
     service = FaithfulService(db)
     created = await service.create_faithful(data)
-    return ApiResponse.ok(data=created, message="Faithful registered successfully")
+    return ApiResponse.ok(data=created, message="success.faithful_registered")
 
 
 @router.post("/families", response_model=ApiResponse[FamilyResponse], status_code=status.HTTP_201_CREATED)
@@ -69,4 +69,4 @@ async def create_family(
     """Register a new household/family."""
     service = FaithfulService(db)
     created = await service.create_family(data)
-    return ApiResponse.ok(data=created, message="Family registered successfully")
+    return ApiResponse.ok(data=created, message="success.family_registered")

@@ -243,8 +243,8 @@ class AggregationService:
     def _validate_source(self, indicator: StatisticIndicator) -> None:
         if not hasattr(indicator.source_model, "parish_id"):
             raise ValidationException(
-                f"Statistic indicator '{indicator.key}' targets a source model "
-                "without a parish_id column."
+                "errors.indicator_source_no_parish",
+                message_params={"key": indicator.key},
             )
 
     def _bucket_key(

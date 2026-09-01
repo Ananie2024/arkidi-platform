@@ -73,14 +73,14 @@ class DocumentService:
     async def create_document_type(self, data: DocumentTypeCreate) -> DocumentTypeResponse:
         existing = await self.repo.get_document_type_by_code(data.code)
         if existing:
-            raise ValidationException(f"Document type with code '{data.code}' already exists.")
+            raise ValidationException("errors.document_type_code_exists", message_params={"code": data.code})
         doc_type = await self.repo.create_document_type(data)
         return DocumentTypeResponse.model_validate(doc_type)
 
     async def get_document_type(self, type_id: uuid.UUID) -> DocumentTypeResponse:
         doc_type = await self.repo.get_document_type_by_id(type_id)
         if not doc_type:
-            raise EntityNotFoundException("Document type not found.")
+            raise EntityNotFoundException("errors.document_type_not_found")
         return DocumentTypeResponse.model_validate(doc_type)
 
     async def list_document_types(
@@ -94,7 +94,7 @@ class DocumentService:
     async def update_document_type(self, type_id: uuid.UUID, data: DocumentTypeUpdate) -> DocumentTypeResponse:
         doc_type = await self.repo.get_document_type_by_id(type_id)
         if not doc_type:
-            raise EntityNotFoundException("Document type not found.")
+            raise EntityNotFoundException("errors.document_type_not_found")
         updated = await self.repo.update_document_type(doc_type, data)
         return DocumentTypeResponse.model_validate(updated)
 
@@ -150,7 +150,7 @@ class DocumentService:
     async def get_document(self, document_id: uuid.UUID) -> DocumentResponse:
         doc = await self.repo.get_document_by_id(document_id)
         if not doc:
-            raise EntityNotFoundException("Document not found.")
+            raise EntityNotFoundException("errors.document_not_found")
         return DocumentResponse.model_validate(doc)
 
     async def list_documents(
@@ -185,18 +185,18 @@ class DocumentService:
     async def update_document(self, document_id: uuid.UUID, data: DocumentUpdate) -> DocumentResponse:
         doc = await self.repo.get_document_by_id(document_id)
         if not doc:
-            raise EntityNotFoundException("Document not found.")
+            raise EntityNotFoundException("errors.document_not_found")
         updated = await self.repo.update_document(doc, data)
         return DocumentResponse.model_validate(updated)
 
     async def delete_document(self, document_id: uuid.UUID) -> None:
         doc = await self.repo.get_document_by_id(document_id)
         if not doc:
-            raise EntityNotFoundException("Document not found.")
+            raise EntityNotFoundException("errors.document_not_found")
         await self.repo.delete_document(doc)
 
     async def get_physical_path(self, document_id: uuid.UUID) -> str:
         doc = await self.repo.get_document_by_id(document_id)
         if not doc:
-            raise EntityNotFoundException("Document not found.")
+            raise EntityNotFoundException("errors.document_not_found")
         return storage_service.get_full_path(doc.file_path)

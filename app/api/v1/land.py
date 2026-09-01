@@ -46,7 +46,7 @@ async def create_parcel(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     service = LandAssetsService(db)
-    return ApiResponse.ok(data=await service.create_parcel(data), message="Land parcel registered")
+    return ApiResponse.ok(data=await service.create_parcel(data), message="success.parcel_registered")
 
 
 @router.post(
@@ -60,4 +60,4 @@ async def create_building_asset(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     service = LandAssetsService(db)
-    return ApiResponse.ok(data=await service.create_building_asset(data), message="Building asset registered")
+    return ApiResponse.ok(data=await service.create_building_asset(data), message="success.building_registered")

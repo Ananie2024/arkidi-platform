@@ -1,12 +1,14 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { domainApi } from '../../core/api/domain';
 
 export const FaithfulDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { faithfulId } = useParams<{ faithfulId: string }>();
 
   const faithfulQuery = useQuery({
@@ -22,7 +24,7 @@ export const FaithfulDetailPage: React.FC = () => {
   if (faithfulQuery.isError || !faithfulQuery.data) {
     return (
       <div className="text-sm text-gray-500 py-20 text-center">
-        Unable to load the faithful record from the API.
+        {t('faithful.detail_load_error')}
       </div>
     );
   }
@@ -34,36 +36,36 @@ export const FaithfulDetailPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{f.last_name} {f.first_name}</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Registration Number: {f.registration_number}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{t('faithful.registration_number')} {f.registration_number}</p>
         </div>
         <Badge variant="success">{f.canonical_status}</Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card title="Personal & Contact Details">
+        <Card title={t('faithful.personal_title')}>
           <div className="space-y-3 text-xs">
-            <div><span className="font-semibold text-gray-700">Christian Name:</span> {f.christian_name || '-'}</div>
-            <div><span className="font-semibold text-gray-700">Gender:</span> {f.gender}</div>
-            <div><span className="font-semibold text-gray-700">Date of Birth:</span> {f.date_of_birth || '-'}</div>
-            <div><span className="font-semibold text-gray-700">Place of Birth:</span> {f.place_of_birth || '-'}</div>
-            <div><span className="font-semibold text-gray-700">Phone:</span> {f.phone_number || '-'}</div>
-            <div><span className="font-semibold text-gray-700">Email:</span> {f.email || '-'}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.christian_name')}</span> {f.christian_name || '-'}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.gender_label')}</span> {f.gender}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.birth_date')}</span> {f.date_of_birth || '-'}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.birth_place')}</span> {f.place_of_birth || '-'}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.phone')}</span> {f.phone_number || '-'}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.email')}</span> {f.email || '-'}</div>
           </div>
         </Card>
 
-        <Card title="Parish Registration">
+        <Card title={t('faithful.parish_title')}>
           <div className="space-y-3 text-xs">
-            <div><span className="font-semibold text-gray-700">Parish ID:</span> {f.parish_id}</div>
-            <div><span className="font-semibold text-gray-700">Family ID:</span> {f.family_id || '-'}</div>
-            <div><span className="font-semibold text-gray-700">SCC ID:</span> {f.scc_id || '-'}</div>
-            <div><span className="font-semibold text-gray-700">Registered:</span> {f.created_at ? new Date(f.created_at).toLocaleDateString() : '-'}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.parish_id')}</span> {f.parish_id}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.family_id')}</span> {f.family_id || '-'}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.scc_id')}</span> {f.scc_id || '-'}</div>
+            <div><span className="font-semibold text-gray-700">{t('faithful.registered')}</span> {f.created_at ? new Date(f.created_at).toLocaleDateString() : '-'}</div>
           </div>
         </Card>
 
-        <Card title="Canonical Status">
+        <Card title={t('faithful.canonical_title')}>
           <div className="space-y-2 text-xs">
             <div className="flex items-center gap-2 p-2 bg-emerald-50 text-emerald-800 rounded">
-              Status: {f.canonical_status}
+              {t('faithful.canonical_status')} {f.canonical_status}
             </div>
           </div>
         </Card>

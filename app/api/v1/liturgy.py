@@ -41,7 +41,7 @@ async def schedule_mass(
     _: dict = Depends(require_roles([UserRole.PARISH_PRIEST, UserRole.PARISH_VICAR])),
 ):
     service = MassService(db)
-    return ApiResponse.ok(data=await service.schedule_mass(data), message="Mass schedule created")
+    return ApiResponse.ok(data=await service.schedule_mass(data), message="success.mass_created")
 
 
 @router.get("/intentions", response_model=ApiResponse[List[MassIntentionResponse]])
@@ -76,4 +76,4 @@ async def register_intention(
     _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
 ):
     service = IntentionService(db)
-    return ApiResponse.ok(data=await service.register_intention(data), message="Intention registered")
+    return ApiResponse.ok(data=await service.register_intention(data), message="success.intention_registered")

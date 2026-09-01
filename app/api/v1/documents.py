@@ -43,7 +43,7 @@ async def create_document_type(
     """Create a new official document category/type."""
     service = DocumentService(db)
     created = await service.create_document_type(data)
-    return ApiResponse.ok(data=created, message="Document type created successfully")
+    return ApiResponse.ok(data=created, message="success.document_type_created")
 
 
 @router.get("/types", response_model=ApiResponse[List[DocumentTypeResponse]])
@@ -81,7 +81,7 @@ async def update_document_type(
     """Update document type."""
     service = DocumentService(db)
     updated = await service.update_document_type(type_id, data)
-    return ApiResponse.ok(data=updated, message="Document type updated successfully")
+    return ApiResponse.ok(data=updated, message="success.document_type_updated")
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +118,7 @@ async def upload_document(
     if not any(scopes):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least one scoping FK must be provided (e.g. parish_id, deanery_id, council_id, etc.).",
+            detail="errors.scoping_fk_required",
         )
 
     metadata = DocumentBase(
@@ -139,7 +139,7 @@ async def upload_document(
     uploader_id = uuid.UUID(user_payload["sub"]) if user_payload and "sub" in user_payload else None
     service = DocumentService(db)
     created = await service.upload_and_create(file=file, metadata=metadata, uploaded_by_user_id=uploader_id)
-    return ApiResponse.ok(data=created, message="Document uploaded successfully")
+    return ApiResponse.ok(data=created, message="success.document_uploaded")
 
 
 @router.post(
@@ -156,7 +156,7 @@ async def create_document_record(
     uploader_id = uuid.UUID(user_payload["sub"]) if user_payload and "sub" in user_payload else None
     service = DocumentService(db)
     created = await service.create_document(data, uploaded_by_user_id=uploader_id)
-    return ApiResponse.ok(data=created, message="Document registered successfully")
+    return ApiResponse.ok(data=created, message="success.document_registered")
 
 
 @router.get("", response_model=ApiResponse[List[DocumentResponse]])
@@ -215,7 +215,7 @@ async def download_document_file(
     service = DocumentService(db)
     full_path = await service.get_physical_path(document_id)
     if not os.path.isfile(full_path):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Physical file not found on disk.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="errors.physical_file_not_found")
 
     doc = await service.get_document(document_id)
     filename = os.path.basename(doc.file_path)
@@ -236,7 +236,7 @@ async def update_document(
     """Update document metadata or scoping."""
     service = DocumentService(db)
     updated = await service.update_document(document_id, data)
-    return ApiResponse.ok(data=updated, message="Document updated successfully")
+    return ApiResponse.ok(data=updated, message="success.document_updated")
 
 
 @router.delete("/{document_id}", response_model=ApiResponse[dict])
@@ -248,4 +248,4 @@ async def delete_document(
     """Soft delete a document record."""
     service = DocumentService(db)
     await service.delete_document(document_id)
-    return ApiResponse.ok(message="Document deleted successfully", data={"deleted": True})
+    return ApiResponse.ok(message="success.document_deleted", data={"deleted": True})

@@ -50,6 +50,7 @@ class LanguageMiddleware(BaseHTTPMiddleware):
             lang = settings.DEFAULT_LANGUAGE
 
         current_language_ctx.set(lang)
+        request.state.lang = lang
         response = await call_next(request)
         response.headers["Content-Language"] = lang
         return response

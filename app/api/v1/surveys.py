@@ -36,7 +36,7 @@ async def create_survey(
     """Create a new diocesan or parish pastoral survey."""
     service = SurveyService(db)
     created = await service.create_survey(data)
-    return ApiResponse.ok(data=created, message="Survey created successfully")
+    return ApiResponse.ok(data=created, message="success.survey_created")
 
 
 @router.get("", response_model=ApiResponse[List[SurveyResponse]])
@@ -81,7 +81,7 @@ async def update_survey(
     """Update survey metadata, questions, or status (e.g. DRAFT -> ACTIVE -> CLOSED)."""
     service = SurveyService(db)
     updated = await service.update_survey(survey_id, data)
-    return ApiResponse.ok(data=updated, message="Survey updated successfully")
+    return ApiResponse.ok(data=updated, message="success.survey_updated")
 
 
 @router.delete("/{survey_id}", response_model=ApiResponse[dict])
@@ -93,7 +93,7 @@ async def delete_survey(
     """Soft delete a pastoral survey."""
     service = SurveyService(db)
     await service.delete_survey(survey_id)
-    return ApiResponse.ok(message="Survey deleted successfully", data={"deleted": True})
+    return ApiResponse.ok(message="success.survey_deleted", data={"deleted": True})
 
 
 @router.post(
@@ -115,7 +115,7 @@ async def submit_response(
         data=data,
         submitted_by_user_id=user_id,
     )
-    return ApiResponse.ok(data=response, message="Survey response submitted successfully")
+    return ApiResponse.ok(data=response, message="success.survey_response_submitted")
 
 
 @router.get("/{survey_id}/responses", response_model=ApiResponse[List[SurveyResponseRecord]])

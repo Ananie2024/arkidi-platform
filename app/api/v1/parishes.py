@@ -58,7 +58,7 @@ async def create_parish(
     """Admin endpoint to create a new parish."""
     service = ParishService(db)
     created = await service.create_parish(data)
-    return ApiResponse.ok(data=created, message="Parish created successfully")
+    return ApiResponse.ok(data=created, message="success.parish_created")
 
 
 @router.get("/parishes/{parish_id}/centrales", response_model=ApiResponse[List[CentraleResponse]])

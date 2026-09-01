@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../../components/common/Card';
 import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
@@ -9,32 +10,33 @@ import { LandParcel } from '../../core/types/land.types';
 import { domainApi } from '../../core/api/domain';
 
 export const LandAssetsPage: React.FC = () => {
+  const { t } = useTranslation();
   const parcelsQuery = useQuery({
     queryKey: ['land-parcels'],
     queryFn: domainApi.listParcels,
   });
 
   const columns: Column<LandParcel>[] = [
-    { header: 'UPI (Cadastre)', accessor: 'upi' },
-    { header: 'Parcel Name', accessor: 'parcel_name' },
-    { header: 'Land Use', accessor: 'land_use' },
-    { header: 'Location', accessor: (row) => `${row.district || '-'} / ${row.sector || '-'}` },
-    { header: 'Area (sqm)', accessor: (row) => row.area_sqm.toLocaleString() },
+    { header: t('land_assets.col_upi'), accessor: 'upi' },
+    { header: t('land_assets.col_parcel_name'), accessor: 'parcel_name' },
+    { header: t('land_assets.col_land_use'), accessor: 'land_use' },
+    { header: t('land_assets.col_location'), accessor: (row) => `${row.district || '-'} / ${row.sector || '-'}` },
+    { header: t('land_assets.col_area'), accessor: (row) => row.area_sqm.toLocaleString() },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Land Intelligence & Real Estate GIS</h1>
-          <p className="text-xs text-gray-500 mt-0.5">PostGIS parcel registry with cadastral UPI numbers, title deeds and boundary polygons</p>
+          <h1 className="text-xl font-bold text-gray-900">{t('land_assets.title')}</h1>
+          <p className="text-xs text-gray-500 mt-0.5">{t('land_assets.subtitle')}</p>
         </div>
         <Button size="sm">
-          <Plus className="w-4 h-4 mr-1.5" /> Register Parcel
+          <Plus className="w-4 h-4 mr-1.5" /> {t('land_assets.register')}
         </Button>
       </div>
 
-      <Card title="Archdiocesan Land Parcels (Spatial View)">
+      <Card title={t('land_assets.map_title')}>
         <GisMapViewer height="300px" />
       </Card>
 
@@ -43,7 +45,7 @@ export const LandAssetsPage: React.FC = () => {
           columns={columns}
           data={parcelsQuery.data || []}
           isLoading={parcelsQuery.isLoading}
-          emptyMessage={parcelsQuery.isError ? 'Unable to load parcels from the API.' : 'No land parcels found.'}
+          emptyMessage={parcelsQuery.isError ? t('land_assets.empty_error') : t('land_assets.empty_none')}
         />
       </Card>
     </div>

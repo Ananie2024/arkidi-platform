@@ -23,7 +23,7 @@ class AuthService:
             raise InvalidCredentialsException()
 
         if not user.is_active:
-            raise InvalidCredentialsException("User account is inactive.")
+            raise InvalidCredentialsException("errors.user_account_inactive")
 
         claims = {
             "email": user.email,
@@ -49,31 +49,31 @@ class AuthService:
         try:
             payload = decode_jwt_token(refresh_token_str)
         except ValueError:
-            raise InvalidCredentialsException("Invalid or expired refresh token.")
+            raise InvalidCredentialsException("errors.invalid_refresh_token")
 
         if payload.get("type") != "refresh":
-            raise InvalidCredentialsException("Invalid token type.")
+            raise InvalidCredentialsException("errors.invalid_token_type")
 
         jti = payload.get("jti")
         if jti and await is_token_revoked(str(jti)):
-            raise InvalidCredentialsException("Refresh token has been revoked.")
+            raise InvalidCredentialsException("errors.refresh_token_revoked")
 
         fid = payload.get("fid")
         if fid and await is_token_revoked(f"family:{fid}"):
-            raise InvalidCredentialsException("Token family has been revoked.")
+            raise InvalidCredentialsException("errors.token_family_revoked")
 
         user_id_str = payload.get("sub")
         if not user_id_str:
-            raise InvalidCredentialsException("Invalid token subject.")
+            raise InvalidCredentialsException("errors.invalid_token_subject")
 
         try:
             user_id = uuid.UUID(user_id_str)
         except ValueError:
-            raise InvalidCredentialsException("Invalid user ID format.")
+            raise InvalidCredentialsException("errors.invalid_user_id_format")
 
         user = await self.repo.get_by_id(user_id)
         if not user or not user.is_active:
-            raise InvalidCredentialsException("User account not found or inactive.")
+            raise InvalidCredentialsException("errors.user_not_found_or_inactive")
 
         # Revoke the old refresh token jti so it cannot be reused
         if jti:
@@ -117,6 +117,6 @@ class AuthService:
     async def register_user(self, data: UserCreate) -> UserResponse:
         existing = await self.repo.get_by_username_or_email(data.email)
         if existing:
-            raise UserAlreadyExistsException("A user with this email or username already exists.")
+            raise UserAlreadyExistsException()
         user = await self.repo.create_user(data)
         return UserResponse.model_validate(user)

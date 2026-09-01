@@ -48,7 +48,7 @@ async def create_priest(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     service = ClergyService(db)
-    return ApiResponse.ok(data=await service.create_priest(data), message="Priest registered successfully")
+    return ApiResponse.ok(data=await service.create_priest(data), message="success.priest_registered")
 
 
 @router.post(
@@ -63,4 +63,4 @@ async def create_assignment(
 ):
     """Record a new clergy assignment."""
     service = ClergyService(db)
-    return ApiResponse.ok(data=await service.record_assignment(data), message="Assignment recorded")
+    return ApiResponse.ok(data=await service.record_assignment(data), message="success.assignment_recorded")

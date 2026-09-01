@@ -74,7 +74,7 @@ async def record_baptism(
     """Record official baptism entry in parish canonical registry."""
     service = SacramentsService(db)
     created = await service.record_baptism(data)
-    return ApiResponse.ok(data=created, message="Baptism recorded successfully")
+    return ApiResponse.ok(data=created, message="success.baptism_recorded")
 
 
 @router.post("/confirmation", response_model=ApiResponse[ConfirmationResponse], status_code=status.HTTP_201_CREATED)
@@ -86,7 +86,7 @@ async def record_confirmation(
     """Record confirmation entry in canonical register."""
     service = SacramentsService(db)
     created = await service.record_confirmation(data)
-    return ApiResponse.ok(data=created, message="Confirmation recorded successfully")
+    return ApiResponse.ok(data=created, message="success.confirmation_recorded")
 
 
 @router.post("/matrimony", response_model=ApiResponse[MatrimonyResponse], status_code=status.HTTP_201_CREATED)
@@ -98,7 +98,7 @@ async def record_matrimony(
     """Record canonical marriage in parish register."""
     service = SacramentsService(db)
     created = await service.record_matrimony(data)
-    return ApiResponse.ok(data=created, message="Matrimony recorded successfully")
+    return ApiResponse.ok(data=created, message="success.matrimony_recorded")
 
 
 @router.post("/first-communion", response_model=ApiResponse[FirstCommunionResponse], status_code=status.HTTP_201_CREATED)
@@ -110,7 +110,7 @@ async def record_first_communion(
     """Record First Communion entry in the parish canonical register."""
     service = SacramentsService(db)
     created = await service.record_first_communion(data)
-    return ApiResponse.ok(data=created, message="First Communion recorded successfully")
+    return ApiResponse.ok(data=created, message="success.first_communion_recorded")
 
 
 @router.post("/holy-orders", response_model=ApiResponse[HolyOrdersResponse], status_code=status.HTTP_201_CREATED)
@@ -122,7 +122,7 @@ async def record_holy_orders(
     """Record ordination (Diaconate, Priesthood, Episcopate) in the canonical register."""
     service = SacramentsService(db)
     created = await service.record_holy_orders(data)
-    return ApiResponse.ok(data=created, message="Holy Orders recorded successfully")
+    return ApiResponse.ok(data=created, message="success.holy_orders_recorded")
 
 
 @router.post("/religious-profession", response_model=ApiResponse[ReligiousProfessionResponse], status_code=status.HTTP_201_CREATED)
@@ -134,7 +134,7 @@ async def record_religious_profession(
     """Record religious profession (temporary or perpetual vows) in the canonical register."""
     service = SacramentsService(db)
     created = await service.record_religious_profession(data)
-    return ApiResponse.ok(data=created, message="Religious Profession recorded successfully")
+    return ApiResponse.ok(data=created, message="success.religious_profession_recorded")
 
 
 @router.post("/anointing", response_model=ApiResponse[AnointingOfTheSickResponse], status_code=status.HTTP_201_CREATED)
@@ -146,7 +146,7 @@ async def record_anointing(
     """Record anointing of the sick in the pastoral register."""
     service = SacramentsService(db)
     created = await service.record_anointing_of_the_sick(data)
-    return ApiResponse.ok(data=created, message="Anointing of the Sick recorded successfully")
+    return ApiResponse.ok(data=created, message="success.anointing_recorded")
 
 
 @router.post("/funerals", response_model=ApiResponse[ChristianFuneralResponse], status_code=status.HTTP_201_CREATED)
@@ -158,7 +158,7 @@ async def record_christian_funeral(
     """Record Christian funeral and burial in the canonical register."""
     service = SacramentsService(db)
     created = await service.record_christian_funeral(data)
-    return ApiResponse.ok(data=created, message="Christian Funeral recorded successfully")
+    return ApiResponse.ok(data=created, message="success.funeral_recorded")
 
 
 @router.post("/certificates/issue", response_model=ApiResponse[CertificateResponse], status_code=status.HTTP_201_CREATED)
@@ -171,7 +171,7 @@ async def issue_certificate(
     service = SacramentsService(db)
     issuer_id = uuid.UUID(user_payload["sub"])
     cert = await service.issue_certificate(req, issued_by_user_id=issuer_id)
-    return ApiResponse.ok(data=cert, message="Certificate generated successfully")
+    return ApiResponse.ok(data=cert, message="success.certificate_generated")
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +192,7 @@ async def request_amendment(
     service = SacramentsService(db)
     requester_id = uuid.UUID(user_payload["sub"]) if user_payload and "sub" in user_payload else None
     created = await service.request_amendment(data, requested_by_user_id=requester_id)
-    return ApiResponse.ok(data=created, message="Sacramental amendment requested successfully")
+    return ApiResponse.ok(data=created, message="success.amendment_requested")
 
 
 @router.get(
@@ -249,5 +249,6 @@ async def review_amendment(
         review=review,
         reviewer_id=reviewer_id,
     )
-    return ApiResponse.ok(data=reviewed, message=f"Amendment {review.action.lower()}d successfully")
+    return ApiResponse.ok(data=reviewed, message="success.amendment_reviewed",
+                          message_params={"action": review.action.lower()})
 

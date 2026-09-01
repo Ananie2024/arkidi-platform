@@ -36,7 +36,7 @@ async def create_book(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.ARCHBISHOP])),
 ):
     service = ArchiveService(db)
-    return ApiResponse.ok(data=await service.create_book(data), message="Ledger book created")
+    return ApiResponse.ok(data=await service.create_book(data), message="success.ledger_book_created")
 
 
 @router.get("/books/{book_id}/pages", response_model=ApiResponse[List[ScannedPageResponse]])
@@ -60,4 +60,4 @@ async def add_page(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     service = ArchiveService(db)
-    return ApiResponse.ok(data=await service.add_page(data), message="Scanned page added")
+    return ApiResponse.ok(data=await service.add_page(data), message="success.scanned_page_added")

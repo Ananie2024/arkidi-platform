@@ -1,10 +1,12 @@
 import React from 'react';
 import { Menu, Bell, User as UserIcon, LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../core/hooks/useAuth';
 import { useUiStore } from '../../core/store/uiStore';
 import { LanguageSwitcher } from '../common/LanguageSwitcher';
 
 export const Header: React.FC = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { toggleSidebar } = useUiStore();
 
@@ -18,8 +20,8 @@ export const Header: React.FC = () => {
           <Menu className="w-5 h-5" />
         </button>
         <div className="hidden sm:block">
-          <h1 className="text-sm font-semibold text-gray-800">Archdiocese of Kigali</h1>
-          <p className="text-xs text-gray-500">Parish Management & Digital Archive</p>
+          <h1 className="text-sm font-semibold text-gray-800">{t('layout.archdiocese')}</h1>
+          <p className="text-xs text-gray-500">{t('layout.header_subtitle')}</p>
         </div>
       </div>
 
@@ -36,12 +38,12 @@ export const Header: React.FC = () => {
             {user?.full_name?.charAt(0) || user?.username?.charAt(0) || <UserIcon className="w-4 h-4" />}
           </div>
           <div className="hidden md:block text-left">
-            <div className="text-xs font-semibold text-gray-900">{user?.full_name || user?.username || 'User'}</div>
-            <div className="text-[10px] text-brand-500 font-medium">{user?.role || 'Guest'}</div>
+            <div className="text-xs font-semibold text-gray-900">{user?.full_name || user?.username || t('layout.user')}</div>
+            <div className="text-[10px] text-brand-500 font-medium">{user?.role || t('layout.guest')}</div>
           </div>
           <button
             onClick={logout}
-            title="Sign out"
+            title={t('layout.sign_out')}
             className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors ml-1"
           >
             <LogOut className="w-4 h-4" />

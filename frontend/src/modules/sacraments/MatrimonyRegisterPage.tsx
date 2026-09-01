@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../../components/common/Card';
 import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
@@ -14,31 +15,31 @@ interface MatrimonyItem {
 }
 
 export const MatrimonyRegisterPage: React.FC = () => {
+  const { t } = useTranslation();
 
   const columns: Column<MatrimonyItem>[] = [
-    { header: 'Act #', accessor: 'act_number' },
-    { header: 'Date of Marriage', accessor: 'celebration_date' },
-    { header: 'Groom (Umugabo)', accessor: 'groom_name' },
-    { header: 'Bride (Umugore)', accessor: 'bride_name' },
-    { header: 'Celebrant Priest', accessor: 'priest_celebrant' },
+    { header: t('sacraments.col_act'), accessor: 'act_number' },
+    { header: t('sacraments.col_marriage_date'), accessor: 'celebration_date' },
+    { header: t('sacraments.col_groom'), accessor: 'groom_name' },
+    { header: t('sacraments.col_bride'), accessor: 'bride_name' },
+    { header: t('sacraments.col_celebrant_priest'), accessor: 'priest_celebrant' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Canonical Marriage Register (Registre des Mariages)</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Catholic marriage ceremonies, banns publication, and canonical witnesses</p>
+          <h1 className="text-xl font-bold text-gray-900">{t('sacraments.matrimony_title')}</h1>
+          <p className="text-xs text-gray-500 mt-0.5">{t('sacraments.matrimony_subtitle')}</p>
         </div>
         <Button size="sm">
-          <Plus className="w-4 h-4 mr-1.5" /> Record Marriage
+          <Plus className="w-4 h-4 mr-1.5" /> {t('sacraments.record_matrimony')}
         </Button>
       </div>
 
       <Card>
-        <Table columns={columns} data={[]} emptyMessage="No register list endpoint is available yet." />
+        <Table columns={columns} data={[]} emptyMessage={t('sacraments.register_empty')} />
       </Card>
     </div>
   );
 };
-

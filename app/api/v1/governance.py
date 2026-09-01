@@ -48,7 +48,7 @@ async def create_commission(
     """Create a new pastoral commission."""
     service = GovernanceService(db)
     created = await service.create_commission(data)
-    return ApiResponse.ok(data=created, message="Commission created successfully")
+    return ApiResponse.ok(data=created, message="success.commission_created")
 
 
 @router.get("/commissions", response_model=ApiResponse[List[CommissionResponse]])
@@ -95,7 +95,7 @@ async def update_commission(
     """Update commission details."""
     service = GovernanceService(db)
     updated = await service.update_commission(commission_id, data)
-    return ApiResponse.ok(data=updated, message="Commission updated successfully")
+    return ApiResponse.ok(data=updated, message="success.commission_updated")
 
 
 @router.delete("/commissions/{commission_id}", response_model=ApiResponse[dict])
@@ -107,7 +107,7 @@ async def delete_commission(
     """Soft delete a commission."""
     service = GovernanceService(db)
     await service.delete_commission(commission_id)
-    return ApiResponse.ok(message="Commission deleted successfully", data={"deleted": True})
+    return ApiResponse.ok(message="success.commission_deleted", data={"deleted": True})
 
 
 # ---------------------------------------------------------------------------
@@ -127,7 +127,7 @@ async def create_council(
     """Create a new diocesan or parish consultative council."""
     service = GovernanceService(db)
     created = await service.create_council(data)
-    return ApiResponse.ok(data=created, message="Council created successfully")
+    return ApiResponse.ok(data=created, message="success.council_created")
 
 
 @router.get("/councils", response_model=ApiResponse[List[CouncilResponse]])
@@ -174,7 +174,7 @@ async def update_council(
     """Update council details."""
     service = GovernanceService(db)
     updated = await service.update_council(council_id, data)
-    return ApiResponse.ok(data=updated, message="Council updated successfully")
+    return ApiResponse.ok(data=updated, message="success.council_updated")
 
 
 @router.delete("/councils/{council_id}", response_model=ApiResponse[dict])
@@ -186,7 +186,7 @@ async def delete_council(
     """Soft delete a council."""
     service = GovernanceService(db)
     await service.delete_council(council_id)
-    return ApiResponse.ok(message="Council deleted successfully", data={"deleted": True})
+    return ApiResponse.ok(message="success.council_deleted", data={"deleted": True})
 
 
 # ---------------------------------------------------------------------------
@@ -206,7 +206,7 @@ async def create_meeting(
     """Schedule a new council or commission meeting."""
     service = GovernanceService(db)
     created = await service.create_meeting(data)
-    return ApiResponse.ok(data=created, message="Meeting scheduled successfully")
+    return ApiResponse.ok(data=created, message="success.meeting_created")
 
 
 @router.get("/meetings", response_model=ApiResponse[List[MeetingResponse]])
@@ -259,7 +259,7 @@ async def update_meeting(
     """Update meeting agenda, status, decisions, or date/time."""
     service = GovernanceService(db)
     updated = await service.update_meeting(meeting_id, data)
-    return ApiResponse.ok(data=updated, message="Meeting updated successfully")
+    return ApiResponse.ok(data=updated, message="success.meeting_updated")
 
 
 @router.delete("/meetings/{meeting_id}", response_model=ApiResponse[dict])
@@ -271,7 +271,7 @@ async def delete_meeting(
     """Soft delete a meeting."""
     service = GovernanceService(db)
     await service.delete_meeting(meeting_id)
-    return ApiResponse.ok(message="Meeting deleted successfully", data={"deleted": True})
+    return ApiResponse.ok(message="success.meeting_deleted", data={"deleted": True})
 
 
 # ---------------------------------------------------------------------------
@@ -299,7 +299,7 @@ async def add_meeting_minute(
     )
     service = GovernanceService(db)
     created = await service.add_minute(create_dto, recorded_by_user_id=user_id)
-    return ApiResponse.ok(data=created, message="Meeting minute recorded successfully")
+    return ApiResponse.ok(data=created, message="success.minute_created")
 
 
 @router.get("/meetings/{meeting_id}/minutes", response_model=ApiResponse[List[MeetingMinuteResponse]])
@@ -336,7 +336,7 @@ async def update_minute(
     """Update meeting minute content or document reference."""
     service = GovernanceService(db)
     updated = await service.update_minute(minute_id, data)
-    return ApiResponse.ok(data=updated, message="Meeting minute updated successfully")
+    return ApiResponse.ok(data=updated, message="success.minute_updated")
 
 
 @router.delete("/minutes/{minute_id}", response_model=ApiResponse[dict])
@@ -348,4 +348,4 @@ async def delete_minute(
     """Delete a meeting minute record."""
     service = GovernanceService(db)
     await service.delete_minute(minute_id)
-    return ApiResponse.ok(message="Meeting minute deleted successfully", data={"deleted": True})
+    return ApiResponse.ok(message="success.minute_deleted", data={"deleted": True})

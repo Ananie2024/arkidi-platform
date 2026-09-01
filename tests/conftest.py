@@ -24,6 +24,21 @@ def event_loop():
     loop.close()
 
 
+@pytest.fixture(autouse=True)
+def _pin_session_event_loop(event_loop):
+    """Keep the session loop installed as the current loop for every test.
+
+    pytest-asyncio (0.23.x) restores the event-loop policy between tests, which
+    on Python 3.14 clears the thread's current loop; its internals then call
+    ``asyncio.get_event_loop()`` and hit "There is no current event loop".
+    Re-pinning the shared session loop before each test keeps both the asyncpg
+    pool and the plugin happy.
+    """
+    asyncio.set_event_loop(event_loop)
+    yield
+    asyncio.set_event_loop(event_loop)
+
+
 @pytest.fixture
 async def client():
     """Async test HTTP client fixture."""

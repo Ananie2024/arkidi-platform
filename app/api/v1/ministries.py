@@ -36,4 +36,4 @@ async def create_ministry(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     service = MinistriesService(db)
-    return ApiResponse.ok(data=await service.create_ministry(data), message="Ministry created successfully")
+    return ApiResponse.ok(data=await service.create_ministry(data), message="success.ministry_created")

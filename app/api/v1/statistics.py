@@ -29,7 +29,7 @@ async def submit_parish_report(
     _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
 ):
     service = StatisticsService(db)
-    return ApiResponse.ok(data=await service.submit_parish_report(data), message="Parish statistic submitted")
+    return ApiResponse.ok(data=await service.submit_parish_report(data), message="success.parish_statistic_submitted")
 
 
 @router.get("/parish-reports", response_model=ApiResponse[list[AnnualStatisticResponse]])
