@@ -161,7 +161,29 @@ getParish: (id: string) => getData<Parish>(API_ENDPOINTS.geography.parishDetail(
   listBaptisms: (parishId?: string) => getData<BaptismRecord[]>(API_ENDPOINTS.sacraments.baptism, parishId ? { parish_id: parishId } : undefined),
   listConfirmations: (parishId?: string) => getData<ConfirmationRecord[]>(API_ENDPOINTS.sacraments.confirmation, parishId ? { parish_id: parishId } : undefined),
   listMatrimonies: (parishId?: string) => getData<MatrimonyRecord[]>(API_ENDPOINTS.sacraments.matrimony, parishId ? { parish_id: parishId } : undefined),
+  createBaptism: async (data: Record<string, unknown>): Promise<BaptismRecord> => {
+    const res = await apiClient.post<ApiResponse<BaptismRecord>>(API_ENDPOINTS.sacraments.baptism, data);
+    return res.data.data;
+  },
+  createConfirmation: async (data: Record<string, unknown>): Promise<ConfirmationRecord> => {
+    const res = await apiClient.post<ApiResponse<ConfirmationRecord>>(API_ENDPOINTS.sacraments.confirmation, data);
+    return res.data.data;
+  },
+  createMatrimony: async (data: Record<string, unknown>): Promise<MatrimonyRecord> => {
+    const res = await apiClient.post<ApiResponse<MatrimonyRecord>>(API_ENDPOINTS.sacraments.matrimony, data);
+    return res.data.data;
+  },
+  issueCertificate: async (data: { sacrament_type: string; faithful_id: string; parish_id: string }) => {
+    const res = await apiClient.post<ApiResponse<{
+      id: string;
+      certificate_number: string;
+      verification_token: string;
+      qr_code_base64: string;
+    }>>(API_ENDPOINTS.sacraments.issueCertificate, data);
+    return res.data.data;
+  },
   listAnnualReports: (year?: number) => getData<AnnualReport[]>(API_ENDPOINTS.statistics.parishReports, year ? { year } : undefined),
   getAnnuarioPontificio: (year: number) => getData<AnnuarioPontificioReport>(API_ENDPOINTS.statistics.annuarioPontificio, { year }),
 };
+
 

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../core/hooks/useAuth';
 import { useUiStore } from '../../core/store/uiStore';
 import { LanguageSwitcher } from '../common/LanguageSwitcher';
+import { ParishSelector } from '../common/ParishSelector';
 
 export const Header: React.FC = () => {
   const { t } = useTranslation();
@@ -25,7 +26,8 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <ParishSelector />
         <LanguageSwitcher />
 
         <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 relative">

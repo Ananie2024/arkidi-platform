@@ -87,6 +87,7 @@
     "indicator_not_found": "Statistic indicator '{{key}}' is not registered.",
     "indicator_scope_required": "An archdiocese_id or deanery_id scope is required to compute an indicator.",
     "indicator_source_no_parish": "Statistic indicator '{{key}}' targets a source model without a parish_id column.",
+    "indicator_invalid_param_filter": "Statistic indicator '{{key}}' does not support a '{{field}}' filter.",
     "document_type_not_found": "Document type not found.",
     "document_type_code_exists": "A document type with code '{{code}}' already exists.",
     "document_not_found": "Document not found.",

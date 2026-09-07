@@ -63,3 +63,13 @@ class SoftDeleteMixin:
 
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    def soft_delete(self) -> None:
+        """Mark this record as deleted without removing the row.
+
+        Sets ``is_deleted`` and stamps ``deleted_at``; consumers that filter
+        on ``is_deleted.is_(False)`` will no longer see the record while the
+        audit trail and any attached children stay intact.
+        """
+        self.is_deleted = True
+        self.deleted_at = _utcnow()

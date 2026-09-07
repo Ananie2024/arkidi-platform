@@ -87,6 +87,7 @@
     "indicator_not_found": "L'indicateur statistique '{{key}}' n'est pas enregistré.",
     "indicator_scope_required": "Un périmètre archdiocese_id ou deanery_id est requis pour calculer un indicateur.",
     "indicator_source_no_parish": "L'indicateur statistique '{{key}}' cible un modèle sans colonne parish_id.",
+    "indicator_invalid_param_filter": "L'indicateur statistique '{{key}}' ne prend pas en charge le filtre '{{field}}'.",
     "document_type_not_found": "Type de document introuvable.",
     "document_type_code_exists": "Un type de document avec le code '{{code}}' existe déjà.",
     "document_not_found": "Document introuvable.",

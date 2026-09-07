@@ -11,7 +11,7 @@ import uuid
 from datetime import date, datetime
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Aggregation(str, Enum):
@@ -20,6 +20,33 @@ class Aggregation(str, Enum):
     COUNT = "count"
     SUM = "sum"
     AVG = "avg"
+    # Share (0..1) of rows in the bucket where ``metric_field`` is not NULL —
+    # e.g. OCR completion rate counts ScannedPages whose ``ocr_raw_text`` has
+    # been extracted.
+    RATE = "rate"
+
+
+class ScopeMode(str, Enum):
+    """How the source model is linked to the organisational scope.
+
+    ``PARISH`` — the source exposes a ``parish_id`` column (Faithful,
+    Donation, LandParcel, ...). Default mode.
+
+    ``VIA_JOIN`` — the source reaches a parish through another table (e.g.
+    ``ScannedPage.ledger_book_id -> ArchiveLedgerBook.parish_id``); configured
+    with ``via_model`` / ``via_local_field`` / ``via_scope_field``.
+
+    ``POLYMORPHIC_ORG`` — the source is scoped to any organisational entity
+    through optional ``archdiocese_id`` / ``deanery_id`` / ``parish_id``
+    columns (the polymorphic ``Document`` registry). In-scope rows are the
+    union of: parish in the resolved parish set, deanery in the resolved
+    deanery set, or archdiocese equal to the scope archdiocese. Rows scoped
+    only to a commission/council/meeting are outside every org scope.
+    """
+
+    PARISH = "parish"
+    VIA_JOIN = "via_join"
+    POLYMORPHIC_ORG = "polymorphic_org"
 
 
 class HierarchyGroup(str, Enum):
@@ -47,9 +74,15 @@ class TrendBucket(str, Enum):
 class StatisticIndicator(BaseModel):
     """Declarative configuration for a single aggregated statistic.
 
-    ``source_model`` must expose a ``parish_id`` column (Faithful, Family,
-    LandParcel, Donation, AnnualParishStatistic, ...). Only ``COUNT`` needs no
-    ``metric_field``; ``SUM``/``AVG`` aggregate ``metric_field`` per bucket.
+    ``source_model`` reaches the organisational scope according to
+    ``scope_mode`` (parish column, via-join, or polymorphic org columns).
+    Only ``COUNT``/``RATE`` need no ``metric_field``; ``SUM``/``AVG``
+    aggregate ``metric_field`` per bucket and ``RATE`` uses it as the
+    completion marker (NULL = not done).
+
+    ``group_by`` buckets rows by a hierarchy level; when ``group_by_field``
+    is set instead, rows are grouped by the value of that source attribute
+    (e.g. ``document_type_id``) and labelled from ``label_model``.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -66,21 +99,42 @@ class StatisticIndicator(BaseModel):
     filters: list[dict] = Field(default_factory=list)
     unit: str | None = None
 
-    @field_validator("metric_field")
-    @classmethod
-    def _metric_required_for_sum_avg(cls, value: str | None, info) -> str | None:
-        if info.data.get("aggregation") in (Aggregation.SUM, Aggregation.AVG) and not value:
+    # --- Scope linking (see ScopeMode) ---------------------------------
+    scope_mode: ScopeMode = ScopeMode.PARISH
+    via_model: type | None = None
+    via_local_field: str | None = None
+    via_scope_field: str = "parish_id"
+
+    # --- Non-hierarchical grouping (e.g. documents by type) ------------
+    group_by_field: str | None = None
+    label_model: type | None = None
+    label_field: str = "name"
+
+    @model_validator(mode="after")
+    def _validate_config_consistency(self) -> "StatisticIndicator":
+        if self.aggregation in (Aggregation.SUM, Aggregation.AVG, Aggregation.RATE) and (
+            not self.metric_field
+        ):
             raise ValueError(
-                "metric_field is required when aggregation is SUM or AVG"
+                "metric_field is required when aggregation is SUM, AVG or RATE"
             )
-        return value
+        if self.scope_mode == ScopeMode.VIA_JOIN and (
+            not self.via_model or not self.via_local_field
+        ):
+            raise ValueError(
+                "scope_mode VIA_JOIN requires both via_model and via_local_field"
+            )
+        if self.group_by_field and self.label_model is None:
+            raise ValueError("label_model is required when group_by_field is set")
+        return self
 
 
 class IndicatorConfigView(BaseModel):
     """Serialisable projection of :class:`StatisticIndicator` for the API.
 
-    ``source_model`` is rendered as the ORM class name rather than the class
-    object itself so the config list endpoint can be JSON-encoded directly.
+    ``source_model`` / ``via_model`` / ``label_model`` are rendered as ORM
+    class names rather than class objects so the config list endpoint can be
+    JSON-encoded directly.
     """
 
     key: str
@@ -94,6 +148,13 @@ class IndicatorConfigView(BaseModel):
     date_field: str | None = None
     filters: list[dict] = Field(default_factory=list)
     unit: str | None = None
+    scope_mode: ScopeMode = ScopeMode.PARISH
+    via_model: str | None = None
+    via_local_field: str | None = None
+    via_scope_field: str = "parish_id"
+    group_by_field: str | None = None
+    label_model: str | None = None
+    label_field: str = "name"
 
 
 class IndicatorRow(BaseModel):

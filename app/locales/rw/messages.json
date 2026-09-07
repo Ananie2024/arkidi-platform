@@ -87,6 +87,7 @@
     "indicator_not_found": "Ikigereranyo cy'imibare '{{key}}' nticyanditswe.",
     "indicator_scope_required": "Hakenewe archdiocese_id cyangwa deanery_id kugira ngo habarwe ikigereranyo.",
     "indicator_source_no_parish": "Ikigereranyo '{{key}}' kigena ikinyabiziga kidafite inzira ya parish_id.",
+    "indicator_invalid_param_filter": "Ikigereranyo '{{key}}' nticyemera akayunguruzo ka '{{field}}'.",
     "document_type_not_found": "Ubwoko bw'inyandiko ntiwabonetse.",
     "document_type_code_exists": "Ubwoko bw'inyandiko bufite code '{{code}}' bumaze kubaho.",
     "document_not_found": "Inyandiko ntiyabonetse.",

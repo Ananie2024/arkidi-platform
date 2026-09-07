@@ -7,15 +7,15 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { PlusCircle } from 'lucide-react';
 import { Donation, domainApi } from '../../core/api/domain';
+import { useActiveParish } from '../../core/hooks/useActiveParish';
 
 export const FinancePage: React.FC = () => {
   const { t } = useTranslation();
-  const parishesQuery = useQuery({ queryKey: ['parishes'], queryFn: () => domainApi.listParishes() });
-  const parishId = parishesQuery.data?.[0]?.id;
+  const { activeParishId, isLoading: parishesLoading, isError: parishesError } = useActiveParish();
   const donationsQuery = useQuery({
-    queryKey: ['donations', parishId],
-    queryFn: () => domainApi.listDonations(parishId as string),
-    enabled: Boolean(parishId),
+    queryKey: ['donations', activeParishId],
+    queryFn: () => domainApi.listDonations(activeParishId as string),
+    enabled: Boolean(activeParishId),
   });
 
   const columns: Column<Donation>[] = [
@@ -44,8 +44,8 @@ export const FinancePage: React.FC = () => {
         <Table
           columns={columns}
           data={donationsQuery.data || []}
-          isLoading={parishesQuery.isLoading || donationsQuery.isLoading}
-          emptyMessage={parishesQuery.isError || donationsQuery.isError ? t('finance.empty_error') : t('finance.empty_none')}
+          isLoading={parishesLoading || donationsQuery.isLoading}
+          emptyMessage={parishesError || donationsQuery.isError ? t('finance.empty_error') : t('finance.empty_none')}
         />
       </Card>
     </div>

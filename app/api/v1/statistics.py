@@ -73,15 +73,26 @@ async def compute_indicator(
     deanery_id: uuid.UUID | None = Query(default=None),
     start_date: date | None = Query(default=None),
     end_date: date | None = Query(default=None),
+    year: int | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
-    """Compute one registered statistic indicator within an org scope."""
+    """Compute one registered statistic indicator within an org scope.
+
+    ``year`` is forwarded as a runtime ``report_year`` parameter filter so the
+    annual-return indicators (e.g. ``annual_catholic_population_by_parish``)
+    are pinned to a single reporting year through the same generic pipeline.
+    """
+    param_filters: dict = {}
+    if year is not None:
+        param_filters["report_year"] = year
+
     result = await AggregationService(db).compute(
         key,
         archdiocese_id=archdiocese_id,
         deanery_id=deanery_id,
         start_date=start_date,
         end_date=end_date,
+        param_filters=param_filters,
     )
     return ApiResponse.ok(data=result)

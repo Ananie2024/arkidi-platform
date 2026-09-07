@@ -5,6 +5,7 @@ import uuid
 from typing import List, Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.deanery import Archdiocese
 from app.models.parish import Parish
 from app.models.priest import Priest
 from app.models.survey import AnnualParishStatistic, Survey, SurveyResponse
@@ -50,24 +51,15 @@ class StatisticsRepository:
         result = await self.db.execute(stmt)
         return int(result.scalar_one() or 0)
 
-    async def get_archdiocesan_totals(self, year: int) -> dict:
-        stmt = select(
-            func.sum(AnnualParishStatistic.total_catholic_population).label("catholics"),
-            func.sum(AnnualParishStatistic.infant_baptisms + AnnualParishStatistic.adult_baptisms).label("baptisms"),
-            func.sum(AnnualParishStatistic.confirmations).label("confirmations"),
-            func.sum(AnnualParishStatistic.marriages_both_catholic + AnnualParishStatistic.marriages_mixed_religion).label("marriages"),
-        ).where(AnnualParishStatistic.report_year == year)
+    async def list_archdioceses(self) -> List[Archdiocese]:
+        """Every archdiocese, oldest first.
 
+        The Annuario Pontificio composition iterates these as indicator
+        computation scopes (see StatisticsService.generate_annuario_pontificio).
+        """
+        stmt = select(Archdiocese).order_by(Archdiocese.created_at.asc())
         result = await self.db.execute(stmt)
-        row = result.first()
-        if row:
-            return {
-                "catholics": int(row[0] or 0),
-                "baptisms": int(row[1] or 0),
-                "confirmations": int(row[2] or 0),
-                "marriages": int(row[3] or 0),
-            }
-        return {"catholics": 0, "baptisms": 0, "confirmations": 0, "marriages": 0}
+        return list(result.scalars().all())
 
 
 class SurveyRepository:

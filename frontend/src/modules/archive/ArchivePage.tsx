@@ -6,15 +6,15 @@ import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
 import { BookOpen } from 'lucide-react';
 import { ArchiveBook, domainApi } from '../../core/api/domain';
+import { useActiveParish } from '../../core/hooks/useActiveParish';
 
 export const ArchivePage: React.FC = () => {
   const { t } = useTranslation();
-  const parishesQuery = useQuery({ queryKey: ['parishes'], queryFn: () => domainApi.listParishes() });
-  const parishId = parishesQuery.data?.[0]?.id;
+  const { activeParishId, isLoading: parishesLoading, isError: parishesError } = useActiveParish();
   const booksQuery = useQuery({
-    queryKey: ['archive-books', parishId],
-    queryFn: () => domainApi.listArchiveBooks(parishId as string),
-    enabled: Boolean(parishId),
+    queryKey: ['archive-books', activeParishId],
+    queryFn: () => domainApi.listArchiveBooks(activeParishId as string),
+    enabled: Boolean(activeParishId),
   });
 
   const columns: Column<ArchiveBook>[] = [
@@ -41,8 +41,8 @@ export const ArchivePage: React.FC = () => {
         <Table
           columns={columns}
           data={booksQuery.data || []}
-          isLoading={parishesQuery.isLoading || booksQuery.isLoading}
-          emptyMessage={parishesQuery.isError || booksQuery.isError ? t('archive.empty_error') : t('archive.empty_none')}
+          isLoading={parishesLoading || booksQuery.isLoading}
+          emptyMessage={parishesError || booksQuery.isError ? t('archive.empty_error') : t('archive.empty_none')}
         />
       </Card>
     </div>

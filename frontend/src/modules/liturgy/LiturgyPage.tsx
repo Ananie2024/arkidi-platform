@@ -6,15 +6,15 @@ import { Table, Column } from '../../components/common/Table';
 import { Button } from '../../components/common/Button';
 import { CalendarPlus } from 'lucide-react';
 import { MassSchedule, domainApi } from '../../core/api/domain';
+import { useActiveParish } from '../../core/hooks/useActiveParish';
 
 export const LiturgyPage: React.FC = () => {
   const { t } = useTranslation();
-  const parishesQuery = useQuery({ queryKey: ['parishes'], queryFn: () => domainApi.listParishes() });
-  const parishId = parishesQuery.data?.[0]?.id;
+  const { activeParishId, isLoading: parishesLoading, isError: parishesError } = useActiveParish();
   const massesQuery = useQuery({
-    queryKey: ['mass-schedules', parishId],
-    queryFn: () => domainApi.listMassSchedules(parishId as string),
-    enabled: Boolean(parishId),
+    queryKey: ['mass-schedules', activeParishId],
+    queryFn: () => domainApi.listMassSchedules(activeParishId as string),
+    enabled: Boolean(activeParishId),
   });
 
   const columns: Column<MassSchedule>[] = [
@@ -41,8 +41,8 @@ export const LiturgyPage: React.FC = () => {
         <Table
           columns={columns}
           data={massesQuery.data || []}
-          isLoading={parishesQuery.isLoading || massesQuery.isLoading}
-          emptyMessage={parishesQuery.isError || massesQuery.isError ? t('liturgy.empty_error') : t('liturgy.empty_none')}
+          isLoading={parishesLoading || massesQuery.isLoading}
+          emptyMessage={parishesError || massesQuery.isError ? t('liturgy.empty_error') : t('liturgy.empty_none')}
         />
       </Card>
     </div>

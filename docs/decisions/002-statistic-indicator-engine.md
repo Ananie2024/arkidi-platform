@@ -60,9 +60,12 @@ configured `vicariate` label in the output.
 - Python-side grouping means all source rows for the scope are loaded into the
   application. Acceptable at diocesan scale; if a future indicator needs
   DB-side `GROUP BY`, the repository can be extended behind the same interface.
-- `Annuario Pontificio` remains a hand-written method for now; it can be
-  re-expressed on this engine (e.g. with `AnnualParishStatistic` as the source
-  model and predetermined year buckets) without changing its API.
+- `Annuario Pontificio` was re-expressed on this engine (2026 follow-up): its
+  figures are now composed from per-parish `annual_*_by_parish` indicators
+  computed with `param_filters={"report_year": year}` and summed over every
+  archdiocese. Only the `total_parishes` / `total_priests` rollup counts remain
+  repository calls (neither `Parish` nor `Priest` exposes a scoped metric
+  column). The report's API is unchanged.
 
 ## Consequences
 
@@ -73,3 +76,24 @@ configured `vicariate` label in the output.
   consumers that already hold a parish set.
 - Tests live in `tests/unit/test_indicators.py` (engine) and
   `tests/test_statistics_integration.py` (endpoints).
+
+## Follow-up: Archives domain adoption
+
+The engine was extended into the Archives domain as the named next step:
+
+- **`ScopeMode`** configures how a source reaches the organisational scope:
+  `PARISH` (a `parish_id` column — the original behaviour), `VIA_JOIN`
+  (e.g. `ScannedPage.ledger_book_id -> ArchiveLedgerBook.parish_id` for OCR
+  completion), and `POLYMORPHIC_ORG` (the `Document` registry, which may attach
+  to a parish, deanery, or the archdiocese directly).
+- **`group_by_field` / `label_model`** allow non-hierarchical buckets such as
+  *documents by document type* while reusing the same reduction pipeline.
+- **`Aggregation.RATE`** computes completion ratios (share of rows in a bucket
+  whose `metric_field` is non-NULL) for the OCR completion rate indicator.
+- Registered Archives indicators:
+  `documents_by_parish`, `documents_by_type`,
+  `retention_review_backlog` (pre-filtered to `DUE_FOR_REVIEW`, the
+  archivist-review scheduler's queue), and `ocr_completion_rate`.
+- Runtime `param_filters` (`compute(..., param_filters={"report_year": year})`)
+  pin annual-return indicators to one reporting year for the Annuario
+  composition.
