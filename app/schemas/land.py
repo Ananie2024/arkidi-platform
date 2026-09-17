@@ -30,6 +30,25 @@ class LandParcelCreate(LandParcelBase):
     deanery_id: Optional[uuid.UUID] = None
 
 
+class LandParcelUpdate(BaseModel):
+    upi: Optional[str] = None
+    parcel_name: Optional[str] = None
+    title_deed_number: Optional[str] = None
+    land_use: Optional[LandUseType] = None
+    tenure_status: Optional[TenureStatus] = None
+    area_sqm: Optional[float] = None
+    acquisition_date: Optional[date] = None
+    estimated_value_rwf: Optional[float] = None
+    province: Optional[str] = None
+    district: Optional[str] = None
+    sector: Optional[str] = None
+    cell: Optional[str] = None
+    village: Optional[str] = None
+    parish_id: Optional[uuid.UUID] = None
+    deanery_id: Optional[uuid.UUID] = None
+    geojson_geometry: Optional[dict] = None
+
+
 class LandParcelResponse(LandParcelBase):
     model_config = ConfigDict(from_attributes=True)
 

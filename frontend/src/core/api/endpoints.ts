@@ -34,9 +34,11 @@ export const API_ENDPOINTS = {
   liturgy: {
     masses: '/liturgy/mass-schedules',
     intentions: '/liturgy/intentions',
+    intentionDetail: (id: string) => `/liturgy/intentions/${id}`,
   },
   finance: {
     donations: '/finance/donations',
+    donationDetail: (id: string) => `/finance/donations/${id}`,
     summary: '/finance/summary',
   },
   ministries: {
@@ -47,13 +49,22 @@ export const API_ENDPOINTS = {
     parcels: '/land-assets/parcels',
     parcelDetail: (id: string) => `/land-assets/parcels/${id}`,
     buildings: '/land-assets/buildings',
+    parcelBuildings: (parcelId: string) => `/land-assets/parcels/${parcelId}/buildings`,
   },
   archive: {
     books: '/archive/books',
     pages: (bookId: string) => `/archive/books/${bookId}/pages`,
+    createPage: '/archive/pages',
+    pageDetail: (pageId: string) => `/archive/pages/${pageId}`,
+    triggerOcr: (pageId: string) => `/archive/pages/${pageId}/ocr`,
+    searchPages: '/archive/pages/search',
   },
   statistics: {
     parishReports: '/statistics/parish-reports',
+    submitReport: '/statistics/parish-report',
     annuarioPontificio: '/statistics/annuario-pontificio',
+    indicators: '/statistics/indicators',
+    computeIndicator: (key: string) => `/statistics/indicators/${key}`,
   },
 };
+

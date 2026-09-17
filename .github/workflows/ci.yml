@@ -124,3 +124,31 @@ jobs:
 
       - name: Production build (code-split bundles)
         run: npm run build
+
+  compose:
+    name: Docker Compose config validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml + prod overlay parse cleanly
+        run: |
+          # docker-compose config does a full parse + resolution; it will fail if
+          # any overlay has structural issues (e.g. a service indented into another).
+          docker-compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet
+
+      - name: YAML syntax lint (catches indentation bugs like the celery-worker one)
+        run: |
+          pip install pyyaml
+          python - <<'PY'
+          import yaml, sys
+          files = ["docker-compose.yml", "docker-compose.prod.yml"]
+          for f in files:
+              try:
+                  with open(f) as fh:
+                      yaml.safe_load(fh)
+                  print(f"OK: {f}")
+              except yaml.YAMLError as e:
+                  print(f"FAIL: {f} - {e}")
+                  sys.exit(1)
+          PY

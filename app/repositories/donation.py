@@ -13,6 +13,11 @@ class FinanceRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def get_by_id(self, donation_id: uuid.UUID) -> Optional[Donation]:
+        stmt = select(Donation).where(Donation.id == donation_id, Donation.is_deleted.is_(False))
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def create_donation(self, data: DonationCreate, receipt_number: str) -> Donation:
         donation = Donation(
             receipt_number=receipt_number,

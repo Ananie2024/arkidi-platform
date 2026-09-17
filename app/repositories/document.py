@@ -80,10 +80,29 @@ class ArchiveRepository:
         await self.db.flush()
         return page
 
+    async def get_page_by_id(self, page_id: uuid.UUID) -> ScannedPage | None:
+        stmt = select(ScannedPage).where(ScannedPage.id == page_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def list_pages(self, ledger_book_id: uuid.UUID) -> list[ScannedPage]:
         stmt = select(ScannedPage).where(ScannedPage.ledger_book_id == ledger_book_id).order_by(ScannedPage.page_number)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def search_pages(self, query: str, parish_id: uuid.UUID | None = None) -> list[ScannedPage]:
+        stmt = select(ScannedPage).join(ArchiveLedgerBook, ScannedPage.ledger_book_id == ArchiveLedgerBook.id)
+        if parish_id:
+            stmt = stmt.where(ArchiveLedgerBook.parish_id == parish_id)
+        stmt = stmt.where(
+            or_(
+                ScannedPage.ocr_raw_text.ilike(f"%{query}%"),
+                ArchiveLedgerBook.book_title.ilike(f"%{query}%"),
+            )
+        ).order_by(ArchiveLedgerBook.start_year.desc(), ScannedPage.page_number)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
 
 
 class DocumentRepository:

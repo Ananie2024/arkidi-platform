@@ -39,6 +39,17 @@ async def list_donations(
     return ApiResponse.ok(data=await service.list_donations(parish_id))
 
 
+@router.get("/donations/{donation_id}", response_model=ApiResponse[DonationResponse])
+async def get_donation(
+    donation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
+    service = FinanceService(db)
+    return ApiResponse.ok(data=await service.get_donation(donation_id))
+
+
+
 @router.get("/summary", response_model=ApiResponse[FinancialSummaryResponse])
 async def financial_summary(
     parish_id: uuid.UUID,

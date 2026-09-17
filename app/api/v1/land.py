@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
-from app.schemas.land import LandParcelCreate, LandParcelResponse, BuildingAssetCreate, BuildingAssetResponse
+from app.schemas.land import LandParcelCreate, LandParcelUpdate, LandParcelResponse, BuildingAssetCreate, BuildingAssetResponse
 from app.services.land import LandAssetsService
 from app.utils.response import ApiResponse
 
@@ -35,6 +35,17 @@ async def get_parcel(
     return ApiResponse.ok(data=await service.get_parcel(parcel_id))
 
 
+@router.put("/parcels/{parcel_id}", response_model=ApiResponse[LandParcelResponse])
+async def update_parcel(
+    parcel_id: uuid.UUID,
+    data: LandParcelUpdate,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
+):
+    service = LandAssetsService(db)
+    return ApiResponse.ok(data=await service.update_parcel(parcel_id, data), message="success.parcel_updated")
+
+
 @router.post(
     "/parcels",
     response_model=ApiResponse[LandParcelResponse],
@@ -47,6 +58,17 @@ async def create_parcel(
 ):
     service = LandAssetsService(db)
     return ApiResponse.ok(data=await service.create_parcel(data), message="success.parcel_registered")
+
+
+@router.get("/parcels/{parcel_id}/buildings", response_model=ApiResponse[list[BuildingAssetResponse]])
+async def list_parcel_buildings(
+    parcel_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
+    service = LandAssetsService(db)
+    return ApiResponse.ok(data=await service.list_buildings(parcel_id))
+
 
 
 @router.post(

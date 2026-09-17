@@ -160,4 +160,6 @@ class ScannedPageResponse(ScannedPageCreate):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
+    ocr_metadata: dict | None = None
     created_at: datetime
+

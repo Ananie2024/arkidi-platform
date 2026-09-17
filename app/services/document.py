@@ -117,6 +117,29 @@ class ArchiveService:
         pages = await self.repo.list_pages(book_id)
         return [ScannedPageResponse.model_validate(p) for p in pages]
 
+    async def get_page(self, page_id: uuid.UUID) -> ScannedPageResponse:
+        page = await self.repo.get_page_by_id(page_id)
+        if not page:
+            raise EntityNotFoundException("errors.scanned_page_not_found")
+        return ScannedPageResponse.model_validate(page)
+
+    async def trigger_ocr(self, page_id: uuid.UUID) -> dict:
+        page = await self.repo.get_page_by_id(page_id)
+        if not page:
+            raise EntityNotFoundException("errors.scanned_page_not_found")
+        try:
+            process_ocr_page.delay(str(page.id))
+            status_msg = "enqueued"
+        except Exception as exc:
+            logger.warning("Could not enqueue OCR task for scanned page %s: %s", page.id, exc)
+            status_msg = "enqueue_failed"
+        return {"scanned_page_id": str(page.id), "status": status_msg}
+
+    async def search_pages(self, query: str, parish_id: uuid.UUID | None = None) -> list[ScannedPageResponse]:
+        pages = await self.repo.search_pages(query, parish_id)
+        return [ScannedPageResponse.model_validate(p) for p in pages]
+
+
 
 class DocumentService:
     def __init__(self, db: AsyncSession):

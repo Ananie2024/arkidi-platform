@@ -28,7 +28,34 @@ export interface LandParcel {
   province: string;
   district?: string | null;
   sector?: string | null;
+  cell?: string | null;
+  village?: string | null;
   parish_id: string;
   deanery_id?: string | null;
+  geojson_geometry?: {
+    type: string;
+    coordinates: any;
+  } | null;
   created_at: string;
 }
+
+export interface BuildingAsset {
+  id: string;
+  parcel_id: string;
+  name: string;
+  building_type: string;
+  construction_year?: number | null;
+  floors_count: number;
+  condition: string;
+  created_at: string;
+}
+
+export interface BuildingAssetCreate {
+  parcel_id: string;
+  name: string;
+  building_type?: string;
+  construction_year?: number | null;
+  floors_count?: number;
+  condition?: string;
+}
+

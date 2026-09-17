@@ -54,6 +54,37 @@ async def list_pages(
     return ApiResponse.ok(data=await service.list_pages(book_id))
 
 
+@router.get("/pages/search", response_model=ApiResponse[list[ScannedPageResponse]])
+async def search_pages(
+    query: str,
+    parish_id: uuid.UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
+    service = ArchiveService(db)
+    return ApiResponse.ok(data=await service.search_pages(query=query, parish_id=parish_id))
+
+
+@router.get("/pages/{page_id}", response_model=ApiResponse[ScannedPageResponse])
+async def get_page(
+    page_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+):
+    service = ArchiveService(db)
+    return ApiResponse.ok(data=await service.get_page(page_id))
+
+
+@router.post("/pages/{page_id}/ocr", response_model=ApiResponse[dict])
+async def trigger_page_ocr(
+    page_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_SECRETARY])),
+):
+    service = ArchiveService(db)
+    return ApiResponse.ok(data=await service.trigger_ocr(page_id), message="success.ocr_enqueued")
+
+
 @router.post(
     "/pages",
     response_model=ApiResponse[ScannedPageResponse],
@@ -62,7 +93,8 @@ async def list_pages(
 async def add_page(
     data: ScannedPageCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
+    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_SECRETARY])),
 ):
     service = ArchiveService(db)
     return ApiResponse.ok(data=await service.add_page(data), message="success.scanned_page_added")
+

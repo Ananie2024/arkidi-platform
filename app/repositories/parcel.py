@@ -6,7 +6,7 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.parcel import LandParcel, LandDocument, BuildingAsset
-from app.schemas.land import LandParcelCreate, BuildingAssetCreate
+from app.schemas.land import LandParcelCreate, LandParcelUpdate, BuildingAssetCreate
 
 
 class LandAssetsRepository:
@@ -34,12 +34,45 @@ class LandAssetsRepository:
     async def create_parcel(self, data: LandParcelCreate) -> LandParcel:
         data_dict = data.model_dump(exclude={"geojson_geometry"})
         parcel = LandParcel(**data_dict)
+        if data.geojson_geometry:
+            try:
+                from shapely.geometry import shape
+                from geoalchemy2.shape import from_shape
+                parcel.boundary = from_shape(shape(data.geojson_geometry), srid=4326)
+            except Exception:
+                pass
         self.db.add(parcel)
         await self.db.flush()
         return parcel
+
+    async def update_parcel(self, parcel_id: uuid.UUID, data: LandParcelUpdate) -> Optional[LandParcel]:
+        parcel = await self.get_by_id(parcel_id)
+        if not parcel:
+            return None
+        data_dict = data.model_dump(exclude_unset=True, exclude={"geojson_geometry"})
+        for key, value in data_dict.items():
+            setattr(parcel, key, value)
+        if data.geojson_geometry is not None:
+            try:
+                from shapely.geometry import shape
+                from geoalchemy2.shape import from_shape
+                parcel.boundary = from_shape(shape(data.geojson_geometry), srid=4326)
+            except Exception:
+                pass
+        await self.db.flush()
+        return parcel
+
+    async def list_buildings(self, parcel_id: uuid.UUID) -> List[BuildingAsset]:
+        stmt = select(BuildingAsset).where(
+            BuildingAsset.parcel_id == parcel_id,
+            BuildingAsset.is_deleted.is_(False)
+        ).order_by(BuildingAsset.name)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
     async def create_building(self, data: BuildingAssetCreate) -> BuildingAsset:
         building = BuildingAsset(**data.model_dump())
         self.db.add(building)
         await self.db.flush()
         return building
+

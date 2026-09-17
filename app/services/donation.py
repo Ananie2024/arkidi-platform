@@ -10,12 +10,19 @@ from app.schemas.donation import (
     DonationResponse,
     FinancialSummaryResponse,
 )
+from app.core.exceptions import EntityNotFoundException
 from app.models.donation import DonationType
 
 
 class FinanceService:
     def __init__(self, db: AsyncSession):
         self.repo = FinanceRepository(db)
+
+    async def get_donation(self, donation_id: uuid.UUID) -> DonationResponse:
+        donation = await self.repo.get_by_id(donation_id)
+        if not donation:
+            raise EntityNotFoundException("errors.donation_not_found")
+        return DonationResponse.model_validate(donation)
 
     async def record_donation(self, data: DonationCreate) -> DonationResponse:
         receipt_no = f"REC-{data.donation_date.strftime('%Y%m')}-{uuid.uuid4().hex[:6].upper()}"
