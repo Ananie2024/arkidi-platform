@@ -2,7 +2,7 @@
 Arkidi Platform Application Configuration
 Archdiocese of Kigali Digital Archive & Parish Management System
 """
-from typing import List, Optional
+
 from pydantic import Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -100,11 +100,22 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = Field(default="HS256")
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7)
+    RATE_LIMIT_LOGIN: str = Field(default="10/minute")
+    RATE_LIMIT_REFRESH: str = Field(default="20/minute")
+    RATE_LIMIT_GOOGLE_AUTH: str = Field(default="10/minute")
+
+    # ------------------------------------------------------------------
+    # Google OAuth 2.0
+    # ------------------------------------------------------------------
+    GOOGLE_CLIENT_ID: str | None = Field(default=None)
+    GOOGLE_CLIENT_SECRET: str | None = Field(default=None)
+    GOOGLE_REDIRECT_URI: str | None = Field(default=None)
+    GOOGLE_ALLOW_SELF_REGISTRATION: bool = Field(default=False)
 
     # ------------------------------------------------------------------
     # CORS
     # ------------------------------------------------------------------
-    CORS_ORIGINS: List[str] = Field(
+    CORS_ORIGINS: list[str] = Field(
         default=[
             "http://localhost:5173",
             "http://127.0.0.1:5173",
@@ -115,7 +126,7 @@ class Settings(BaseSettings):
     )
     # Optional extra regex of allowed origins (e.g. any localhost dev port).
     # Keep empty/None in production and rely on the explicit CORS_ORIGINS list.
-    CORS_ORIGIN_REGEX: Optional[str] = Field(default=None)
+    CORS_ORIGIN_REGEX: str | None = Field(default=None)
 
     # ------------------------------------------------------------------
     # Redis & Caching
@@ -149,37 +160,46 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     FILE_STORAGE_PATH: str = Field(default="./file-storage")
     MAX_UPLOAD_SIZE_MB: int = Field(default=50)
-    ALLOWED_EXTENSIONS: List[str] = Field(
+    ALLOWED_EXTENSIONS: list[str] = Field(
         default=[".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx", ".xls", ".xlsx"]
     )
     BACKUP_BASE_PATH: str = Field(default="./backups")
     GCS_ENABLED: bool = Field(default=False)
-    GCS_PROJECT_ID: Optional[str] = Field(default=None)
-    GCS_BUCKET_NAME: Optional[str] = Field(default=None)
-    GCS_CREDENTIALS_PATH: Optional[str] = Field(default=None)
+    GCS_PROJECT_ID: str | None = Field(default=None)
+    GCS_BUCKET_NAME: str | None = Field(default=None)
+    GCS_CREDENTIALS_PATH: str | None = Field(default=None)
     B2_ENABLED: bool = Field(default=False)
-    B2_ACCOUNT_ID: Optional[str] = Field(default=None)
-    B2_APPLICATION_KEY: Optional[str] = Field(default=None)
-    B2_BUCKET_NAME: Optional[str] = Field(default=None)
+    B2_ACCOUNT_ID: str | None = Field(default=None)
+    B2_APPLICATION_KEY: str | None = Field(default=None)
+    B2_BUCKET_NAME: str | None = Field(default=None)
 
     # ------------------------------------------------------------------
     # Internationalization (i18n)
     # ------------------------------------------------------------------
     DEFAULT_LANGUAGE: str = Field(default="en")
-    SUPPORTED_LANGUAGES: List[str] = Field(default=["en", "fr", "rw"])
+    SUPPORTED_LANGUAGES: list[str] = Field(default=["en", "fr", "rw"])
 
     # ------------------------------------------------------------------
     # Email / SMTP Notifications
     # ------------------------------------------------------------------
-    SMTP_SERVER: Optional[str] = Field(default=None)
+    SMTP_SERVER: str | None = Field(default=None)
     SMTP_PORT: int = Field(default=587)
-    SMTP_USER: Optional[str] = Field(default=None)
-    SMTP_PASSWORD: Optional[str] = Field(default=None)
+    SMTP_USER: str | None = Field(default=None)
+    SMTP_PASSWORD: str | None = Field(default=None)
     SMTP_USE_TLS: bool = Field(default=True)
-    EMAIL_SENDER: Optional[str] = Field(default="noreply@archidiocesekigali.org")
+    EMAIL_SENDER: str | None = Field(default="noreply@archidiocesekigali.org")
     # Comma-separated list of recipients for backup / restore-drill failure
     # alerts.  When empty, alerts fall back to EMAIL_SENDER.
-    ALERT_RECIPIENTS: Optional[str] = Field(default=None)
+    ALERT_RECIPIENTS: str | None = Field(default=None)
+
+    # ------------------------------------------------------------------
+    # Public front-end & password reset
+    # ------------------------------------------------------------------
+    # Base URL of the SPA used to build self-service reset links (also used by
+    # any other user-facing e-mail that links back into the frontend).
+    PUBLIC_FRONTEND_URL: str = Field(default="http://localhost:5173")
+    # Lifetime of one password-reset token (single-use, stored in Redis).
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
 
     # ------------------------------------------------------------------
     # Logging

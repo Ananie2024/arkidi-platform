@@ -1,12 +1,24 @@
 """
 Auth Module FastAPI Endpoints
 """
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user_payload, require_roles
+from app.config import settings
+from app.core.limiter import limiter
+from app.dependencies import get_current_user_payload, get_db, require_roles
 from app.models.enums import UserRole
-from app.schemas.user import LoginRequest, RefreshRequest, TokenResponse, UserCreate, UserResponse
+from app.schemas.user import (
+    ForgotPasswordRequest,
+    GoogleAuthRequest,
+    GoogleAuthUrlResponse,
+    LoginRequest,
+    RefreshRequest,
+    ResetPasswordRequest,
+    TokenResponse,
+    UserCreate,
+    UserResponse,
+)
 from app.services.auth import AuthService
 from app.utils.response import ApiResponse
 
@@ -14,7 +26,12 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/login", response_model=ApiResponse[TokenResponse])
-async def login(credentials: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit(settings.RATE_LIMIT_LOGIN)
+async def login(
+    request: Request,
+    credentials: LoginRequest,
+    db: AsyncSession = Depends(get_db),
+):
     """Authenticate user and issue access + refresh JWT tokens."""
     service = AuthService(db)
     tokens = await service.authenticate(credentials)
@@ -22,10 +39,15 @@ async def login(credentials: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/refresh", response_model=ApiResponse[TokenResponse])
-async def refresh_token(request: RefreshRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit(settings.RATE_LIMIT_REFRESH)
+async def refresh_token(
+    request: Request,
+    body: RefreshRequest,
+    db: AsyncSession = Depends(get_db),
+):
     """Rotate refresh token and issue a fresh token pair."""
     service = AuthService(db)
-    tokens = await service.refresh(request.refresh_token)
+    tokens = await service.refresh(body.refresh_token)
     return ApiResponse.ok(data=tokens, message="success.token_refreshed")
 
 
@@ -67,3 +89,72 @@ async def logout(
     """Revoke the current access token so it can no longer authenticate."""
     await AuthService(db).logout(payload)
     return ApiResponse.ok(message="success.logout_successful", data={"detail": "token revoked"})
+
+
+@router.post("/forgot-password", response_model=ApiResponse[dict])
+async def forgot_password(
+    data: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Request a one-time password-reset link.
+
+    Always returns the same success message regardless of whether an active
+    account exists for the given e-mail, to prevent user enumeration.
+    """
+    await AuthService(db).request_password_reset(data.email)
+    return ApiResponse.ok(
+        message="success.password_reset_requested",
+        data={"detail": "If an account exists for this email, a password reset link has been sent."},
+    )
+
+
+@router.post("/reset-password", response_model=ApiResponse[dict])
+async def reset_password(
+    data: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Consume a one-time reset token and update the user's password."""
+    await AuthService(db).reset_password(data.token, data.new_password)
+    return ApiResponse.ok(message="success.password_reset_completed", data={"detail": "Password reset successfully"})
+
+
+# ==========================================================================
+# Google OAuth 2.0 Endpoints
+# ==========================================================================
+
+
+@router.get("/google/url", response_model=ApiResponse[GoogleAuthUrlResponse])
+@limiter.limit(settings.RATE_LIMIT_GOOGLE_AUTH)
+async def get_google_auth_url(
+    request: Request,
+    redirect_uri: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return the Google OAuth 2.0 authorization URL for the frontend to redirect to.
+
+    The frontend should redirect the user to the returned URL. After the user
+    consents, Google will redirect back to the backend with an authorization code.
+    """
+    service = AuthService(db)
+    result = await service.get_google_authorization_url(redirect_uri)
+    return ApiResponse.ok(data=result, message="success.google_auth_url_generated")
+
+
+@router.post("/google/login", response_model=ApiResponse[TokenResponse])
+@limiter.limit(settings.RATE_LIMIT_GOOGLE_AUTH)
+async def google_login(
+    request: Request,
+    data: GoogleAuthRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Authenticate a user via Google OAuth.
+
+    Supports two flows:
+    1. Authorization code flow — pass `code` (and optionally `redirect_uri`)
+    2. ID token flow — pass `credential` (from Google One-Tap / GIS button)
+
+    Returns the same JWT token pair as the standard login endpoint.
+    """
+    service = AuthService(db)
+    tokens = await service.google_authenticate(data)
+    return ApiResponse.ok(data=tokens, message="success.login_successful")

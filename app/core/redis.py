@@ -120,3 +120,39 @@ async def health_probe() -> bool:
     except Exception as exc:
         logger.warning("Redis health probe failed: %s", exc)
         return False
+
+
+# ---------------------------------------------------------------------------
+# Password-reset tokens (single-use, time-boxed)
+# ---------------------------------------------------------------------------
+_PASSWORD_RESET_PREFIX = "password_reset:"
+
+
+async def set_password_reset_token(token: str, user_id: str, ttl_seconds: int) -> bool:
+    """Store a one-time password-reset token mapped to *user_id* with a TTL."""
+    try:
+        r = await get_redis()
+        await r.setex(f"{_PASSWORD_RESET_PREFIX}{token}", ttl_seconds, user_id)
+        return True
+    except Exception as exc:
+        logger.error("Failed to store password-reset token: %s", exc)
+        return False
+
+
+async def consume_password_reset_token(token: str) -> Optional[str]:
+    """Atomically read-and-delete a password-reset token.
+
+    Returns the associated ``user_id`` when the token exists and is unexpired,
+    otherwise ``None`` (invalid, expired, or already consumed).
+    """
+    try:
+        r = await get_redis()
+        key = f"{_PASSWORD_RESET_PREFIX}{token}"
+        user_id = await r.get(key)
+        if user_id is None:
+            return None
+        await r.delete(key)
+        return user_id
+    except Exception as exc:
+        logger.error("Failed to consume password-reset token: %s", exc)
+        return None

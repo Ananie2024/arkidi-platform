@@ -1,4 +1,4 @@
-# 002 — Generic Statistic Indicator Engine
+# 003 — Generic Statistic Indicator Engine
 
 - **Status:** Accepted
 - **Date:** 2026-08-28

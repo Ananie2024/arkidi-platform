@@ -103,3 +103,51 @@ def send_alert(
     except Exception as exc:  # noqa: BLE001 — alerts must never crash the task
         logger.error("Failed to send alert e-mail '%s': %s", subject, exc)
         return False
+def send_email_message(
+    to: str,
+    subject: str,
+    body: str,
+    html_body: Optional[str] = None,
+) -> bool:
+    """Send a transactional e-mail to a single recipient (e.g. password reset).
+
+    Mirrors the alert-sending machinery (``smtplib`` + TLS + optional login)
+    but targets the explicit ``to`` address instead of the configured alert list,
+    so user-facing e-mails (password resets) can be delivered directly ath.
+    Returns ``True`` when the e-mail was sent, ``False`` when SMTP was not
+    configured or sending failed (the attempt is logged accordingly).
+    """
+    if not _smtp_configured():
+        logger.warning(
+            "SMTP not configured (no SMTP_SERVER). E-mail would have been sent:\n"
+            "  To: %s\n  Subject: %s\n  Body: %s",
+            to,
+            subject,
+            body,
+        )
+        return False
+    if not to:
+        return False
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = settings.EMAIL_SENDER or (settings.SMTP_USER or "noreply@archidiocesekigali.org")
+    msg["To"] = to
+    msg.set_content(body, subtype="plain")
+    if html_body:
+        msg.add_alternative(html_body, subtype="html")
+
+    try:
+        server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT, timeout=30)
+        if settings.SMTP_USE_TLS:
+            ctx = ssl.create_default_context()
+            server.starttls(context=ctx)
+        if settings.SMTP_USER and settings.SMTP_PASSWORD:
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        logger.info("E-mail sent: %s -> %s", subject, to)
+        return True
+    except Exception as exc:  # noqa: BLE001 — e-mail must never crash the request
+        logger.error("Failed to send e-mail '%s' to %s: %s", subject, to, exc)
+        return False

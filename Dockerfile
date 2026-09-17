@@ -35,8 +35,12 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 # Copy application source code
 COPY . .
 
-# Create storage and logs directories
-RUN mkdir -p /app/file-storage /app/logs /app/backups
+# Create dedicated non-root application user and group
+RUN groupadd -r -g 1001 arkidi && useradd -r -u 1001 -g arkidi -d /app -s /sbin/nologin arkidi
+
+# Create storage and logs directories, ensuring correct ownership
+RUN mkdir -p /app/file-storage /app/logs /app/backups && \
+    chown -R arkidi:arkidi /app
 
 EXPOSE 8000
 
@@ -44,5 +48,7 @@ EXPOSE 8000
 # head`, then execs the real uvicorn command. See docker-entrypoint.sh.
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
+
+USER arkidi
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

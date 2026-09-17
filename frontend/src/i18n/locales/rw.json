@@ -93,8 +93,27 @@
       "title": "Gusubiza ijambobanga",
       "subtitle": "Andika imeyili yawe ya ofisi ya arikidiyosezi kugira ngo wakire ihurirwa ryo gusubiza ijambobanga.",
       "email_label": "Imeyili ya Ofisi",
+      "email_placeholder": "izina@archidiocesekigali.org",
+      "email_required": "Nyamuneka andika adresse imeyili idahoze.",
       "send_link": "Ohereza ihurirwa ryo gusubiza",
-      "back_to_sign_in": "← Subira mu Kwinjira"
+      "back_to_sign_in": "← Subira mu Kwinjira",
+      "success_title": "Reba ImeyiliYawe",
+      "success_message": "Ihurirwa ryo gusubiza ijambobanga wagaragaye harimo. Nyamuneka reba i-coffre.",
+      "error_generic": "Hahoze ikosa. Nyamuneka wuzuza."
+    },
+    "reset": {
+      "title": "Gusubiza ijambobanga",
+      "subtitle": "Andika ijambobanga rusange aha kundera.",
+      "password_label": "Ijambobanga rusange",
+      "password_min_length": "Ijambobanga kamenewe gukorwa ku myanya 10.",
+      "confirm_password_label": "Emeza ijambobanga rusange",
+      "passwords_must_match": "Ijambobanga ebyufi birimo cyangwa ntikibaye.",
+      "submit": "Gusubiza ijambobanga",
+      "back_to_sign_in": "← Subira mu Kwinjira",
+      "no_token": "Iyi token nta kintu cyangwa yararangiye. Nyamuneka mandwa nohuriwe ihurirwa.",
+      "success_title": "Ijambobanga yasubiwemo neza",
+      "success_message": "Ijambobanga yawe yasubiwemo neza. Gikomeza kuri kwinjira...",
+      "error_generic": "Hahoze ikosa. Nyamuneka wuzuza."
     }
   },
   "error_pages": {

@@ -21,6 +21,8 @@ from app.models.sacrament import (
     AmendmentStatus,
     AmendmentType,
 )
+from app.models.faithful import Faithful
+from app.models.parish import Parish
 from app.schemas.sacrament import (
     BaptismCreate,
     ConfirmationCreate,
@@ -127,6 +129,21 @@ class SacramentsRepository:
 
     async def get_certificate_by_token(self, token: str) -> Optional[CertificateIssue]:
         stmt = select(CertificateIssue).where(CertificateIssue.verification_token == token)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_certificate_by_id(self, certificate_id: uuid.UUID) -> Optional[CertificateIssue]:
+        stmt = select(CertificateIssue).where(CertificateIssue.id == certificate_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_faithful_by_id(self, faithful_id: uuid.UUID) -> Optional[Faithful]:
+        stmt = select(Faithful).where(Faithful.id == faithful_id, Faithful.is_deleted.is_(False))
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_parish_by_id(self, parish_id: uuid.UUID) -> Optional[Parish]:
+        stmt = select(Parish).where(Parish.id == parish_id, Parish.is_deleted.is_(False))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 

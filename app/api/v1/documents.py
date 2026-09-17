@@ -4,7 +4,7 @@ Generic Archdiocesan Digital Document Registry & Document Types
 """
 import os
 import uuid
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,13 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
 from app.schemas.document import (
+    DocumentBase,
     DocumentCreate,
-    DocumentUpdate,
     DocumentResponse,
     DocumentTypeCreate,
-    DocumentTypeUpdate,
     DocumentTypeResponse,
-    DocumentBase,
+    DocumentTypeUpdate,
+    DocumentUpdate,
 )
 from app.services.document import DocumentService
 from app.utils.response import ApiResponse
@@ -46,10 +46,10 @@ async def create_document_type(
     return ApiResponse.ok(data=created, message="success.document_type_created")
 
 
-@router.get("/types", response_model=ApiResponse[List[DocumentTypeResponse]])
+@router.get("/types", response_model=ApiResponse[list[DocumentTypeResponse]])
 async def list_document_types(
-    category: Optional[str] = Query(default=None),
-    is_active: Optional[bool] = Query(default=None),
+    category: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -95,17 +95,17 @@ async def update_document_type(
 )
 async def upload_document(
     title: str = Form(...),
-    document_type_id: Optional[uuid.UUID] = Form(None),
+    document_type_id: uuid.UUID | None = Form(None),
     classification: str = Form("OFFICIAL"),
-    notes: Optional[str] = Form(None),
-    archdiocese_id: Optional[uuid.UUID] = Form(None),
-    deanery_id: Optional[uuid.UUID] = Form(None),
-    parish_id: Optional[uuid.UUID] = Form(None),
-    commission_id: Optional[uuid.UUID] = Form(None),
-    council_id: Optional[uuid.UUID] = Form(None),
-    meeting_id: Optional[uuid.UUID] = Form(None),
-    priest_id: Optional[uuid.UUID] = Form(None),
-    parcel_id: Optional[uuid.UUID] = Form(None),
+    notes: str | None = Form(None),
+    archdiocese_id: uuid.UUID | None = Form(None),
+    deanery_id: uuid.UUID | None = Form(None),
+    parish_id: uuid.UUID | None = Form(None),
+    commission_id: uuid.UUID | None = Form(None),
+    council_id: uuid.UUID | None = Form(None),
+    meeting_id: uuid.UUID | None = Form(None),
+    priest_id: uuid.UUID | None = Form(None),
+    parcel_id: uuid.UUID | None = Form(None),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
     user_payload: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
@@ -159,19 +159,19 @@ async def create_document_record(
     return ApiResponse.ok(data=created, message="success.document_registered")
 
 
-@router.get("", response_model=ApiResponse[List[DocumentResponse]])
+@router.get("", response_model=ApiResponse[list[DocumentResponse]])
 async def list_documents(
-    archdiocese_id: Optional[uuid.UUID] = Query(default=None),
-    deanery_id: Optional[uuid.UUID] = Query(default=None),
-    parish_id: Optional[uuid.UUID] = Query(default=None),
-    commission_id: Optional[uuid.UUID] = Query(default=None),
-    council_id: Optional[uuid.UUID] = Query(default=None),
-    meeting_id: Optional[uuid.UUID] = Query(default=None),
-    priest_id: Optional[uuid.UUID] = Query(default=None),
-    parcel_id: Optional[uuid.UUID] = Query(default=None),
-    document_type_id: Optional[uuid.UUID] = Query(default=None),
-    classification: Optional[str] = Query(default=None),
-    search: Optional[str] = Query(default=None),
+    archdiocese_id: uuid.UUID | None = Query(default=None),
+    deanery_id: uuid.UUID | None = Query(default=None),
+    parish_id: uuid.UUID | None = Query(default=None),
+    commission_id: uuid.UUID | None = Query(default=None),
+    council_id: uuid.UUID | None = Query(default=None),
+    meeting_id: uuid.UUID | None = Query(default=None),
+    priest_id: uuid.UUID | None = Query(default=None),
+    parcel_id: uuid.UUID | None = Query(default=None),
+    document_type_id: uuid.UUID | None = Query(default=None),
+    classification: str | None = Query(default=None),
+    search: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):

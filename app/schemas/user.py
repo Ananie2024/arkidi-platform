@@ -4,7 +4,7 @@ Auth Module Pydantic v2 Schemas
 import uuid
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 from app.models.enums import UserRole
 
 
@@ -23,6 +23,38 @@ class TokenResponse(BaseModel):
 class RefreshRequest(BaseModel):
     """Request body for the public refresh-token rotation endpoint."""
     refresh_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Request body for requesting a password-reset link (public endpoint)."""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Request body for consuming a one-time password-reset token."""
+    token: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def _password_min_length(cls, value: str) -> str:
+        if len(value) < 10:
+            raise ValueError("New password must be at least 10 characters long.")
+        return value
+
+
+class GoogleAuthRequest(BaseModel):
+    """Request body for Google OAuth authentication (code exchange or ID token verification)."""
+    code: Optional[str] = None
+    credential: Optional[str] = None
+    redirect_uri: Optional[str] = None
+    state: Optional[str] = None
+
+
+class GoogleAuthUrlResponse(BaseModel):
+    """Response containing the Google OAuth authorization URL."""
+    url: str
+    state: str
 
 
 class UserBase(BaseModel):

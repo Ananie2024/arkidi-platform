@@ -89,12 +89,31 @@
       "auth_failed": "Authentication failed. Please check your credentials.",
       "footer": "Archdiocese of Kigali Ecclesiastical Management System"
     },
-    "forgot": {
+            "forgot": {
       "title": "Reset Password",
       "subtitle": "Enter your official archdiocesan email to receive a password reset link.",
       "email_label": "Official Email Address",
+      "email_placeholder": "name@archidiocesekigali.org",
+      "email_required": "Please enter a valid email address.",
       "send_link": "Send Recovery Link",
-      "back_to_sign_in": "← Back to Sign In"
+      "back_to_sign_in": "← Back to Sign In",
+      "success_title": "Check Your Email",
+      "success_message": "A password reset link has been sent to your email. Please check your inbox.",
+      "error_generic": "An error occurred. Please try again."
+    },
+    "reset": {
+      "title": "Reset Password",
+      "subtitle": "Enter your new password below.",
+      "password_label": "New Password",
+      "password_min_length": "Password must be at least 10 characters.",
+      "confirm_password_label": "Confirm New Password",
+      "passwords_must_match": "Passwords do not match.",
+      "submit": "Reset Password",
+      "back_to_sign_in": "← Back to Sign In",
+      "no_token": "The reset token is missing or expired. Please request a new password reset link.",
+      "success_title": "Password Reset Successfully",
+      "success_message": "Your password has been reset. Redirecting to login...",
+      "error_generic": "An error occurred. Please try again."
     }
   },
   "error_pages": {

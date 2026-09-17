@@ -2,19 +2,23 @@
 Document & Archive Module Database Repository
 Handles generic Documents, Document Types, and Historical Ledger Books.
 """
+from __future__ import annotations
+
 import uuid
-from typing import List, Optional
-from sqlalchemy import select, or_
+
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.document import Document, ArchiveLedgerBook, ScannedPage
+
+from app.models.document import ArchiveLedgerBook, Document, ScannedPage
 from app.models.document_type import DocumentType
+from app.models.sacrament import SacramentType
 from app.schemas.document import (
     ArchiveLedgerBookCreate,
-    ScannedPageCreate,
     DocumentCreate,
-    DocumentUpdate,
     DocumentTypeCreate,
     DocumentTypeUpdate,
+    DocumentUpdate,
+    ScannedPageCreate,
 )
 
 
@@ -22,7 +26,7 @@ class ArchiveRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def list_ledger_books(self, parish_id: uuid.UUID) -> List[ArchiveLedgerBook]:
+    async def list_ledger_books(self, parish_id: uuid.UUID) -> list[ArchiveLedgerBook]:
         stmt = select(ArchiveLedgerBook).where(
             ArchiveLedgerBook.parish_id == parish_id,
             ArchiveLedgerBook.is_deleted.is_(False),
@@ -30,19 +34,53 @@ class ArchiveRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_ledger_book(
+        self,
+        parish_id: uuid.UUID,
+        sacrament_type: SacramentType,
+        volume_number: str,
+    ) -> ArchiveLedgerBook | None:
+        """Return the active canonical ledger book matching the natural key,
+        so callers can refuse to re-create an already-registered physical book."""
+        stmt = select(ArchiveLedgerBook).where(
+            ArchiveLedgerBook.parish_id == parish_id,
+            ArchiveLedgerBook.sacrament_type == sacrament_type,
+            ArchiveLedgerBook.volume_number == volume_number,
+            ArchiveLedgerBook.is_deleted.is_(False),
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def create_ledger_book(self, data: ArchiveLedgerBookCreate) -> ArchiveLedgerBook:
         book = ArchiveLedgerBook(**data.model_dump())
         self.db.add(book)
         await self.db.flush()
         return book
 
+    async def get_scanned_page(
+        self, ledger_book_id: uuid.UUID, page_number: int
+    ) -> ScannedPage | None:
+        """Return a scanned page matching the natural key (book, page number)."""
+        stmt = select(ScannedPage).where(
+            ScannedPage.ledger_book_id == ledger_book_id,
+            ScannedPage.page_number == page_number,
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def add_scanned_page(self, data: ScannedPageCreate) -> ScannedPage:
         page = ScannedPage(**data.model_dump())
         self.db.add(page)
+        # Keep the canonical book's scan counter in sync so the archive summary
+        # never goes stale. The page row is added in the same transaction.
+        book_stmt = select(ArchiveLedgerBook).where(ArchiveLedgerBook.id == data.ledger_book_id)
+        book = (await self.db.execute(book_stmt)).scalar_one_or_none()
+        if book is not None:
+            book.total_scanned_pages += 1
         await self.db.flush()
         return page
 
-    async def list_pages(self, ledger_book_id: uuid.UUID) -> List[ScannedPage]:
+    async def list_pages(self, ledger_book_id: uuid.UUID) -> list[ScannedPage]:
         stmt = select(ScannedPage).where(ScannedPage.ledger_book_id == ledger_book_id).order_by(ScannedPage.page_number)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
@@ -62,7 +100,7 @@ class DocumentRepository:
         await self.db.flush()
         return doc_type
 
-    async def get_document_type_by_id(self, type_id: uuid.UUID) -> Optional[DocumentType]:
+    async def get_document_type_by_id(self, type_id: uuid.UUID) -> DocumentType | None:
         stmt = select(DocumentType).where(
             DocumentType.id == type_id,
             DocumentType.is_deleted.is_(False),
@@ -70,7 +108,7 @@ class DocumentRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_document_type_by_code(self, code: str) -> Optional[DocumentType]:
+    async def get_document_type_by_code(self, code: str) -> DocumentType | None:
         stmt = select(DocumentType).where(
             DocumentType.code == code,
             DocumentType.is_deleted.is_(False),
@@ -80,9 +118,9 @@ class DocumentRepository:
 
     async def list_document_types(
         self,
-        category: Optional[str] = None,
-        is_active: Optional[bool] = None,
-    ) -> List[DocumentType]:
+        category: str | None = None,
+        is_active: bool | None = None,
+    ) -> list[DocumentType]:
         stmt = select(DocumentType).where(DocumentType.is_deleted.is_(False))
         if category is not None:
             stmt = stmt.where(DocumentType.category == category)
@@ -106,7 +144,7 @@ class DocumentRepository:
     async def create_document(
         self,
         data: DocumentCreate,
-        uploaded_by_user_id: Optional[uuid.UUID] = None,
+        uploaded_by_user_id: uuid.UUID | None = None,
     ) -> Document:
         doc = Document(
             **data.model_dump(),
@@ -116,7 +154,7 @@ class DocumentRepository:
         await self.db.flush()
         return doc
 
-    async def get_document_by_id(self, document_id: uuid.UUID) -> Optional[Document]:
+    async def get_document_by_id(self, document_id: uuid.UUID) -> Document | None:
         stmt = select(Document).where(
             Document.id == document_id,
             Document.is_deleted.is_(False),
@@ -124,20 +162,34 @@ class DocumentRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_document_by_checksum(self, checksum: str) -> Document | None:
+        """Return the oldest active document registered with this exact content
+        checksum (SHA-256). The archive stores each byte content exactly once."""
+        stmt = (
+            select(Document)
+            .where(
+                Document.checksum_sha256 == checksum,
+                Document.is_deleted.is_(False),
+            )
+            .order_by(Document.created_at.asc(), Document.id.asc())
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().first()
+
     async def list_documents(
         self,
-        archdiocese_id: Optional[uuid.UUID] = None,
-        deanery_id: Optional[uuid.UUID] = None,
-        parish_id: Optional[uuid.UUID] = None,
-        commission_id: Optional[uuid.UUID] = None,
-        council_id: Optional[uuid.UUID] = None,
-        meeting_id: Optional[uuid.UUID] = None,
-        priest_id: Optional[uuid.UUID] = None,
-        parcel_id: Optional[uuid.UUID] = None,
-        document_type_id: Optional[uuid.UUID] = None,
-        classification: Optional[str] = None,
-        search: Optional[str] = None,
-    ) -> List[Document]:
+        archdiocese_id: uuid.UUID | None = None,
+        deanery_id: uuid.UUID | None = None,
+        parish_id: uuid.UUID | None = None,
+        commission_id: uuid.UUID | None = None,
+        council_id: uuid.UUID | None = None,
+        meeting_id: uuid.UUID | None = None,
+        priest_id: uuid.UUID | None = None,
+        parcel_id: uuid.UUID | None = None,
+        document_type_id: uuid.UUID | None = None,
+        classification: str | None = None,
+        search: str | None = None,
+    ) -> list[Document]:
         stmt = select(Document).where(Document.is_deleted.is_(False))
 
         if archdiocese_id is not None:

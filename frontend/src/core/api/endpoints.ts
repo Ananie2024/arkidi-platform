@@ -3,6 +3,8 @@ export const API_ENDPOINTS = {
     login: '/auth/login',
     me: '/auth/me',
     users: '/auth/users',
+    forgotPassword: '/auth/forgot-password',
+    resetPassword: '/auth/reset-password',
   },
   geography: {
     deaneries: '/geography/deaneries',

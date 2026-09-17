@@ -1,3 +1,4 @@
+
 """
 Generic Statistic Indicator Engine — Pydantic v2 Schemas.
 

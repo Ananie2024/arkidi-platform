@@ -22,6 +22,9 @@ const LoginPage = lazy(() =>
 const ForgotPasswordPage = lazy(() =>
   import('./modules/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage }))
 );
+const ResetPasswordPage = lazy(() =>
+  import('./modules/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage }))
+);
 const DashboardPage = lazy(() =>
   import('./modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage }))
 );
@@ -96,6 +99,7 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
               {/* Protected routes */}
               <Route element={<ProtectedRoute />}>

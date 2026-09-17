@@ -93,8 +93,27 @@
       "title": "Réinitialiser le mot de passe",
       "subtitle": "Saisissez votre e-mail officiel de l'archidiocèse pour recevoir un lien de réinitialisation.",
       "email_label": "Adresse e-mail officielle",
+      "email_placeholder": "nom@archidiocesekigali.org",
+      "email_required": "Veuillez saisir une adresse e-mail valide.",
       "send_link": "Envoyer le lien de récupération",
-      "back_to_sign_in": "← Retour à la connexion"
+      "back_to_sign_in": "← Retour à la connexion",
+      "success_title": "Vérifiez votre e-mail",
+      "success_message": "Un lien de réinitialisation a été envoyé à votre e-mail. Veuillez vérifier votre boîte de réception.",
+      "error_generic": "Une erreur est survenue. Veuillez réessayer."
+    },
+    "reset": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Saisissez votre nouveau mot de passe ci-dessous.",
+      "password_label": "Nouveau mot de passe",
+      "password_min_length": "Le mot de passe doit comporter au moins 10 caractères.",
+      "confirm_password_label": "Confirmer le nouveau mot de passe",
+      "passwords_must_match": "Les mots de passe ne correspondent pas.",
+      "submit": "Réinitialiser le mot de passe",
+      "back_to_sign_in": "← Retour à la connexion",
+      "no_token": "Le jeton de réinitialisation est manquant ou expiré. Veuillez demander un nouveau lien.",
+      "success_title": "Mot de passe réinitialisé avec succès",
+      "success_message": "Votre mot de passe a été réinitialisé. Redirection vers la connexion...",
+      "error_generic": "Une erreur est survenue. Veuillez réessayer."
     }
   },
   "error_pages": {

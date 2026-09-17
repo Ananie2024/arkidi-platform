@@ -1,9 +1,11 @@
 """
 Sacraments Module FastAPI Endpoints
 """
+import io
 import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_current_user_payload, require_roles
 from app.models.enums import UserRole
@@ -173,6 +175,31 @@ async def issue_certificate(
     cert = await service.issue_certificate(req, issued_by_user_id=issuer_id)
     return ApiResponse.ok(data=cert, message="success.certificate_generated")
 
+@router.get("/certificates/{certificate_id}/pdf")
+async def download_certificate_pdf(
+    certificate_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
+):
+    """Stream the official printable PDF certificate for a given issuance."""
+    service = SacramentsService(db)
+    pdf_bytes, filename = await service.get_certificate_pdf(certificate_id)
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/certificates/verify/{verification_token}", response_model=ApiResponse[CertificateResponse])
+async def verify_certificate(
+    verification_token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public QR verification for an issued sacramental certificate."""
+    service = SacramentsService(db)
+    data = await service.verify_certificate(verification_token)
+    return ApiResponse.ok(data=data, message="success.certificate_verified")
 
 # ---------------------------------------------------------------------------
 # Sacramental Amendment Workflow Endpoints

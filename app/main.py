@@ -2,18 +2,20 @@
 Archdiocese of Kigali Digital Archive, Parish Management & Statistical System
 """
 import os
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 
 from app.api.v1.router import api_v1_router
 from app.config import settings
 from app.core.database import AsyncSessionLocal
 from app.core.exceptions import setup_exception_handlers
+from app.core.limiter import limiter
 from app.core.logging import setup_logging
 from app.core.middleware import LanguageMiddleware, RequestLoggingMiddleware
 from app.core.redis import health_probe as redis_health_probe
@@ -49,6 +51,7 @@ async def _db_health() -> str:
 
 def create_application() -> FastAPI:
     """Factory to instantiate and configure the FastAPI application."""
+    is_prod = settings.ENVIRONMENT.lower() == "production"
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
@@ -56,11 +59,14 @@ def create_application() -> FastAPI:
             "Enterprise modular monolith backend for the Archdiocese of Kigali "
             "(Parish Management, Sacraments, Land Intelligence GIS & Digital Archive)."
         ),
-        docs_url="/docs",
-        redoc="/redoc",
-        openapi_url="/openapi.json",
+        docs_url=None if is_prod else "/docs",
+        redoc_url=None if is_prod else "/redoc",
+        openapi_url=None if is_prod else "/openapi.json",
         lifespan=lifespan,
     )
+
+    # Attach rate limiter to app state for slowapi
+    app.state.limiter = limiter
 
     # --------------------------------------------------------------------------
     # Middleware
@@ -75,6 +81,7 @@ def create_application() -> FastAPI:
     )
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(LanguageMiddleware)
+    app.add_middleware(SlowAPIMiddleware)
 
     # --------------------------------------------------------------------------
     # Exception Handlers

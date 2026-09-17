@@ -7,7 +7,12 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import EntityNotFoundException, ValidationException
+from app.core.exceptions import (
+    EntityNotFoundException,
+    ValidationException,
+    CertificateInvalidException,
+)
+from app.config import settings
 from app.repositories.sacrament import SacramentsRepository
 from app.schemas.sacrament import (
     BaptismCreate,
@@ -34,7 +39,20 @@ from app.schemas.sacrament import (
 )
 from app.models.sacrament import CertificateIssue, SacramentType, AmendmentStatus
 from app.models.audit_log import AuditLog
-from app.utils.qr import generate_qr_code_base64
+from app.utils.qr import generate_qr_code_base64, generate_qr_code_bytes
+from app.utils.pdf import generate_certificate_pdf
+
+
+SACRAMENT_DISPLAY_NAMES = {
+    SacramentType.BAPTISM: "Certificate of Baptism",
+    SacramentType.FIRST_COMMUNION: "Certificate of First Communion",
+    SacramentType.CONFIRMATION: "Certificate of Confirmation",
+    SacramentType.MATRIMONY: "Certificate of Canonical Marriage",
+    SacramentType.HOLY_ORDERS: "Certificate of Holy Orders",
+    SacramentType.RELIGIOUS_PROFESSION: "Certificate of Religious Profession",
+    SacramentType.ANOINTING_OF_THE_SICK: "Certificate of the Anointing of the Sick",
+    SacramentType.CHRISTIAN_FUNERAL: "Certificate of Christian Burial",
+}
 
 
 class SacramentsService:
@@ -113,6 +131,53 @@ class SacramentsService:
             verification_token=saved.verification_token,
             qr_code_base64=generate_qr_code_base64(verification_url),
             created_at=saved.created_at,
+        )
+
+    async def get_certificate_pdf(self, certificate_id: uuid.UUID) -> tuple[bytes, str]:
+        """Render a printable PDF for an issued certificate and return (bytes, filename)."""
+        issue = await self.repo.get_certificate_by_id(certificate_id)
+        if not issue:
+            raise EntityNotFoundException("errors.certificate_not_found")
+
+        faithful = await self.repo.get_faithful_by_id(issue.faithful_id)
+        parish = await self.repo.get_parish_by_id(issue.parish_id)
+
+        if faithful:
+            recipient = f"{faithful.first_name} {faithful.last_name} ({faithful.christian_name})"
+        else:
+            recipient = "Registered Faithful"
+
+        details = {
+            "Sacrament": issue.sacrament_type.value.replace("_", " ").title(),
+            "Parish": parish.name if parish else "",
+        }
+        title = SACRAMENT_DISPLAY_NAMES.get(issue.sacrament_type, "Sacramental Certificate")
+        pdf = generate_certificate_pdf(
+            title=title,
+            recipient=recipient,
+            details=details,
+            issued_at=issue.created_at,
+            issued_by=settings.APP_NAME,
+            certificate_number=issue.certificate_number,
+            qr_image_bytes=generate_qr_code_bytes(issue.qr_code_payload),
+            verification_url=issue.qr_code_payload,
+        )
+        return pdf, f"{issue.certificate_number}.pdf"
+
+    async def verify_certificate(self, token: str) -> CertificateResponse:
+        """Validate a certificate's verification token (public QR verification)."""
+        issue = await self.repo.get_certificate_by_token(token)
+        if not issue:
+            raise CertificateInvalidException()
+        return CertificateResponse(
+            id=issue.id,
+            certificate_number=issue.certificate_number,
+            sacrament_type=issue.sacrament_type,
+            faithful_id=issue.faithful_id,
+            parish_id=issue.parish_id,
+            verification_token=issue.verification_token,
+            qr_code_base64=generate_qr_code_base64(issue.qr_code_payload),
+            created_at=issue.created_at,
         )
 
     # -----------------------------------------------------------------------

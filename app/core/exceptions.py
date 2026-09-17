@@ -8,6 +8,7 @@ detected by ``LanguageMiddleware`` (``Accept-Language`` header or ``?lang=``).
 from typing import Any, Dict, Optional
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 
 from app.utils.i18n import get_translation, is_translation_key
 
@@ -171,6 +172,16 @@ class UserNotFoundException(ArkidiBaseException):
         )
 
 
+class InvalidResetTokenException(ArkidiBaseException):
+    """Raised when a password-reset token is invalid, expired, or already consumed."""
+    def __init__(self, message: str = "The password reset link is invalid or has expired."):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message_key="errors.invalid_reset_token",
+        )
+
+
 class FaithfulNotFoundException(ArkidiBaseException):
     """Raised when a faithful record is not found."""
     def __init__(self, identifier: Any):
@@ -248,6 +259,71 @@ class DuplicateUPIException(ArkidiBaseException):
         )
 
 
+class DuplicateDocumentException(ArkidiBaseException):
+    """Raised when the same document content is already archived.
+
+    The archive is content-addressed: identical bytes (same SHA-256 checksum)
+    must never be registered twice, so re-uploading the same file is rejected.
+    """
+    def __init__(self, checksum: str):
+        super().__init__(
+            message=f"A document with checksum '{checksum}' is already archived.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={"checksum": str(checksum), "type": "duplicate_document"},
+            message_key="errors.document_duplicate",
+            message_params={"checksum": str(checksum)},
+        )
+
+
+class DuplicateLedgerBookException(ArkidiBaseException):
+    """Raised when a physical canonical ledger book already exists for a parish.
+
+    A ledger book is uniquely identified by (parish, sacrament type, volume).
+    """
+    def __init__(self, parish_id, sacrament_type, volume_number: str):
+        super().__init__(
+            message=(
+                f"A ledger book for parish '{parish_id}', sacrament "
+                f"'{sacrament_type}' and volume '{volume_number}' already exists."
+            ),
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "parish_id": str(parish_id),
+                "sacrament_type": str(sacrament_type),
+                "volume_number": str(volume_number),
+                "type": "duplicate_ledger_book",
+            },
+            message_key="errors.ledger_book_duplicate",
+            message_params={
+                "parish_id": str(parish_id),
+                "sacrament_type": str(sacrament_type),
+                "volume_number": str(volume_number),
+            },
+        )
+
+
+class DuplicateScannedPageException(ArkidiBaseException):
+    """Raised when a page of a ledger book is scanned more than once."""
+    def __init__(self, ledger_book_id, page_number: int):
+        super().__init__(
+            message=(
+                f"Page '{page_number}' is already scanned for ledger book "
+                f"'{ledger_book_id}'."
+            ),
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "ledger_book_id": str(ledger_book_id),
+                "page_number": int(page_number),
+                "type": "duplicate_scanned_page",
+            },
+            message_key="errors.scanned_page_duplicate",
+            message_params={
+                "ledger_book_id": str(ledger_book_id),
+                "page_number": int(page_number),
+            },
+        )
+
+
 class SacramentRecordNotFoundException(ArkidiBaseException):
     """Raised when a sacrament registry record is not found."""
     def __init__(self, message: str = "Sacrament registry record was not found."):
@@ -312,6 +388,28 @@ class IndicatorScopeRequiredException(ArkidiBaseException):
         )
 
 
+class GoogleAuthException(ArkidiBaseException):
+    """Raised when Google OAuth verification fails."""
+    def __init__(self, message: str = "Google authentication failed.", *, message_key: str | None = None):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message_key=message_key or "errors.google_auth_failed",
+        )
+
+
+class GoogleAccountNotLinkedException(ArkidiBaseException):
+    """Raised when a Google user has no associated account in the system."""
+    def __init__(self, email: str):
+        super().__init__(
+            message=f"No system account found for Google email '{email}'. Please contact your administrator.",
+            status_code=status.HTTP_403_FORBIDDEN,
+            details={"email": email},
+            message_key="errors.google_account_not_registered",
+            message_params={"email": email},
+        )
+
+
 def _request_language(request: Request) -> Optional[str]:
     """Language detected by ``LanguageMiddleware`` (falls back to the context var)."""
     lang = getattr(request.state, "lang", None)
@@ -353,6 +451,23 @@ def setup_exception_handlers(app: FastAPI) -> None:
                     "message": message,
                     "type": "HTTPException",
                     "details": {},
+                    "language": lang,
+                },
+            },
+        )
+
+    @app.exception_handler(RateLimitExceeded)
+    async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+        lang = _request_language(request)
+        message = get_translation("errors.rate_limit_exceeded", default=f"Rate limit exceeded: {exc.detail}", lang=lang)
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={
+                "success": False,
+                "error": {
+                    "message": message,
+                    "type": "RateLimitExceeded",
+                    "details": {"detail": str(exc.detail)},
                     "language": lang,
                 },
             },

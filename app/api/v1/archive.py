@@ -2,13 +2,18 @@
 Archive Module FastAPI Endpoints — Canonical Ledger Books & Scanned Pages
 """
 import uuid
-from typing import List
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
-from app.schemas.document import ArchiveLedgerBookCreate, ArchiveLedgerBookResponse, ScannedPageCreate, ScannedPageResponse
+from app.schemas.document import (
+    ArchiveLedgerBookCreate,
+    ArchiveLedgerBookResponse,
+    ScannedPageCreate,
+    ScannedPageResponse,
+)
 from app.services.document import ArchiveService
 from app.utils.response import ApiResponse
 
@@ -39,7 +44,7 @@ async def create_book(
     return ApiResponse.ok(data=await service.create_book(data), message="success.ledger_book_created")
 
 
-@router.get("/books/{book_id}/pages", response_model=ApiResponse[List[ScannedPageResponse]])
+@router.get("/books/{book_id}/pages", response_model=ApiResponse[list[ScannedPageResponse]])
 async def list_pages(
     book_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),

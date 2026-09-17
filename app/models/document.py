@@ -8,11 +8,22 @@ Also hosts the historical sacramental ledger books and scanned page archive.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Integer, Text, Enum as SQLEnum, ForeignKey, CheckConstraint, DateTime
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.sacrament import SacramentType
 
 
@@ -42,6 +53,15 @@ class Document(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
             "disposition_status IS NULL OR disposition_status IN "
             "('ACTIVE', 'DUE_FOR_REVIEW', 'DISPOSED', 'PRESERVE_INDEFINITELY')",
             name="ck_documents_disposition_status",
+        ),
+        # Archive integrity: the same byte content may only ever be registered
+        # once. Soft-deleted rows are excluded so re-archiving after a deletion
+        # stays possible (the unique key applies to the active document set).
+        Index(
+            "uq_documents_checksum_active",
+            "checksum_sha256",
+            unique=True,
+            postgresql_where=text("checksum_sha256 IS NOT NULL AND is_deleted = false"),
         ),
     )
 
@@ -89,6 +109,20 @@ class ArchiveLedgerBook(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMix
     """Physical Historical Registry Book."""
     __tablename__ = "archive_ledger_books"
 
+    __table_args__ = (
+        # A physical canonical ledger book is uniquely identified by its parish,
+        # sacrament type and volume number. Soft-deleted rows are excluded so
+        # a book can be re-registered after an archival cleanup.
+        Index(
+            "uq_ledger_book_parish_volume",
+            "parish_id",
+            "sacrament_type",
+            "volume_number",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+    )
+
     parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
     sacrament_type: Mapped[SacramentType] = mapped_column(
         SQLEnum(SacramentType, name="sacrament_type_archive_enum"),
@@ -105,6 +139,11 @@ class ArchiveLedgerBook(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMix
 class ScannedPage(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Individual Digitized Scan of a Canonical Ledger Page."""
     __tablename__ = "archive_scanned_pages"
+
+    __table_args__ = (
+        # Each page of a given ledger book may be scanned exactly once.
+        UniqueConstraint("ledger_book_id", "page_number", name="uq_scanned_page_book_page"),
+    )
 
     ledger_book_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("archive_ledger_books.id"), nullable=False
