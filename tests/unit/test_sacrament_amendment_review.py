@@ -8,6 +8,7 @@ marginal annotation, write an audit-log entry, and advance the amendment
 state — exactly once. These tests drive the service against the live schema
 with a rolled-back transaction (same pattern as tests/unit/test_indicators.py).
 """
+
 import uuid
 from datetime import date
 
@@ -99,7 +100,9 @@ async def amendment_org():
             await db.rollback()
 
 
-def _approve_request(review_notes: str = "Verified against diocesan archives") -> AmendmentReviewRequest:
+def _approve_request(
+    review_notes: str = "Verified against diocesan archives",
+) -> AmendmentReviewRequest:
     return AmendmentReviewRequest(action="APPROVE", review_notes=review_notes)
 
 

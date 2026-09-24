@@ -2,51 +2,52 @@
 Arkidi Models Package — all ORM models are imported here so that
 Alembic autogenerate and the application registry can discover them.
 """
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
-from app.models.enums import UserRole, ROLE_HIERARCHY, has_role
-from app.models.user import User
-from app.models.audit_log import AuditLog
+
 from app.models.appointment import Appointment, AppointmentRole, AppointmentStatus
-from app.models.deanery import Archdiocese, Deanery
-from app.models.parish import Parish, Centrale, SmallChristianCommunity
-from app.models.council import Council, CouncilType
+from app.models.audit_log import AuditLog
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.commission import Commission, CommissionCategory
-from app.models.meeting import Meeting
-from app.models.meeting_minute import MeetingMinute
-from app.models.document import Document, ArchiveLedgerBook, ScannedPage
+from app.models.council import Council, CouncilType
+from app.models.deanery import Archdiocese, Deanery
+from app.models.document import ArchiveLedgerBook, Document, ScannedPage
 from app.models.document_type import DocumentType
-from app.models.physical_location import PhysicalLocation
-from app.models.qr_code_registry import QrCodeRegistry, QrCodePurpose
-from app.models.storage_cabinet import StorageCabinet
-from app.models.parcel import LandParcel, LandDocument, BuildingAsset, LandUseType, TenureStatus
-from app.models.parcel_ownership_history import ParcelOwnershipHistory
+from app.models.donation import Donation, DonationType, PaymentMethod
+from app.models.enums import ROLE_HIERARCHY, UserRole, has_role
+from app.models.event import Event, EventType
+from app.models.faithful import CanonicalStatus, Faithful, Family, FamilyRole, Gender
+from app.models.intention import IntentionType, MassIntention
+from app.models.land_use_category import LandUseCategory
 from app.models.lease_agreement import LeaseAgreement
 from app.models.lease_payment_schedule import LeasePaymentSchedule
-from app.models.tax_record import TaxRecord
-from app.models.tax_payment import TaxPayment
-from app.models.land_use_category import LandUseCategory
-from app.models.faithful import Faithful, Family, Gender, CanonicalStatus, FamilyRole
-from app.models.priest import Priest, ClergyAssignment, ClergyType, ClergyStatus
-from app.models.ministry import Ministry, MinistryCategory
 from app.models.mass import MassSchedule
-from app.models.intention import MassIntention, IntentionType
-from app.models.donation import Donation, DonationType, PaymentMethod
-from app.models.event import Event, EventType
-from app.models.survey import Survey, SurveyResponse, AnnualParishStatistic
+from app.models.meeting import Meeting
+from app.models.meeting_minute import MeetingMinute
+from app.models.ministry import Ministry, MinistryCategory
+from app.models.parcel import BuildingAsset, LandDocument, LandParcel, LandUseType, TenureStatus
+from app.models.parcel_ownership_history import ParcelOwnershipHistory
+from app.models.parish import Centrale, Parish, SmallChristianCommunity
+from app.models.physical_location import PhysicalLocation
+from app.models.priest import ClergyAssignment, ClergyStatus, ClergyType, Priest
+from app.models.qr_code_registry import QrCodePurpose, QrCodeRegistry
 from app.models.sacrament import (
-    SacramentType,
+    AnointingOfTheSickRecord,
     BaptismRecord,
+    CertificateIssue,
+    ChristianFuneralRecord,
     ConfirmationRecord,
-    MatrimonyRecord,
     FirstCommunionRecord,
-    HolyOrdersRecord,
     HolyOrdersOrderType,
+    HolyOrdersRecord,
+    MatrimonyRecord,
     ReligiousProfessionRecord,
     ReligiousProfessionType,
-    AnointingOfTheSickRecord,
-    ChristianFuneralRecord,
-    CertificateIssue,
+    SacramentType,
 )
+from app.models.storage_cabinet import StorageCabinet
+from app.models.survey import AnnualParishStatistic, Survey, SurveyResponse
+from app.models.tax_payment import TaxPayment
+from app.models.tax_record import TaxRecord
+from app.models.user import User
 
 __all__ = [
     "Base",

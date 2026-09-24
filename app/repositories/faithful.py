@@ -1,35 +1,39 @@
 """
 Faithful Module Database Repository
 """
+
 import uuid
-from typing import List, Optional, Tuple
-from sqlalchemy import select, func, or_
+
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.faithful import Faithful, Family
-from app.schemas.faithful import FaithfulCreate, FaithfulUpdate, FamilyCreate
+from app.schemas.faithful import FaithfulCreate, FamilyCreate
 
 
 class FaithfulRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_by_id(self, faithful_id: uuid.UUID) -> Optional[Faithful]:
+    async def get_by_id(self, faithful_id: uuid.UUID) -> Faithful | None:
         stmt = select(Faithful).where(Faithful.id == faithful_id, Faithful.is_deleted.is_(False))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_registration_number(self, reg_num: str) -> Optional[Faithful]:
-        stmt = select(Faithful).where(Faithful.registration_number == reg_num, Faithful.is_deleted.is_(False))
+    async def get_by_registration_number(self, reg_num: str) -> Faithful | None:
+        stmt = select(Faithful).where(
+            Faithful.registration_number == reg_num, Faithful.is_deleted.is_(False)
+        )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
     async def list_faithful(
         self,
-        parish_id: Optional[uuid.UUID] = None,
-        search: Optional[str] = None,
+        parish_id: uuid.UUID | None = None,
+        search: str | None = None,
         skip: int = 0,
         limit: int = 20,
-    ) -> Tuple[List[Faithful], int]:
+    ) -> tuple[list[Faithful], int]:
         stmt = select(Faithful).where(Faithful.is_deleted.is_(False))
         count_stmt = select(func.count(Faithful.id)).where(Faithful.is_deleted.is_(False))
 

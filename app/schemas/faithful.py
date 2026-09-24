@@ -1,11 +1,13 @@
 """
 Faithful Module Pydantic v2 Schemas
 """
+
 import uuid
 from datetime import date, datetime
-from typing import Optional
+
 from pydantic import BaseModel, ConfigDict
-from app.models.faithful import Gender, CanonicalStatus, FamilyRole
+
+from app.models.faithful import CanonicalStatus, FamilyRole, Gender
 
 
 class FaithfulBase(BaseModel):
@@ -14,35 +16,35 @@ class FaithfulBase(BaseModel):
     last_name: str
     christian_name: str
     gender: Gender
-    date_of_birth: Optional[date] = None
-    place_of_birth: Optional[str] = None
-    father_name: Optional[str] = None
-    mother_name: Optional[str] = None
-    national_id: Optional[str] = None
-    phone_number: Optional[str] = None
-    email: Optional[str] = None
-    occupation: Optional[str] = None
+    date_of_birth: date | None = None
+    place_of_birth: str | None = None
+    father_name: str | None = None
+    mother_name: str | None = None
+    national_id: str | None = None
+    phone_number: str | None = None
+    email: str | None = None
+    occupation: str | None = None
     canonical_status: CanonicalStatus = CanonicalStatus.BAPTIZED
     family_role: FamilyRole = FamilyRole.HEAD
 
 
 class FaithfulCreate(FaithfulBase):
     parish_id: uuid.UUID
-    family_id: Optional[uuid.UUID] = None
-    scc_id: Optional[uuid.UUID] = None
+    family_id: uuid.UUID | None = None
+    scc_id: uuid.UUID | None = None
 
 
 class FaithfulUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    christian_name: Optional[str] = None
-    phone_number: Optional[str] = None
-    email: Optional[str] = None
-    occupation: Optional[str] = None
-    canonical_status: Optional[CanonicalStatus] = None
-    family_id: Optional[uuid.UUID] = None
-    family_role: Optional[FamilyRole] = None
-    scc_id: Optional[uuid.UUID] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    christian_name: str | None = None
+    phone_number: str | None = None
+    email: str | None = None
+    occupation: str | None = None
+    canonical_status: CanonicalStatus | None = None
+    family_id: uuid.UUID | None = None
+    family_role: FamilyRole | None = None
+    scc_id: uuid.UUID | None = None
 
 
 class FaithfulResponse(FaithfulBase):
@@ -50,8 +52,8 @@ class FaithfulResponse(FaithfulBase):
 
     id: uuid.UUID
     parish_id: uuid.UUID
-    family_id: Optional[uuid.UUID] = None
-    scc_id: Optional[uuid.UUID] = None
+    family_id: uuid.UUID | None = None
+    scc_id: uuid.UUID | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -59,14 +61,14 @@ class FaithfulResponse(FaithfulBase):
 class FamilyBase(BaseModel):
     family_code: str
     family_name: str
-    residence_address: Optional[str] = None
-    phone: Optional[str] = None
+    residence_address: str | None = None
+    phone: str | None = None
 
 
 class FamilyCreate(FamilyBase):
     parish_id: uuid.UUID
-    centrale_id: Optional[uuid.UUID] = None
-    scc_id: Optional[uuid.UUID] = None
+    centrale_id: uuid.UUID | None = None
+    scc_id: uuid.UUID | None = None
 
 
 class FamilyResponse(FamilyBase):
@@ -74,6 +76,6 @@ class FamilyResponse(FamilyBase):
 
     id: uuid.UUID
     parish_id: uuid.UUID
-    centrale_id: Optional[uuid.UUID] = None
-    scc_id: Optional[uuid.UUID] = None
+    centrale_id: uuid.UUID | None = None
+    scc_id: uuid.UUID | None = None
     created_at: datetime

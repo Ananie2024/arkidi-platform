@@ -4,6 +4,7 @@ Statistics Module Business Logic Service
 The Annuario Pontificio report is composed from configuration-driven
 indicator computations (ADR 002) — no hand-written aggregation SQL.
 """
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.survey import StatisticsRepository

@@ -6,6 +6,7 @@ to the file store for batch/offline workflows.
 The synchronous Celery task wraps an async coroutine (mirroring the reports
 task pattern) because the app's SQLAlchemy engine is asynchronous.
 """
+
 import asyncio
 import logging
 import os
@@ -47,7 +48,9 @@ async def render_certificate_batch(certificate_ids: list[str]) -> dict:
                 parish = await repo.get_parish_by_id(issue.parish_id)
 
                 if faithful:
-                    recipient = f"{faithful.first_name} {faithful.last_name} ({faithful.christian_name})"
+                    recipient = (
+                        f"{faithful.first_name} {faithful.last_name} ({faithful.christian_name})"
+                    )
                 else:
                     recipient = "Registered Faithful"
 

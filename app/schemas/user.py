@@ -1,10 +1,12 @@
 """
 Auth Module Pydantic v2 Schemas
 """
+
 import uuid
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
+
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+
 from app.models.enums import UserRole
 
 
@@ -22,16 +24,19 @@ class TokenResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     """Request body for the public refresh-token rotation endpoint."""
+
     refresh_token: str
 
 
 class ForgotPasswordRequest(BaseModel):
     """Request body for requesting a password-reset link (public endpoint)."""
+
     email: EmailStr
 
 
 class ResetPasswordRequest(BaseModel):
     """Request body for consuming a one-time password-reset token."""
+
     token: str
     new_password: str
 
@@ -45,14 +50,16 @@ class ResetPasswordRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     """Request body for Google OAuth authentication (code exchange or ID token verification)."""
-    code: Optional[str] = None
-    credential: Optional[str] = None
-    redirect_uri: Optional[str] = None
-    state: Optional[str] = None
+
+    code: str | None = None
+    credential: str | None = None
+    redirect_uri: str | None = None
+    state: str | None = None
 
 
 class GoogleAuthUrlResponse(BaseModel):
     """Response containing the Google OAuth authorization URL."""
+
     url: str
     state: str
 
@@ -61,10 +68,10 @@ class UserBase(BaseModel):
     email: EmailStr
     username: str
     full_name: str
-    phone_number: Optional[str] = None
+    phone_number: str | None = None
     role: UserRole = UserRole.PARISH_SECRETARY
-    parish_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
+    parish_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
     is_active: bool = True
 
 
@@ -73,13 +80,13 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    full_name: Optional[str] = None
-    phone_number: Optional[str] = None
-    role: Optional[UserRole] = None
-    is_active: Optional[bool] = None
-    parish_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
+    email: EmailStr | None = None
+    full_name: str | None = None
+    phone_number: str | None = None
+    role: UserRole | None = None
+    is_active: bool | None = None
+    parish_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
 
 
 class UserResponse(UserBase):
@@ -88,4 +95,4 @@ class UserResponse(UserBase):
     id: uuid.UUID
     created_at: datetime
     updated_at: datetime
-    last_login_at: Optional[datetime] = None
+    last_login_at: datetime | None = None

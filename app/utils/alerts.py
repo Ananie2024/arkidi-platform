@@ -16,12 +16,12 @@ When SMTP is not configured (no ``SMTP_SERVER``), alerts are logged as a
 warning instead of being sent, so the tasks never crash purely because
 e-mail is unconfigured in a dev environment.
 """
+
 import logging
 import os
 import smtplib
 import ssl
 from email.message import EmailMessage
-from typing import Optional
 
 from app.config import settings
 
@@ -43,11 +43,23 @@ def _smtp_configured() -> bool:
     return bool(settings.SMTP_SERVER)
 
 
+def _smtp_server() -> str:
+    """Return the configured SMTP host as a non-optional ``str``.
+
+    Callers reach this only after ``_smtp_configured()`` returned true, so the
+    assertion never fires in practice — it exists purely to narrow the
+    ``str | None`` from settings for the type checker.
+    """
+    server = settings.SMTP_SERVER
+    assert server is not None, "SMTP_SERVER must be configured before sending"
+    return server
+
+
 def send_alert(
     subject: str,
     body: str,
-    recipients: Optional[list[str]] = None,
-    html_body: Optional[str] = None,
+    recipients: list[str] | None = None,
+    html_body: str | None = None,
 ) -> bool:
     """Send an alert e-mail.
 
@@ -85,7 +97,7 @@ def send_alert(
     try:
         ctx = ssl.create_default_context() if settings.SMTP_USE_TLS else None
         if settings.SMTP_PORT in (465, 587) or settings.SMTP_USE_TLS:
-            server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT, timeout=30)
+            server = smtplib.SMTP(_smtp_server(), settings.SMTP_PORT, timeout=30)
             if settings.SMTP_USE_TLS:
                 server.starttls(context=ctx)
             if settings.SMTP_USER and settings.SMTP_PASSWORD:
@@ -93,7 +105,7 @@ def send_alert(
             server.send_message(msg)
             server.quit()
         else:
-            server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT, timeout=30)
+            server = smtplib.SMTP(_smtp_server(), settings.SMTP_PORT, timeout=30)
             if settings.SMTP_USER and settings.SMTP_PASSWORD:
                 server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
             server.send_message(msg)
@@ -103,11 +115,13 @@ def send_alert(
     except Exception as exc:  # noqa: BLE001 — alerts must never crash the task
         logger.error("Failed to send alert e-mail '%s': %s", subject, exc)
         return False
+
+
 def send_email_message(
     to: str,
     subject: str,
     body: str,
-    html_body: Optional[str] = None,
+    html_body: str | None = None,
 ) -> bool:
     """Send a transactional e-mail to a single recipient (e.g. password reset).
 
@@ -138,7 +152,7 @@ def send_email_message(
         msg.add_alternative(html_body, subtype="html")
 
     try:
-        server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT, timeout=30)
+        server = smtplib.SMTP(_smtp_server(), settings.SMTP_PORT, timeout=30)
         if settings.SMTP_USE_TLS:
             ctx = ssl.create_default_context()
             server.starttls(context=ctx)

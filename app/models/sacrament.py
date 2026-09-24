@@ -2,14 +2,17 @@
 Sacraments Module SQLAlchemy Models
 Official Catholic Sacramental Registers and Canonical Records
 """
+
 import uuid
 from datetime import date, datetime
 from enum import Enum
-from sqlalchemy import String, Date, DateTime, Text, Enum as SQLEnum, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+
+from sqlalchemy import Date, DateTime, ForeignKey, String, Text
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class SacramentType(str, Enum):
@@ -40,10 +43,15 @@ class AmendmentType(str, Enum):
 
 class BaptismRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Canonical Baptism Register (Registre des Baptêmes)."""
+
     __tablename__ = "baptism_records"
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
-    faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
+    faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
 
     # Canonical registry reference
     registry_year: Mapped[int] = mapped_column(nullable=False)
@@ -63,10 +71,15 @@ class BaptismRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
 class ConfirmationRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Canonical Confirmation Register (Registre des Confirmations)."""
+
     __tablename__ = "confirmation_records"
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
-    faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
+    faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
 
     registry_year: Mapped[int] = mapped_column(nullable=False)
     volume_number: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -80,11 +93,18 @@ class ConfirmationRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMi
 
 class MatrimonyRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Canonical Marriage Register (Registre des Mariages)."""
+
     __tablename__ = "matrimony_records"
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
-    groom_faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
-    bride_faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
+    groom_faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
+    bride_faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
 
     registry_year: Mapped[int] = mapped_column(nullable=False)
     volume_number: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -102,10 +122,15 @@ class MatrimonyRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin
 
 class FirstCommunionRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Canonical First Communion Register (Registre des Premières Communions)."""
+
     __tablename__ = "first_communion_records"
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
-    faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
+    faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
 
     registry_year: Mapped[int] = mapped_column(nullable=False)
     volume_number: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -127,10 +152,15 @@ class HolyOrdersOrderType(str, Enum):
 
 class HolyOrdersRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Canonical Holy Orders Register (Registre des Ordinations)."""
+
     __tablename__ = "holy_orders_records"
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
-    ordained_faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
+    ordained_faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
 
     register_book: Mapped[str] = mapped_column(String(20), default="Ordinations", nullable=False)
     page_number: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -154,12 +184,19 @@ class ReligiousProfessionType(str, Enum):
 
 class ReligiousProfessionRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Canonical Religious Profession Register (Registre des Professions Religieuses)."""
+
     __tablename__ = "religious_profession_records"
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
-    professed_faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
+    professed_faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
 
-    register_book: Mapped[str] = mapped_column(String(20), default="Religious Professions", nullable=False)
+    register_book: Mapped[str] = mapped_column(
+        String(20), default="Religious Professions", nullable=False
+    )
     page_number: Mapped[str] = mapped_column(String(20), nullable=False)
     act_number: Mapped[str] = mapped_column(String(50), nullable=False)
 
@@ -175,10 +212,15 @@ class ReligiousProfessionRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftD
 
 class AnointingOfTheSickRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Pastoral Register for the Anointing of the Sick (Registre des Onctions)."""
+
     __tablename__ = "anointing_of_the_sick_records"
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
-    faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
+    faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
 
     anointing_date: Mapped[date] = mapped_column(Date, nullable=False)
     minister_name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -188,10 +230,15 @@ class AnointingOfTheSickRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDe
 
 class ChristianFuneralRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Canonical Register of Christian Funerals & Burials (Registre des Sépultures)."""
+
     __tablename__ = "christian_funeral_records"
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
-    deceased_faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
+    deceased_faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
 
     date_of_death: Mapped[date] = mapped_column(Date, nullable=False)
     funeral_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -203,15 +250,22 @@ class ChristianFuneralRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDele
 
 class CertificateIssue(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Issued Sacramental Certificates with QR verification codes."""
+
     __tablename__ = "certificate_issues"
 
-    certificate_number: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    certificate_number: Mapped[str] = mapped_column(
+        String(50), unique=True, index=True, nullable=False
+    )
     sacrament_type: Mapped[SacramentType] = mapped_column(
         SQLEnum(SacramentType, name="sacrament_type_enum"),
         nullable=False,
     )
-    faithful_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False)
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
+    faithful_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False
+    )
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
     issued_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
 
     verification_token: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
@@ -220,6 +274,7 @@ class CertificateIssue(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
 class SacramentalAmendment(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Audited, structured canonical correction / amendment for sacramental registers."""
+
     __tablename__ = "sacramental_amendments"
 
     sacrament_type: Mapped[SacramentType] = mapped_column(
@@ -233,8 +288,12 @@ class SacramentalAmendment(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDelete
         nullable=False,
     )
     reason: Mapped[str] = mapped_column(Text, nullable=False)
-    field_changes: Mapped[dict] = mapped_column(JSONB, nullable=False)  # e.g. {"minister_name": {"old": "Père A", "new": "Père B"}}
-    supporting_document_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    field_changes: Mapped[dict] = mapped_column(
+        JSONB, nullable=False
+    )  # e.g. {"minister_name": {"old": "Père A", "new": "Père B"}}
+    supporting_document_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
 
     status: Mapped[AmendmentStatus] = mapped_column(
         SQLEnum(AmendmentStatus, name="amendment_status_enum"),
@@ -242,8 +301,9 @@ class SacramentalAmendment(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDelete
         nullable=False,
     )
 
-    requested_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    requested_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
     reviewed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     review_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-

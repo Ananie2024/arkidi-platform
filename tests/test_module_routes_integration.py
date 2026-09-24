@@ -10,6 +10,7 @@
 
 Needs live Postgres + Redis, same as the other integration tests.
 """
+
 import uuid
 
 import pytest
@@ -118,6 +119,7 @@ async def geo_setup():
 # 1. Governance API — update/delete, 404s, role enforcement
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_governance_update_delete_and_404s(client: AsyncClient, auth_users, geo_setup):
     _, _, par_id = geo_setup
@@ -136,7 +138,11 @@ async def test_governance_update_delete_and_404s(client: AsyncClient, auth_users
 
     council = await client.post(
         "/api/v1/governance/councils",
-        json={"name": "Conseil Pastoral Paroissial", "council_type": "PARISH_PASTORAL", "parish_id": str(par_id)},
+        json={
+            "name": "Conseil Pastoral Paroissial",
+            "council_type": "PARISH_PASTORAL",
+            "parish_id": str(par_id),
+        },
         headers=priest_headers,
     )
     assert council.status_code == 201, council.text
@@ -198,7 +204,9 @@ async def test_governance_update_delete_and_404s(client: AsyncClient, auth_users
         assert upd_minute.json()["data"]["content"] == "Final approved decisions."
 
         # Single reads work for the auditor.
-        got_minute = await client.get(f"/api/v1/governance/minutes/{minute_id}", headers=auditor_headers)
+        got_minute = await client.get(
+            f"/api/v1/governance/minutes/{minute_id}", headers=auditor_headers
+        )
         assert got_minute.status_code == 200, got_minute.text
 
         # --- 404s ---------------------------------------------------------
@@ -212,13 +220,21 @@ async def test_governance_update_delete_and_404s(client: AsyncClient, auth_users
             assert resp.status_code == 404, f"{url}: {resp.text}"
     finally:
         # --- Deletes (drive the soft-delete paths) ------------------------
-        del_minute = await client.delete(f"/api/v1/governance/minutes/{minute_id}", headers=secretary_headers)
+        del_minute = await client.delete(
+            f"/api/v1/governance/minutes/{minute_id}", headers=secretary_headers
+        )
         assert del_minute.status_code == 200, del_minute.text
-        del_meeting = await client.delete(f"/api/v1/governance/meetings/{meeting_id}", headers=secretary_headers)
+        del_meeting = await client.delete(
+            f"/api/v1/governance/meetings/{meeting_id}", headers=secretary_headers
+        )
         assert del_meeting.status_code == 200, del_meeting.text
-        del_council = await client.delete(f"/api/v1/governance/councils/{council_id}", headers=priest_headers)
+        del_council = await client.delete(
+            f"/api/v1/governance/councils/{council_id}", headers=priest_headers
+        )
         assert del_council.status_code == 200, del_council.text
-        del_comm = await client.delete(f"/api/v1/governance/commissions/{comm_id}", headers=priest_headers)
+        del_comm = await client.delete(
+            f"/api/v1/governance/commissions/{comm_id}", headers=priest_headers
+        )
         assert del_comm.status_code == 200, del_comm.text
 
         # Deleted minute is no longer readable.
@@ -268,6 +284,7 @@ async def test_governance_role_enforcement(client: AsyncClient, auth_users, geo_
 # ---------------------------------------------------------------------------
 # 2. Finance API — donations, listing, typed summary
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_finance_donation_lifecycle_and_summary(client: AsyncClient, auth_users, geo_setup):
@@ -343,6 +360,7 @@ async def test_finance_donation_lifecycle_and_summary(client: AsyncClient, auth_
 # ---------------------------------------------------------------------------
 # 3. Liturgy API — mass schedules and intentions
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_liturgy_mass_schedules_and_intentions(client: AsyncClient, auth_users, geo_setup):
@@ -426,19 +444,27 @@ async def test_liturgy_mass_schedules_and_intentions(client: AsyncClient, auth_u
         assert int_list.status_code == 200, int_list.text
         assert any(row["id"] == intention_id for row in int_list.json()["data"])
 
-        got = await client.get(f"/api/v1/liturgy/intentions/{intention_id}", headers=auditor_headers)
+        got = await client.get(
+            f"/api/v1/liturgy/intentions/{intention_id}", headers=auditor_headers
+        )
         assert got.status_code == 200, got.text
         assert got.json()["data"]["requested_by_name"] == "Marie Uwase"
 
         # Unknown intention -> 404.
-        missing = await client.get(f"/api/v1/liturgy/intentions/{uuid.uuid4()}", headers=auditor_headers)
+        missing = await client.get(
+            f"/api/v1/liturgy/intentions/{uuid.uuid4()}", headers=auditor_headers
+        )
         assert missing.status_code == 404, missing.text
     finally:
         async with AsyncSessionLocal() as db:
             if intention_id:
-                await db.execute(delete(MassIntention).where(MassIntention.id == uuid.UUID(intention_id)))
+                await db.execute(
+                    delete(MassIntention).where(MassIntention.id == uuid.UUID(intention_id))
+                )
             if schedule_id:
-                await db.execute(delete(MassSchedule).where(MassSchedule.id == uuid.UUID(schedule_id)))
+                await db.execute(
+                    delete(MassSchedule).where(MassSchedule.id == uuid.UUID(schedule_id))
+                )
             await db.commit()
 
 
@@ -446,14 +472,19 @@ async def test_liturgy_mass_schedules_and_intentions(client: AsyncClient, auth_u
 # 4. Archives indicators end-to-end through the statistics API (ADR 002)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
-async def test_archive_indicator_documents_by_type_via_api(client: AsyncClient, auth_users, geo_setup):
+async def test_archive_indicator_documents_by_type_via_api(
+    client: AsyncClient, auth_users, geo_setup
+):
     arch_id, _dea_id, par_id = geo_setup
     auditor_headers = await auth_users(client, UserRole.READ_ONLY_AUDITOR)
 
     doc_type = DocumentType(
         code=f"DECREE-{uuid.uuid4().hex[:8]}",
-        name_en="Decree", name_fr="Décret", name_rw="Itegeko",
+        name_en="Decree",
+        name_fr="Décret",
+        name_rw="Itegeko",
     )
     doc_ids = []
     async with AsyncSessionLocal() as db:

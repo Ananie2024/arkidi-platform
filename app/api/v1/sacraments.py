@@ -1,42 +1,45 @@
 """
 Sacraments Module FastAPI Endpoints
 """
+
 import io
 import uuid
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.dependencies import get_db, get_current_user_payload, require_roles
+
+from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
 from app.models.sacrament import SacramentType
 from app.schemas.sacrament import (
+    AmendmentRequestCreate,
+    AmendmentReviewRequest,
+    AnointingOfTheSickCreate,
+    AnointingOfTheSickResponse,
     BaptismCreate,
     BaptismResponse,
+    CertificateRequest,
+    CertificateResponse,
+    ChristianFuneralCreate,
+    ChristianFuneralResponse,
     ConfirmationCreate,
     ConfirmationResponse,
-    MatrimonyCreate,
-    MatrimonyResponse,
     FirstCommunionCreate,
     FirstCommunionResponse,
     HolyOrdersCreate,
     HolyOrdersResponse,
+    MatrimonyCreate,
+    MatrimonyResponse,
     ReligiousProfessionCreate,
     ReligiousProfessionResponse,
-    AnointingOfTheSickCreate,
-    AnointingOfTheSickResponse,
-    ChristianFuneralCreate,
-    ChristianFuneralResponse,
-    CertificateRequest,
-    CertificateResponse,
-    AmendmentRequestCreate,
-    AmendmentReviewRequest,
     SacramentalAmendmentResponse,
 )
 from app.services.sacrament import SacramentsService
 from app.utils.response import ApiResponse
 
 router = APIRouter(prefix="/sacraments", tags=["Sacraments & Canonical Registers"])
+
 
 @router.get("/baptism", response_model=ApiResponse[list[BaptismResponse]])
 async def list_baptisms(
@@ -67,7 +70,10 @@ async def list_matrimonies(
     service = SacramentsService(db)
     return ApiResponse.ok(data=await service.list_matrimonies(parish_id=parish_id))
 
-@router.post("/baptism", response_model=ApiResponse[BaptismResponse], status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/baptism", response_model=ApiResponse[BaptismResponse], status_code=status.HTTP_201_CREATED
+)
 async def record_baptism(
     data: BaptismCreate,
     db: AsyncSession = Depends(get_db),
@@ -79,7 +85,11 @@ async def record_baptism(
     return ApiResponse.ok(data=created, message="success.baptism_recorded")
 
 
-@router.post("/confirmation", response_model=ApiResponse[ConfirmationResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/confirmation",
+    response_model=ApiResponse[ConfirmationResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def record_confirmation(
     data: ConfirmationCreate,
     db: AsyncSession = Depends(get_db),
@@ -91,7 +101,9 @@ async def record_confirmation(
     return ApiResponse.ok(data=created, message="success.confirmation_recorded")
 
 
-@router.post("/matrimony", response_model=ApiResponse[MatrimonyResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/matrimony", response_model=ApiResponse[MatrimonyResponse], status_code=status.HTTP_201_CREATED
+)
 async def record_matrimony(
     data: MatrimonyCreate,
     db: AsyncSession = Depends(get_db),
@@ -103,7 +115,11 @@ async def record_matrimony(
     return ApiResponse.ok(data=created, message="success.matrimony_recorded")
 
 
-@router.post("/first-communion", response_model=ApiResponse[FirstCommunionResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/first-communion",
+    response_model=ApiResponse[FirstCommunionResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def record_first_communion(
     data: FirstCommunionCreate,
     db: AsyncSession = Depends(get_db),
@@ -115,7 +131,11 @@ async def record_first_communion(
     return ApiResponse.ok(data=created, message="success.first_communion_recorded")
 
 
-@router.post("/holy-orders", response_model=ApiResponse[HolyOrdersResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/holy-orders",
+    response_model=ApiResponse[HolyOrdersResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def record_holy_orders(
     data: HolyOrdersCreate,
     db: AsyncSession = Depends(get_db),
@@ -127,7 +147,11 @@ async def record_holy_orders(
     return ApiResponse.ok(data=created, message="success.holy_orders_recorded")
 
 
-@router.post("/religious-profession", response_model=ApiResponse[ReligiousProfessionResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/religious-profession",
+    response_model=ApiResponse[ReligiousProfessionResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def record_religious_profession(
     data: ReligiousProfessionCreate,
     db: AsyncSession = Depends(get_db),
@@ -139,7 +163,11 @@ async def record_religious_profession(
     return ApiResponse.ok(data=created, message="success.religious_profession_recorded")
 
 
-@router.post("/anointing", response_model=ApiResponse[AnointingOfTheSickResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/anointing",
+    response_model=ApiResponse[AnointingOfTheSickResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def record_anointing(
     data: AnointingOfTheSickCreate,
     db: AsyncSession = Depends(get_db),
@@ -151,7 +179,11 @@ async def record_anointing(
     return ApiResponse.ok(data=created, message="success.anointing_recorded")
 
 
-@router.post("/funerals", response_model=ApiResponse[ChristianFuneralResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/funerals",
+    response_model=ApiResponse[ChristianFuneralResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def record_christian_funeral(
     data: ChristianFuneralCreate,
     db: AsyncSession = Depends(get_db),
@@ -163,7 +195,11 @@ async def record_christian_funeral(
     return ApiResponse.ok(data=created, message="success.funeral_recorded")
 
 
-@router.post("/certificates/issue", response_model=ApiResponse[CertificateResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/certificates/issue",
+    response_model=ApiResponse[CertificateResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def issue_certificate(
     req: CertificateRequest,
     db: AsyncSession = Depends(get_db),
@@ -174,6 +210,7 @@ async def issue_certificate(
     issuer_id = uuid.UUID(user_payload["sub"])
     cert = await service.issue_certificate(req, issued_by_user_id=issuer_id)
     return ApiResponse.ok(data=cert, message="success.certificate_generated")
+
 
 @router.get("/certificates/{certificate_id}/pdf")
 async def download_certificate_pdf(
@@ -191,7 +228,9 @@ async def download_certificate_pdf(
     )
 
 
-@router.get("/certificates/verify/{verification_token}", response_model=ApiResponse[CertificateResponse])
+@router.get(
+    "/certificates/verify/{verification_token}", response_model=ApiResponse[CertificateResponse]
+)
 async def verify_certificate(
     verification_token: str,
     db: AsyncSession = Depends(get_db),
@@ -201,9 +240,11 @@ async def verify_certificate(
     data = await service.verify_certificate(verification_token)
     return ApiResponse.ok(data=data, message="success.certificate_verified")
 
+
 # ---------------------------------------------------------------------------
 # Sacramental Amendment Workflow Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.post(
     "/amendments",
@@ -217,19 +258,21 @@ async def request_amendment(
 ):
     """Submit a formal canonical amendment request for a sacramental record."""
     service = SacramentsService(db)
-    requester_id = uuid.UUID(user_payload["sub"]) if user_payload and "sub" in user_payload else None
+    requester_id = (
+        uuid.UUID(user_payload["sub"]) if user_payload and "sub" in user_payload else None
+    )
     created = await service.request_amendment(data, requested_by_user_id=requester_id)
     return ApiResponse.ok(data=created, message="success.amendment_requested")
 
 
 @router.get(
     "/amendments",
-    response_model=ApiResponse[List[SacramentalAmendmentResponse]],
+    response_model=ApiResponse[list[SacramentalAmendmentResponse]],
 )
 async def list_amendments(
-    sacrament_type: Optional[SacramentType] = Query(default=None),
-    record_id: Optional[uuid.UUID] = Query(default=None),
-    status: Optional[str] = Query(default=None),
+    sacrament_type: SacramentType | None = Query(default=None),
+    record_id: uuid.UUID | None = Query(default=None),
+    status: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -276,6 +319,8 @@ async def review_amendment(
         review=review,
         reviewer_id=reviewer_id,
     )
-    return ApiResponse.ok(data=reviewed, message="success.amendment_reviewed",
-                          message_params={"action": review.action.lower()})
-
+    return ApiResponse.ok(
+        data=reviewed,
+        message="success.amendment_reviewed",
+        message_params={"action": review.action.lower()},
+    )

@@ -1,7 +1,6 @@
 """
 Tests for the Document organisational-scoping CHECK constraint.
 """
-import uuid
 
 import pytest
 from sqlalchemy.exc import IntegrityError

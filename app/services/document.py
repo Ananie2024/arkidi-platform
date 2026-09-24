@@ -1,6 +1,7 @@
 """
 Document & Archive Module Business Logic Service
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -108,9 +109,7 @@ class ArchiveService:
         try:
             process_ocr_page.delay(str(page.id))
         except Exception:  # noqa: BLE001 - broker/connection failures
-            logger.warning(
-                "Could not enqueue OCR task for scanned page %s", page.id, exc_info=True
-            )
+            logger.warning("Could not enqueue OCR task for scanned page %s", page.id, exc_info=True)
         return ScannedPageResponse.model_validate(page)
 
     async def list_pages(self, book_id: uuid.UUID) -> list[ScannedPageResponse]:
@@ -135,10 +134,11 @@ class ArchiveService:
             status_msg = "enqueue_failed"
         return {"scanned_page_id": str(page.id), "status": status_msg}
 
-    async def search_pages(self, query: str, parish_id: uuid.UUID | None = None) -> list[ScannedPageResponse]:
+    async def search_pages(
+        self, query: str, parish_id: uuid.UUID | None = None
+    ) -> list[ScannedPageResponse]:
         pages = await self.repo.search_pages(query, parish_id)
         return [ScannedPageResponse.model_validate(p) for p in pages]
-
 
 
 class DocumentService:
@@ -153,7 +153,9 @@ class DocumentService:
     async def create_document_type(self, data: DocumentTypeCreate) -> DocumentTypeResponse:
         existing = await self.repo.get_document_type_by_code(data.code)
         if existing:
-            raise ValidationException("errors.document_type_code_exists", message_params={"code": data.code})
+            raise ValidationException(
+                "errors.document_type_code_exists", message_params={"code": data.code}
+            )
         doc_type = await self.repo.create_document_type(data)
         return DocumentTypeResponse.model_validate(doc_type)
 
@@ -171,7 +173,9 @@ class DocumentService:
         types = await self.repo.list_document_types(category=category, is_active=is_active)
         return [DocumentTypeResponse.model_validate(t) for t in types]
 
-    async def update_document_type(self, type_id: uuid.UUID, data: DocumentTypeUpdate) -> DocumentTypeResponse:
+    async def update_document_type(
+        self, type_id: uuid.UUID, data: DocumentTypeUpdate
+    ) -> DocumentTypeResponse:
         doc_type = await self.repo.get_document_type_by_id(type_id)
         if not doc_type:
             raise EntityNotFoundException("errors.document_type_not_found")
@@ -226,7 +230,9 @@ class DocumentService:
         )
 
         try:
-            doc = await self.repo.create_document(create_data, uploaded_by_user_id=uploaded_by_user_id)
+            doc = await self.repo.create_document(
+                create_data, uploaded_by_user_id=uploaded_by_user_id
+            )
         except IntegrityError as exc:
             await self.db.rollback()
             if _is_constraint_violation(exc, UQ_DOCUMENTS_CHECKSUM):
@@ -288,7 +294,9 @@ class DocumentService:
         )
         return [DocumentResponse.model_validate(d) for d in docs]
 
-    async def update_document(self, document_id: uuid.UUID, data: DocumentUpdate) -> DocumentResponse:
+    async def update_document(
+        self, document_id: uuid.UUID, data: DocumentUpdate
+    ) -> DocumentResponse:
         doc = await self.repo.get_document_by_id(document_id)
         if not doc:
             raise EntityNotFoundException("errors.document_not_found")

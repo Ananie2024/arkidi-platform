@@ -1,28 +1,28 @@
 """
 Liturgy Module FastAPI Endpoints — Mass Schedules & Intentions
 """
+
 import uuid
 from datetime import date
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
-from app.schemas.mass import MassScheduleCreate, MassScheduleResponse
 from app.schemas.intention import MassIntentionCreate, MassIntentionResponse
-from app.services.mass import MassService
+from app.schemas.mass import MassScheduleCreate, MassScheduleResponse
 from app.services.intention import IntentionService
+from app.services.mass import MassService
 from app.utils.response import ApiResponse
 
 router = APIRouter(prefix="/liturgy", tags=["Liturgy & Sacred Music"])
 
 
-@router.get("/mass-schedules", response_model=ApiResponse[List[MassScheduleResponse]])
+@router.get("/mass-schedules", response_model=ApiResponse[list[MassScheduleResponse]])
 async def list_mass_schedules(
     parish_id: uuid.UUID,
-    for_date: Optional[date] = Query(default=None),
+    for_date: date | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -44,10 +44,10 @@ async def schedule_mass(
     return ApiResponse.ok(data=await service.schedule_mass(data), message="success.mass_created")
 
 
-@router.get("/intentions", response_model=ApiResponse[List[MassIntentionResponse]])
+@router.get("/intentions", response_model=ApiResponse[list[MassIntentionResponse]])
 async def list_intentions(
     parish_id: uuid.UUID,
-    target_date: Optional[date] = Query(default=None),
+    target_date: date | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -76,4 +76,6 @@ async def register_intention(
     _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
 ):
     service = IntentionService(db)
-    return ApiResponse.ok(data=await service.register_intention(data), message="success.intention_registered")
+    return ApiResponse.ok(
+        data=await service.register_intention(data), message="success.intention_registered"
+    )

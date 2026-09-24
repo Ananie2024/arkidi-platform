@@ -1,6 +1,7 @@
 """
 Auth Module Business Logic Service
 """
+
 import secrets
 import uuid
 from datetime import UTC, datetime
@@ -74,7 +75,9 @@ class AuthService:
             expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
 
-    async def get_google_authorization_url(self, redirect_uri: str | None = None) -> GoogleAuthUrlResponse:
+    async def get_google_authorization_url(
+        self, redirect_uri: str | None = None
+    ) -> GoogleAuthUrlResponse:
         """Get the Google OAuth 2.0 authorization URL for the frontend to redirect to."""
         google_service = GoogleAuthService()
         return google_service.get_authorization_url(redirect_uri)
@@ -114,7 +117,6 @@ class AuthService:
                 # Self-register a new user with info from Google profile
                 from app.schemas.user import UserCreate
 
-                name_parts = (profile.get("name") or email.split("@")[0]).split(" ", 1)
                 full_name = profile.get("name") or email.split("@")[0]
                 username = email.split("@")[0]
 

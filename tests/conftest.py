@@ -1,10 +1,12 @@
 """
 Pytest Test Fixtures and Application Setup
 """
+
 import asyncio
 
 import pytest
 from httpx import AsyncClient
+
 from app.main import app
 
 

@@ -1,5 +1,5 @@
 # Core FastAPI & ASGI
-fastapi==0.109.0
+fastapi==0.109.2
 uvicorn[standard]==0.27.0
 pydantic[email]==2.5.3
 pydantic-settings==2.1.0
@@ -14,7 +14,7 @@ geoalchemy2==0.14.3
 alembic==1.13.1
 asyncpg==0.29.0
 psycopg2-binary==2.9.9
-cryptography==42.0.0
+cryptography==42.0.8
 
 # GIS & Spatial Processing
 numpy==1.26.4

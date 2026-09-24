@@ -5,9 +5,9 @@ Verifies that the Annuario Pontificio report computes parish/priest totals from
 the database (task 3) instead of hardcoded values, and that the reporting
 endpoints round-trip real records.
 """
+
 import uuid
 from datetime import date
-
 
 import pytest
 from httpx import AsyncClient
@@ -45,9 +45,7 @@ async def org() -> tuple:
         await db.commit()
         yield arch.id, dea.id, par.id
         await db.execute(
-            delete(AnnualParishStatistic).where(
-                AnnualParishStatistic.parish_id == par.id
-            )
+            delete(AnnualParishStatistic).where(AnnualParishStatistic.parish_id == par.id)
         )
         await db.execute(delete(Parish).where(Parish.id == par.id))
         await db.execute(delete(Deanery).where(Deanery.id == dea.id))
@@ -110,7 +108,9 @@ async def test_statistics_end_to_end(client: AsyncClient, org):
 
         # 3. Annuario Pontificio aggregates the submitted figures and counts parish
         #    records from the DB (not hardcoded 34/178).
-        annuario = await client.get(f"/api/v1/statistics/annuario-pontificio?year={year}", headers=headers)
+        annuario = await client.get(
+            f"/api/v1/statistics/annuario-pontificio?year={year}", headers=headers
+        )
         assert annuario.status_code == 200, annuario.text
         data = annuario.json()["data"]
         assert data["year"] == year
@@ -125,6 +125,8 @@ async def test_statistics_end_to_end(client: AsyncClient, org):
             async with AsyncSessionLocal() as db:
                 await db.execute(delete(User).where(User.id == user_id))
                 await db.commit()
+
+
 @pytest.mark.asyncio
 async def test_statistic_indicator_endpoints(client, org):
     """Config-driven indicators are served by the API end-to-end.
@@ -201,7 +203,11 @@ async def test_statistic_indicator_endpoints(client, org):
         cfg = await client.get("/api/v1/statistics/indicators", headers=headers)
         assert cfg.status_code == 200, cfg.text
         keys = {c["key"] for c in cfg.json()["data"]}
-        assert {"faithful_by_deanery", "land_value_by_vicariate", "donations_trend_by_parish"} <= keys
+        assert {
+            "faithful_by_deanery",
+            "land_value_by_vicariate",
+            "donations_trend_by_parish",
+        } <= keys
 
         # 2. Faithful by deanery (archdiocese scope) -> the parish's deanery row.
         r = await client.get(

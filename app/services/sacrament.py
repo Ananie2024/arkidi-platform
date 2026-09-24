@@ -1,47 +1,47 @@
 """
 Sacraments Module Business Logic Service
 """
-import uuid
+
 import secrets
-from datetime import datetime, timezone
-from typing import List, Optional
+import uuid
+from datetime import UTC, datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.exceptions import (
+    CertificateInvalidException,
     EntityNotFoundException,
     ValidationException,
-    CertificateInvalidException,
 )
-from app.config import settings
+from app.models.audit_log import AuditLog
+from app.models.sacrament import AmendmentStatus, CertificateIssue, SacramentType
 from app.repositories.sacrament import SacramentsRepository
 from app.schemas.sacrament import (
+    AmendmentRequestCreate,
+    AmendmentReviewRequest,
+    AnointingOfTheSickCreate,
+    AnointingOfTheSickResponse,
     BaptismCreate,
     BaptismResponse,
+    CertificateRequest,
+    CertificateResponse,
+    ChristianFuneralCreate,
+    ChristianFuneralResponse,
     ConfirmationCreate,
     ConfirmationResponse,
-    MatrimonyCreate,
-    MatrimonyResponse,
     FirstCommunionCreate,
     FirstCommunionResponse,
     HolyOrdersCreate,
     HolyOrdersResponse,
+    MatrimonyCreate,
+    MatrimonyResponse,
     ReligiousProfessionCreate,
     ReligiousProfessionResponse,
-    AnointingOfTheSickCreate,
-    AnointingOfTheSickResponse,
-    ChristianFuneralCreate,
-    ChristianFuneralResponse,
-    CertificateRequest,
-    CertificateResponse,
-    AmendmentRequestCreate,
-    AmendmentReviewRequest,
     SacramentalAmendmentResponse,
 )
-from app.models.sacrament import CertificateIssue, SacramentType, AmendmentStatus
-from app.models.audit_log import AuditLog
-from app.utils.qr import generate_qr_code_base64, generate_qr_code_bytes
 from app.utils.pdf import generate_certificate_pdf
-
+from app.utils.qr import generate_qr_code_base64, generate_qr_code_bytes
 
 SACRAMENT_DISPLAY_NAMES = {
     SacramentType.BAPTISM: "Certificate of Baptism",
@@ -68,7 +68,9 @@ class SacramentsService:
         record = await self.repo.create_baptism(data)
         return BaptismResponse.model_validate(record)
 
-    async def list_confirmations(self, parish_id: uuid.UUID | None = None) -> list[ConfirmationResponse]:
+    async def list_confirmations(
+        self, parish_id: uuid.UUID | None = None
+    ) -> list[ConfirmationResponse]:
         records = await self.repo.list_confirmations(parish_id=parish_id)
         return [ConfirmationResponse.model_validate(record) for record in records]
 
@@ -92,15 +94,21 @@ class SacramentsService:
         record = await self.repo.create_holy_orders(data)
         return HolyOrdersResponse.model_validate(record)
 
-    async def record_religious_profession(self, data: ReligiousProfessionCreate) -> ReligiousProfessionResponse:
+    async def record_religious_profession(
+        self, data: ReligiousProfessionCreate
+    ) -> ReligiousProfessionResponse:
         record = await self.repo.create_religious_profession(data)
         return ReligiousProfessionResponse.model_validate(record)
 
-    async def record_anointing_of_the_sick(self, data: AnointingOfTheSickCreate) -> AnointingOfTheSickResponse:
+    async def record_anointing_of_the_sick(
+        self, data: AnointingOfTheSickCreate
+    ) -> AnointingOfTheSickResponse:
         record = await self.repo.create_anointing_of_the_sick(data)
         return AnointingOfTheSickResponse.model_validate(record)
 
-    async def record_christian_funeral(self, data: ChristianFuneralCreate) -> ChristianFuneralResponse:
+    async def record_christian_funeral(
+        self, data: ChristianFuneralCreate
+    ) -> ChristianFuneralResponse:
         record = await self.repo.create_christian_funeral(data)
         return ChristianFuneralResponse.model_validate(record)
 
@@ -187,7 +195,7 @@ class SacramentsService:
     async def request_amendment(
         self,
         data: AmendmentRequestCreate,
-        requested_by_user_id: Optional[uuid.UUID] = None,
+        requested_by_user_id: uuid.UUID | None = None,
     ) -> SacramentalAmendmentResponse:
         """Submit a formal canonical amendment request for a sacramental record."""
         target_record = await self.repo.get_record_by_type_and_id(
@@ -197,7 +205,10 @@ class SacramentsService:
         if not target_record:
             raise EntityNotFoundException(
                 "errors.target_record_not_found",
-                message_params={"type": data.sacrament_type.value, "record_id": str(data.record_id)},
+                message_params={
+                    "type": data.sacrament_type.value,
+                    "record_id": str(data.record_id),
+                },
             )
 
         # Validate that requested fields exist on target record
@@ -216,10 +227,10 @@ class SacramentsService:
 
     async def list_amendments(
         self,
-        sacrament_type: Optional[SacramentType] = None,
-        record_id: Optional[uuid.UUID] = None,
-        amendment_status: Optional[str] = None,
-    ) -> List[SacramentalAmendmentResponse]:
+        sacrament_type: SacramentType | None = None,
+        record_id: uuid.UUID | None = None,
+        amendment_status: str | None = None,
+    ) -> list[SacramentalAmendmentResponse]:
         items = await self.repo.list_amendments(
             sacrament_type=sacrament_type,
             record_id=record_id,
@@ -250,7 +261,7 @@ class SacramentsService:
                 message_params={"status": amendment.status.value},
             )
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if review.action == "APPROVE":
             target_record = await self.repo.get_record_by_type_and_id(

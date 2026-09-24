@@ -6,6 +6,7 @@ Uses the same live-DB rolled-back-transaction pattern as
 tests/unit/test_hierarchy_resolver.py so the engine is exercised against real
 SQLAlchemy models and the hierarchy_resolver rollup helpers it builds on.
 """
+
 import uuid
 from datetime import date
 
@@ -17,7 +18,6 @@ from app.core.database import AsyncSessionLocal
 from app.core.exceptions import (
     IndicatorNotFoundException,
     IndicatorScopeRequiredException,
-    ValidationException,
 )
 from app.models.deanery import Archdiocese, Deanery
 from app.models.document import ArchiveLedgerBook, Document, ScannedPage
@@ -71,9 +71,7 @@ async def indicator_org():
                 gender=Gender.MALE,
                 parish_id=parish_id,
             )
-            for i, parish_id in enumerate(
-                [par_a1.id, par_a1.id, par_a2.id, par_b1.id], start=1
-            )
+            for i, parish_id in enumerate([par_a1.id, par_a1.id, par_a2.id, par_b1.id], start=1)
         ]
         db.add_all(faithful)
 
@@ -147,11 +145,15 @@ async def indicator_org():
         # ------------------------------------------------------------------
         doc_type_decree = DocumentType(
             code=f"DECREE-{uuid.uuid4().hex[:8]}",
-            name_en="Decree", name_fr="Décret", name_rw="Itegeko",
+            name_en="Decree",
+            name_fr="Décret",
+            name_rw="Itegeko",
         )
         doc_type_letter = DocumentType(
             code=f"LETTER-{uuid.uuid4().hex[:8]}",
-            name_en="Letter", name_fr="Lettre", name_rw="Ibarua",
+            name_en="Letter",
+            name_fr="Lettre",
+            name_rw="Ibarua",
         )
         db.add_all([doc_type_decree, doc_type_letter])
         await db.flush()
@@ -159,28 +161,39 @@ async def indicator_org():
         db.add_all(
             [
                 Document(
-                    title="Decree A1", file_path="archive/decree-a1.pdf",
-                    document_type_id=doc_type_decree.id, parish_id=par_a1.id,
+                    title="Decree A1",
+                    file_path="archive/decree-a1.pdf",
+                    document_type_id=doc_type_decree.id,
+                    parish_id=par_a1.id,
                 ),
                 Document(
-                    title="Decree A2", file_path="archive/decree-a2.pdf",
-                    document_type_id=doc_type_decree.id, parish_id=par_a2.id,
+                    title="Decree A2",
+                    file_path="archive/decree-a2.pdf",
+                    document_type_id=doc_type_decree.id,
+                    parish_id=par_a2.id,
                 ),
                 Document(
-                    title="Letter B1", file_path="archive/letter-b1.pdf",
-                    document_type_id=doc_type_letter.id, parish_id=par_b1.id,
+                    title="Letter B1",
+                    file_path="archive/letter-b1.pdf",
+                    document_type_id=doc_type_letter.id,
+                    parish_id=par_b1.id,
                 ),
                 Document(
-                    title="Backlog A1", file_path="archive/backlog-a1.pdf",
-                    document_type_id=doc_type_letter.id, parish_id=par_a1.id,
+                    title="Backlog A1",
+                    file_path="archive/backlog-a1.pdf",
+                    document_type_id=doc_type_letter.id,
+                    parish_id=par_a1.id,
                     disposition_status="DUE_FOR_REVIEW",
                 ),
                 Document(
-                    title="Curia Letter", file_path="archive/curia-letter.pdf",
-                    document_type_id=doc_type_letter.id, archdiocese_id=arch.id,
+                    title="Curia Letter",
+                    file_path="archive/curia-letter.pdf",
+                    document_type_id=doc_type_letter.id,
+                    archdiocese_id=arch.id,
                 ),
                 Document(
-                    title="Deanery Note", file_path="archive/deanery-note.pdf",
+                    title="Deanery Note",
+                    file_path="archive/deanery-note.pdf",
                     deanery_id=dea_a.id,
                 ),
             ]
@@ -188,13 +201,19 @@ async def indicator_org():
 
         # Scanned pages via ledger books: A1 has 1/2 pages OCR'd, B1 has 0/1.
         ledger_a1 = ArchiveLedgerBook(
-            parish_id=par_a1.id, sacrament_type=SacramentType.BAPTISM,
-            book_title="Baptisms A1", start_year=1920, end_year=1950,
+            parish_id=par_a1.id,
+            sacrament_type=SacramentType.BAPTISM,
+            book_title="Baptisms A1",
+            start_year=1920,
+            end_year=1950,
             volume_number="V1",
         )
         ledger_b1 = ArchiveLedgerBook(
-            parish_id=par_b1.id, sacrament_type=SacramentType.MATRIMONY,
-            book_title="Marriages B1", start_year=1930, end_year=1960,
+            parish_id=par_b1.id,
+            sacrament_type=SacramentType.MATRIMONY,
+            book_title="Marriages B1",
+            start_year=1930,
+            end_year=1960,
             volume_number="V2",
         )
         db.add_all([ledger_a1, ledger_b1])
@@ -202,15 +221,19 @@ async def indicator_org():
         db.add_all(
             [
                 ScannedPage(
-                    ledger_book_id=ledger_a1.id, page_number=1,
-                    image_file_path="scans/a1-1.png", ocr_raw_text="Baptismus 1923",
+                    ledger_book_id=ledger_a1.id,
+                    page_number=1,
+                    image_file_path="scans/a1-1.png",
+                    ocr_raw_text="Baptismus 1923",
                 ),
                 ScannedPage(
-                    ledger_book_id=ledger_a1.id, page_number=2,
+                    ledger_book_id=ledger_a1.id,
+                    page_number=2,
                     image_file_path="scans/a1-2.png",
                 ),
                 ScannedPage(
-                    ledger_book_id=ledger_b1.id, page_number=1,
+                    ledger_book_id=ledger_b1.id,
+                    page_number=1,
                     image_file_path="scans/b1-1.png",
                 ),
             ]
@@ -220,16 +243,24 @@ async def indicator_org():
         db.add_all(
             [
                 AnnualParishStatistic(
-                    parish_id=par_a1.id, report_year=2025,
-                    total_catholic_population=1200, infant_baptisms=30,
-                    adult_baptisms=10, confirmations=25,
-                    marriages_both_catholic=12, marriages_mixed_religion=3,
+                    parish_id=par_a1.id,
+                    report_year=2025,
+                    total_catholic_population=1200,
+                    infant_baptisms=30,
+                    adult_baptisms=10,
+                    confirmations=25,
+                    marriages_both_catholic=12,
+                    marriages_mixed_religion=3,
                 ),
                 AnnualParishStatistic(
-                    parish_id=par_b1.id, report_year=2026,
-                    total_catholic_population=800, infant_baptisms=5,
-                    adult_baptisms=2, confirmations=8,
-                    marriages_both_catholic=4, marriages_mixed_religion=1,
+                    parish_id=par_b1.id,
+                    report_year=2026,
+                    total_catholic_population=800,
+                    infant_baptisms=5,
+                    adult_baptisms=2,
+                    confirmations=8,
+                    marriages_both_catholic=4,
+                    marriages_mixed_religion=1,
                 ),
             ]
         )
@@ -240,8 +271,15 @@ async def indicator_org():
 
         try:
             yield (
-                db, arch, dea_a, dea_b, par_a1, par_a2, par_b1,
-                doc_type_decree, doc_type_letter,
+                db,
+                arch,
+                dea_a,
+                dea_b,
+                par_a1,
+                par_a2,
+                par_b1,
+                doc_type_decree,
+                doc_type_letter,
             )
         finally:
             await db.rollback()
@@ -299,7 +337,6 @@ async def test_land_value_by_vicariate(indicator_org):
     assert by_name["Deanery Beta"] == 5000
 
 
-
 @pytest.mark.asyncio
 async def test_donations_trend_by_parish(indicator_org):
     db, arch, *_ = indicator_org
@@ -347,6 +384,7 @@ async def test_compute_requires_scope(indicator_org):
 # ---------------------------------------------------------------------------
 # Archives domain indicators
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_documents_by_parish(indicator_org):
@@ -413,6 +451,7 @@ async def test_ocr_completion_rate_deanery_scope(indicator_org):
 # Annual-return indicators (param_filters) & engine edge cases
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_annual_indicators_respect_param_filters(indicator_org):
     db, arch, *_rest = indicator_org
@@ -457,9 +496,7 @@ async def test_empty_scope_returns_no_rows(indicator_org):
 async def test_unknown_scope_id_returns_no_rows(indicator_org):
     """A scope id that does not exist resolves to zero parishes, not an error."""
     db, *_rest = indicator_org
-    result = await _service(db).compute(
-        "documents_by_parish", archdiocese_id=uuid.uuid4()
-    )
+    result = await _service(db).compute("documents_by_parish", archdiocese_id=uuid.uuid4())
     assert result.rows == []
 
 
@@ -518,4 +555,3 @@ async def test_list_indicators_exposes_archives_config(indicator_org):
     annual = views["annual_catholic_population_by_parish"]
     assert annual.source_model == "AnnualParishStatistic"
     assert annual.metric_field == "total_catholic_population"
-

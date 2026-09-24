@@ -1,14 +1,15 @@
 """
 Lease Agreement Model — rental/emphyteutic lease contracts on church land.
 """
+
 import uuid
 from datetime import date
 
-from sqlalchemy import String, Date, Numeric, Text, ForeignKey, Boolean
+from sqlalchemy import Date, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class LeaseAgreement(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -17,7 +18,9 @@ class LeaseAgreement(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin)
     __tablename__ = "lease_agreements"
 
     lease_number: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
-    parcel_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("land_parcels.id"), nullable=False)
+    parcel_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("land_parcels.id"), nullable=False
+    )
     lessee_name: Mapped[str] = mapped_column(String(200), nullable=False)
     lessee_contact: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
@@ -28,6 +31,6 @@ class LeaseAgreement(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin)
     contract_document_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    payments: Mapped[list["LeasePaymentSchedule"]] = relationship(  # type: ignore[name-defined]
+    payments: Mapped[list["LeasePaymentSchedule"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "LeasePaymentSchedule", back_populates="lease_agreement"
     )

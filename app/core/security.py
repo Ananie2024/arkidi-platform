@@ -2,9 +2,11 @@
 Security & Cryptography Module
 JWT token creation, validation, and Argon2 password hashing
 """
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+
 import uuid
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 import jwt
 from passlib.context import CryptContext
 
@@ -32,20 +34,18 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(
     subject: str | Any,
-    claims: Optional[Dict[str, Any]] = None,
-    expires_delta: Optional[timedelta] = None,
-    family_id: Optional[str] = None,
+    claims: dict[str, Any] | None = None,
+    expires_delta: timedelta | None = None,
+    family_id: str | None = None,
 ) -> str:
     """Generate a signed JWT access token."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if expires_delta:
         expire = now + expires_delta
     else:
-        expire = now + timedelta(
-            minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        expire = now + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode: Dict[str, Any] = {
+    to_encode: dict[str, Any] = {
         "sub": str(subject),
         "exp": expire,
         "iat": now,
@@ -68,19 +68,17 @@ def create_access_token(
 
 def create_refresh_token(
     subject: str | Any,
-    expires_delta: Optional[timedelta] = None,
-    family_id: Optional[str] = None,
+    expires_delta: timedelta | None = None,
+    family_id: str | None = None,
 ) -> str:
     """Generate a signed JWT refresh token."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if expires_delta:
         expire = now + expires_delta
     else:
-        expire = now + timedelta(
-            days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS
-        )
+        expire = now + timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
 
-    to_encode: Dict[str, Any] = {
+    to_encode: dict[str, Any] = {
         "sub": str(subject),
         "exp": expire,
         "iat": now,
@@ -99,7 +97,7 @@ def create_refresh_token(
     return encoded_jwt
 
 
-def decode_jwt_token(token: str) -> Dict[str, Any]:
+def decode_jwt_token(token: str) -> dict[str, Any]:
     """Decode and validate a JWT token against the application SECRET_KEY."""
     try:
         payload = jwt.decode(
@@ -107,6 +105,6 @@ def decode_jwt_token(token: str) -> Dict[str, Any]:
             settings.SECRET_KEY,
             algorithms=[settings.JWT_ALGORITHM],
         )
-        return payload
+        return dict(payload)
     except jwt.PyJWTError as e:
         raise ValueError(f"Invalid or expired JWT token: {str(e)}")

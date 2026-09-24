@@ -5,26 +5,28 @@ Integration tests for new API surfaces:
 3. Governance API (Commission, Council, Meeting, MeetingMinute)
 4. Sacramental Amendment Workflow (request, review, marginal notes, audit logs)
 """
+
 import uuid
 from datetime import date
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import delete
 
 from app.core.database import AsyncSessionLocal
 from app.core.security import get_password_hash
-from app.models.deanery import Archdiocese, Deanery
-from app.models.enums import UserRole
-from app.models.faithful import Faithful
-from app.models.parish import Parish
-from app.models.sacrament import BaptismRecord, SacramentType, SacramentalAmendment
-from app.models.survey import Survey, SurveyResponse
-from app.models.document import Document
-from app.models.document_type import DocumentType
 from app.models.commission import Commission
 from app.models.council import Council
+from app.models.deanery import Archdiocese, Deanery
+from app.models.document import Document
+from app.models.document_type import DocumentType
+from app.models.enums import UserRole
+from app.models.faithful import Faithful
 from app.models.meeting import Meeting
 from app.models.meeting_minute import MeetingMinute
+from app.models.parish import Parish
+from app.models.sacrament import BaptismRecord, SacramentalAmendment
+from app.models.survey import Survey, SurveyResponse
 from app.models.user import User
 
 
@@ -85,10 +87,18 @@ async def geo_setup():
         arch = Archdiocese(name=f"Arch {uuid.uuid4().hex[:6]}", see_city="Kigali")
         db.add(arch)
         await db.flush()
-        dea = Deanery(archdiocese_id=arch.id, name=f"Deanery {uuid.uuid4().hex[:6]}", code=f"D-{uuid.uuid4().hex[:6]}")
+        dea = Deanery(
+            archdiocese_id=arch.id,
+            name=f"Deanery {uuid.uuid4().hex[:6]}",
+            code=f"D-{uuid.uuid4().hex[:6]}",
+        )
         db.add(dea)
         await db.flush()
-        par = Parish(deanery_id=dea.id, name=f"Parish {uuid.uuid4().hex[:6]}", code=f"P-{uuid.uuid4().hex[:6]}")
+        par = Parish(
+            deanery_id=dea.id,
+            name=f"Parish {uuid.uuid4().hex[:6]}",
+            code=f"P-{uuid.uuid4().hex[:6]}",
+        )
         db.add(par)
         await db.flush()
         await db.commit()
@@ -103,6 +113,7 @@ async def geo_setup():
 # ---------------------------------------------------------------------------
 # 1. Survey API Integration Tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_survey_lifecycle_and_responses(client: AsyncClient, auth_users, geo_setup):
@@ -147,25 +158,32 @@ async def test_survey_lifecycle_and_responses(client: AsyncClient, auth_users, g
         "respondent_parish_id": str(par_id),
         "answers": {"q1": 5, "q2": "Youth"},
     }
-    draft_submit = await client.post(f"/api/v1/surveys/{survey_id}/responses", json=ans_payload, headers=secretary_headers)
+    draft_submit = await client.post(
+        f"/api/v1/surveys/{survey_id}/responses", json=ans_payload, headers=secretary_headers
+    )
     assert draft_submit.status_code == 400
 
     # 3. Activate survey
-    update_resp = await client.put(f"/api/v1/surveys/{survey_id}", json={"status": "ACTIVE"}, headers=priest_headers)
+    update_resp = await client.put(
+        f"/api/v1/surveys/{survey_id}", json={"status": "ACTIVE"}, headers=priest_headers
+    )
     assert update_resp.status_code == 200
     assert update_resp.json()["data"]["status"] == "ACTIVE"
 
     # 4. Submit valid responses
-    resp1 = await client.post(f"/api/v1/surveys/{survey_id}/responses", json=ans_payload, headers=secretary_headers)
+    resp1 = await client.post(
+        f"/api/v1/surveys/{survey_id}/responses", json=ans_payload, headers=secretary_headers
+    )
     assert resp1.status_code == 201, resp1.text
-    ans_id1 = resp1.json()["data"]["id"]
 
     ans_payload2 = {
         "respondent_name": "Marie Claire",
         "respondent_parish_id": str(par_id),
         "answers": {"q1": 15, "q2": "Youth"},
     }
-    resp2 = await client.post(f"/api/v1/surveys/{survey_id}/responses", json=ans_payload2, headers=secretary_headers)
+    resp2 = await client.post(
+        f"/api/v1/surveys/{survey_id}/responses", json=ans_payload2, headers=secretary_headers
+    )
     assert resp2.status_code == 201
 
     # 5. List responses
@@ -183,7 +201,9 @@ async def test_survey_lifecycle_and_responses(client: AsyncClient, auth_users, g
 
     # Cleanup survey
     async with AsyncSessionLocal() as db:
-        await db.execute(delete(SurveyResponse).where(SurveyResponse.survey_id == uuid.UUID(survey_id)))
+        await db.execute(
+            delete(SurveyResponse).where(SurveyResponse.survey_id == uuid.UUID(survey_id))
+        )
         await db.execute(delete(Survey).where(Survey.id == uuid.UUID(survey_id)))
         await db.commit()
 
@@ -191,6 +211,7 @@ async def test_survey_lifecycle_and_responses(client: AsyncClient, auth_users, g
 # ---------------------------------------------------------------------------
 # 2. Generic Document API Integration Tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_document_and_type_lifecycle(client: AsyncClient, auth_users, geo_setup):
@@ -208,7 +229,9 @@ async def test_document_and_type_lifecycle(client: AsyncClient, auth_users, geo_
         "name_rw": "Iteka ry'ubuyobozi bwa Kiliziya",
         "category": "CANONICAL",
     }
-    create_type_resp = await client.post("/api/v1/documents/types", json=doc_type_payload, headers=admin_headers)
+    create_type_resp = await client.post(
+        "/api/v1/documents/types", json=doc_type_payload, headers=admin_headers
+    )
     assert create_type_resp.status_code == 201, create_type_resp.text
     type_id = create_type_resp.json()["data"]["id"]
 
@@ -223,7 +246,9 @@ async def test_document_and_type_lifecycle(client: AsyncClient, auth_users, geo_
         "mime_type": "application/pdf",
         "checksum_sha256": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
     }
-    create_doc_resp = await client.post("/api/v1/documents", json=doc_payload, headers=secretary_headers)
+    create_doc_resp = await client.post(
+        "/api/v1/documents", json=doc_payload, headers=secretary_headers
+    )
     assert create_doc_resp.status_code == 201, create_doc_resp.text
     doc_data = create_doc_resp.json()["data"]
     doc_id = doc_data["id"]
@@ -255,6 +280,7 @@ async def test_document_and_type_lifecycle(client: AsyncClient, auth_users, geo_
 # ---------------------------------------------------------------------------
 # 3. Governance API Integration Tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_governance_layer_crud(client: AsyncClient, auth_users, geo_setup):
@@ -319,7 +345,9 @@ async def test_governance_layer_crud(client: AsyncClient, auth_users, geo_setup)
     minute_id = minute_resp.json()["data"]["id"]
 
     # 5. List minutes
-    min_list = await client.get(f"/api/v1/governance/meetings/{meeting_id}/minutes", headers=auditor_headers)
+    min_list = await client.get(
+        f"/api/v1/governance/meetings/{meeting_id}/minutes", headers=auditor_headers
+    )
     assert min_list.status_code == 200
     assert len(min_list.json()["data"]) == 1
 
@@ -336,12 +364,12 @@ async def test_governance_layer_crud(client: AsyncClient, auth_users, geo_setup)
 # 4. Sacramental Amendment Workflow Integration Tests
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_sacramental_amendment_workflow(client: AsyncClient, auth_users, geo_setup):
     _, _, par_id = geo_setup
     secretary_headers = await auth_users(client, UserRole.PARISH_SECRETARY)
     chancellor_headers = await auth_users(client, UserRole.CHANCELLOR)
-    auditor_headers = await auth_users(client, UserRole.READ_ONLY_AUDITOR)
 
     # 1. Create Faithful and Baptism Record
     faithful_id = None
@@ -388,7 +416,9 @@ async def test_sacramental_amendment_workflow(client: AsyncClient, auth_users, g
                 "minister_name": {"old": "Abbé Jean", "new": "Abbé Jean-Baptiste Gasana"}
             },
         }
-        req_resp = await client.post("/api/v1/sacraments/amendments", json=amend_req, headers=secretary_headers)
+        req_resp = await client.post(
+            "/api/v1/sacraments/amendments", json=amend_req, headers=secretary_headers
+        )
         assert req_resp.status_code == 201, req_resp.text
         amend_data = req_resp.json()["data"]
         amendment_id = amend_data["id"]
@@ -407,6 +437,7 @@ async def test_sacramental_amendment_workflow(client: AsyncClient, auth_users, g
         # 4. Verify target baptism record was amended and marginal note was added
         async with AsyncSessionLocal() as db:
             from sqlalchemy import select
+
             stmt = select(BaptismRecord).where(BaptismRecord.id == baptism_id)
             res = await db.execute(stmt)
             updated_baptism = res.scalar_one()
@@ -416,7 +447,11 @@ async def test_sacramental_amendment_workflow(client: AsyncClient, auth_users, g
     finally:
         async with AsyncSessionLocal() as db:
             if amendment_id:
-                await db.execute(delete(SacramentalAmendment).where(SacramentalAmendment.id == uuid.UUID(amendment_id)))
+                await db.execute(
+                    delete(SacramentalAmendment).where(
+                        SacramentalAmendment.id == uuid.UUID(amendment_id)
+                    )
+                )
             if baptism_id:
                 await db.execute(delete(BaptismRecord).where(BaptismRecord.id == baptism_id))
             if faithful_id:

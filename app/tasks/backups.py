@@ -17,6 +17,7 @@ Two periodic tasks, scheduled by ``celery_app.beat_schedule``:
 Both tasks emit an e-mail alert (via ``app.utils.alerts``) on failure so
 recovery-readiness is never silently broken.
 """
+
 import logging
 import os
 import subprocess
@@ -27,9 +28,7 @@ from app.utils.alerts import send_alert
 
 logger = logging.getLogger("arkidi.tasks.backup")
 
-SCRIPTS_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "scripts"
-)
+SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "scripts")
 BACKUP_SH = os.path.join(SCRIPTS_DIR, "backup.sh")
 RESTORE_DRILL_SH = os.path.join(SCRIPTS_DIR, "restore_drill.sh")
 
@@ -85,7 +84,10 @@ def _run_script(script_path: str, env: dict, label: str) -> dict:
     if result.returncode != 0:
         logger.error(
             "[%s] FAILED (rc=%d)\nstdout:\n%s\nstderr:\n%s",
-            label, result.returncode, stdout_tail, stderr_tail,
+            label,
+            result.returncode,
+            stdout_tail,
+            stderr_tail,
         )
     else:
         logger.info("[%s] completed successfully", label)

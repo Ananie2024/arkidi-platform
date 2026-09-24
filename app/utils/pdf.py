@@ -14,11 +14,12 @@ pass a flat ``details`` mapping of display strings plus optional QR PNG bytes,
 so the same renderer can be reused by the API download endpoint and the Celery
 batch task (``app/tasks/certificates.py``).
 """
+
 from __future__ import annotations
 
 import io
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -36,7 +37,9 @@ _MARGIN = 42
 _OUTER = 10
 
 
-def _wrap_text(c: canvas.Canvas, text: str, x: float, y: float, max_width: float, leading: float = 15):
+def _wrap_text(
+    c: canvas.Canvas, text: str, x: float, y: float, max_width: float, leading: float = 15
+):
     """Greedily wrap ``text`` to fit *max_width* and draw it at ``(x, y)``.
 
     Returns the new baseline ``y`` after the wrapped block.
@@ -84,12 +87,12 @@ def generate_certificate_pdf(
     *,
     title: str,
     recipient: str,
-    details: Dict[str, Any],
-    issued_at: Optional[datetime] = None,
-    issued_by: Optional[str] = None,
-    certificate_number: Optional[str] = None,
-    qr_image_bytes: Optional[bytes] = None,
-    verification_url: Optional[str] = None,
+    details: dict[str, Any],
+    issued_at: datetime | None = None,
+    issued_by: str | None = None,
+    certificate_number: str | None = None,
+    qr_image_bytes: bytes | None = None,
+    verification_url: str | None = None,
 ) -> bytes:
     """Render a canonical sacramental certificate as PDF bytes.
 
@@ -197,7 +200,9 @@ def generate_certificate_pdf(
                 )
         except Exception:  # pragma: no cover - non-fatal embedding failure
             c.setFont("Helvetica", 9)
-            c.drawString(inner_left + 6, _MARGIN + _OUTER + 40, "QR verification image unavailable.")
+            c.drawString(
+                inner_left + 6, _MARGIN + _OUTER + 40, "QR verification image unavailable."
+            )
 
     # --- Footer / signature line ------------------------------------------
     footer_top = _MARGIN + _OUTER + 14

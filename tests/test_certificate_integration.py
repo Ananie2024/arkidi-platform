@@ -8,6 +8,7 @@ Integration tests for the sacramental certificate pipeline:
 
 Requires a live Postgres + Redis (mirroring development/production wiring).
 """
+
 import uuid
 from pathlib import Path
 
@@ -19,7 +20,7 @@ from app.core.database import AsyncSessionLocal
 from app.core.security import get_password_hash
 from app.models.deanery import Archdiocese, Deanery
 from app.models.enums import UserRole
-from app.models.faithful import Faithful, Gender, CanonicalStatus
+from app.models.faithful import CanonicalStatus, Faithful, Gender
 from app.models.parish import Parish
 from app.models.sacrament import CertificateIssue, SacramentType
 from app.models.user import User
@@ -28,15 +29,29 @@ from app.models.user import User
 @pytest.fixture
 async def cert_scenario():
     """Org hierarchy + faithful + secretary user for certificate workflows."""
-    created_ids: dict = {"users": [], "faithful": [], "arch_id": None, "dea_id": None, "par_id": None}
+    created_ids: dict = {
+        "users": [],
+        "faithful": [],
+        "arch_id": None,
+        "dea_id": None,
+        "par_id": None,
+    }
     async with AsyncSessionLocal() as db:
         arch = Archdiocese(name=f"Arch {uuid.uuid4().hex[:6]}", see_city="Kigali")
         db.add(arch)
         await db.flush()
-        dea = Deanery(archdiocese_id=arch.id, name=f"Deanery {uuid.uuid4().hex[:6]}", code=f"D-{uuid.uuid4().hex[:6]}")
+        dea = Deanery(
+            archdiocese_id=arch.id,
+            name=f"Deanery {uuid.uuid4().hex[:6]}",
+            code=f"D-{uuid.uuid4().hex[:6]}",
+        )
         db.add(dea)
         await db.flush()
-        par = Parish(deanery_id=dea.id, name=f"Parish {uuid.uuid4().hex[:6]}", code=f"P-{uuid.uuid4().hex[:6]}")
+        par = Parish(
+            deanery_id=dea.id,
+            name=f"Parish {uuid.uuid4().hex[:6]}",
+            code=f"P-{uuid.uuid4().hex[:6]}",
+        )
         db.add(par)
         await db.flush()
 
@@ -83,7 +98,9 @@ async def cert_scenario():
     finally:
         async with AsyncSessionLocal() as db:
             for fid in created_ids["faithful"]:
-                await db.execute(delete(CertificateIssue).where(CertificateIssue.faithful_id == fid))
+                await db.execute(
+                    delete(CertificateIssue).where(CertificateIssue.faithful_id == fid)
+                )
             for uid in created_ids["users"]:
                 await db.execute(delete(User).where(User.id == uid))
             for fid in created_ids["faithful"]:
@@ -93,7 +110,9 @@ async def cert_scenario():
             if created_ids["dea_id"]:
                 await db.execute(delete(Deanery).where(Deanery.id == created_ids["dea_id"]))
             if created_ids["arch_id"]:
-                await db.execute(delete(Archdiocese).where(Archdiocese.id == created_ids["arch_id"]))
+                await db.execute(
+                    delete(Archdiocese).where(Archdiocese.id == created_ids["arch_id"])
+                )
             await db.commit()
 
 
@@ -105,6 +124,8 @@ async def _headers(client: AsyncClient, creds: dict) -> dict:
     assert resp.status_code == 200, resp.text
     token = resp.json()["data"]["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
 @pytest.mark.asyncio
 async def test_certificate_issue_download_verify(client: AsyncClient, cert_scenario):
     data = cert_scenario

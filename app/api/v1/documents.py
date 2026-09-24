@@ -2,6 +2,7 @@
 Documents Module FastAPI Endpoints
 Generic Archdiocesan Digital Document Registry & Document Types
 """
+
 import os
 import uuid
 
@@ -29,6 +30,7 @@ router = APIRouter(prefix="/documents", tags=["Documents & Archival Repository"]
 # ---------------------------------------------------------------------------
 # Document Types Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.post(
     "/types",
@@ -88,6 +90,7 @@ async def update_document_type(
 # Generic Document Endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.post(
     "/upload",
     response_model=ApiResponse[DocumentResponse],
@@ -112,8 +115,14 @@ async def upload_document(
 ):
     """Upload a file and register document with hierarchy scoping."""
     scopes = [
-        archdiocese_id, deanery_id, parish_id, commission_id,
-        council_id, meeting_id, priest_id, parcel_id,
+        archdiocese_id,
+        deanery_id,
+        parish_id,
+        commission_id,
+        council_id,
+        meeting_id,
+        priest_id,
+        parcel_id,
     ]
     if not any(scopes):
         raise HTTPException(
@@ -138,7 +147,9 @@ async def upload_document(
 
     uploader_id = uuid.UUID(user_payload["sub"]) if user_payload and "sub" in user_payload else None
     service = DocumentService(db)
-    created = await service.upload_and_create(file=file, metadata=metadata, uploaded_by_user_id=uploader_id)
+    created = await service.upload_and_create(
+        file=file, metadata=metadata, uploaded_by_user_id=uploader_id
+    )
     return ApiResponse.ok(data=created, message="success.document_uploaded")
 
 
@@ -215,7 +226,9 @@ async def download_document_file(
     service = DocumentService(db)
     full_path = await service.get_physical_path(document_id)
     if not os.path.isfile(full_path):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="errors.physical_file_not_found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="errors.physical_file_not_found"
+        )
 
     doc = await service.get_document(document_id)
     filename = os.path.basename(doc.file_path)

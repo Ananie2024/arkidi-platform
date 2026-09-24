@@ -1,14 +1,16 @@
 """
 User Model — system accounts for diocesan & parish staff.
 """
+
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Boolean, DateTime, Enum as SQLEnum
+from sqlalchemy import Boolean, DateTime, String
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.enums import UserRole
 
 
@@ -31,7 +33,11 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Optional geographical jurisdiction bindings
-    parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
-    deanery_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    parish_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
+    deanery_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
 
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

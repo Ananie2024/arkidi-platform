@@ -1,6 +1,7 @@
 """
 Health Endpoint Tests
 """
+
 import pytest
 from httpx import AsyncClient
 

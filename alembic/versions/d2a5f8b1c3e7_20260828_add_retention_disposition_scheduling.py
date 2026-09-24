@@ -9,6 +9,7 @@ retention_flagged_at / disposition_status (with a CheckConstraint) to Document
 so the Celery-beat archivist-review scheduler can flag documents whose
 retention deadline has elapsed.
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -77,8 +78,7 @@ def upgrade() -> None:
     # Back-fill existing rows so the server_default applies retroactively
     # and the CheckConstraint is satisfied for all rows.
     op.execute(
-        "UPDATE documents SET disposition_status = 'ACTIVE' "
-        "WHERE disposition_status IS NULL"
+        "UPDATE documents SET disposition_status = 'ACTIVE' " "WHERE disposition_status IS NULL"
     )
     # Now that every row satisfies the constraint, add the CheckConstraint.
     op.create_check_constraint(

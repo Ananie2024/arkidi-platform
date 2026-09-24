@@ -12,12 +12,13 @@ the ``{{name}}`` syntax (mirroring i18next), for example::
 
     translate("errors.entity_not_found", {"entity": "Parish", "identifier": id})
 """
+
 from __future__ import annotations
 
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from app.core.middleware import current_language_ctx
 
@@ -36,20 +37,20 @@ _CATALOG_NAMESPACES: tuple[str, ...] = ("messages", "errors", "success", "common
 # Catalog loading & lookup
 # ---------------------------------------------------------------------------
 @lru_cache(maxsize=32)
-def _load_catalog(lang: str) -> Dict[str, Any]:
+def _load_catalog(lang: str) -> dict[str, Any]:
     """Load and cache a locale catalog, merging every ``app/locales/<lang>/*.json`` file.
 
     Multiple files per language are supported so error catalogs can grow
     independently from success/common messages; files are merged in order.
     """
-    catalog: Dict[str, Any] = {}
+    catalog: dict[str, Any] = {}
     lang_dir = _LOCALES_DIR / lang
     for filename in _MESSAGE_FILENAMES:
         path = lang_dir / filename
         if not path.is_file():
             continue
         try:
-            with open(path, "r", encoding="utf-8") as handle:
+            with open(path, encoding="utf-8") as handle:
                 data = json.load(handle)
             if isinstance(data, dict):
                 catalog.update(data)
@@ -58,7 +59,7 @@ def _load_catalog(lang: str) -> Dict[str, Any]:
     return catalog
 
 
-def _resolve(catalog: Dict[str, Any], key: str) -> Optional[str]:
+def _resolve(catalog: dict[str, Any], key: str) -> str | None:
     """Dot-path lookup into a nested catalog (``"errors.parish_not_found"``)."""
     node: Any = catalog
     for part in key.split("."):
@@ -68,7 +69,7 @@ def _resolve(catalog: Dict[str, Any], key: str) -> Optional[str]:
     return node if isinstance(node, str) else None
 
 
-def _interpolate(template: str, params: Optional[Dict[str, Any]]) -> str:
+def _interpolate(template: str, params: dict[str, Any] | None) -> str:
     """Replace ``{{name}}`` placeholders with the given parameter values."""
     if not params:
         return template
@@ -92,9 +93,9 @@ def is_translation_key(value: Any) -> bool:
 
 def get_translation(
     key: str,
-    params: Optional[Dict[str, Any]] = None,
+    params: dict[str, Any] | None = None,
     default: str = "",
-    lang: Optional[str] = None,
+    lang: str | None = None,
 ) -> str:
     """Translate ``key`` for the given/current request language.
 
@@ -116,9 +117,9 @@ def get_translation(
 
 def t(
     key: str,
-    params: Optional[Dict[str, Any]] = None,
+    params: dict[str, Any] | None = None,
     default: str = "",
-    lang: Optional[str] = None,
+    lang: str | None = None,
 ) -> str:
     """Short alias for :func:`get_translation`."""
     return get_translation(key, params=params, default=default, lang=lang)

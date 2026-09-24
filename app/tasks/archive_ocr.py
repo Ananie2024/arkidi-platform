@@ -10,6 +10,7 @@ text lands in ``ScannedPage.ocr_raw_text`` and the extraction diagnostics in
 The heavy pytesseract calls are blocking system calls, so the task runs them
 in a worker thread (``asyncio.to_thread``) instead of the event loop.
 """
+
 import asyncio
 import logging
 import os
@@ -95,6 +96,7 @@ def extract_ocr_text(image_path: str) -> tuple[str, dict]:
         "duration_ms": duration_ms,
     }
 
+
 @celery_app.task(name="archive.process_ocr_page")
 def process_ocr_page(scanned_page_id: str) -> dict:
     """Extract real OCR text from a scanned canonical ledger page and index it.
@@ -156,7 +158,11 @@ def process_ocr_page(scanned_page_id: str) -> dict:
                     "error": str(exc),
                 }
                 await db.commit()
-                return {"scanned_page_id": scanned_page_id, "status": "ocr_unavailable", "error": str(exc)}
+                return {
+                    "scanned_page_id": scanned_page_id,
+                    "status": "ocr_unavailable",
+                    "error": str(exc),
+                }
             except FileNotFoundError as exc:
                 logger.error("OCR image missing for page %s: %s", scanned_page_id, exc)
                 page.ocr_metadata = {
@@ -166,7 +172,11 @@ def process_ocr_page(scanned_page_id: str) -> dict:
                     "error": str(exc),
                 }
                 await db.commit()
-                return {"scanned_page_id": scanned_page_id, "status": "image_not_found", "error": str(exc)}
+                return {
+                    "scanned_page_id": scanned_page_id,
+                    "status": "image_not_found",
+                    "error": str(exc),
+                }
             except Exception as exc:  # noqa: BLE001 - pytesseract.TesseractError etc.
                 logger.exception("OCR extraction failed for page %s", scanned_page_id)
                 page.ocr_metadata = {
@@ -176,7 +186,11 @@ def process_ocr_page(scanned_page_id: str) -> dict:
                     "error": str(exc),
                 }
                 await db.commit()
-                return {"scanned_page_id": scanned_page_id, "status": "ocr_failed", "error": str(exc)}
+                return {
+                    "scanned_page_id": scanned_page_id,
+                    "status": "ocr_failed",
+                    "error": str(exc),
+                }
 
             # ----------------------------------------------------------------
             # Success: persist the extracted text and merge the extraction

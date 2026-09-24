@@ -1,24 +1,29 @@
 """
 Clergy Module FastAPI Endpoints — Priests & Clergy Assignments
 """
+
 import uuid
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
-from app.schemas.appointment import PriestCreate, PriestResponse, AssignmentCreate, AssignmentResponse
+from app.schemas.appointment import (
+    AssignmentCreate,
+    AssignmentResponse,
+    PriestCreate,
+    PriestResponse,
+)
 from app.services.appointment import ClergyService
 from app.utils.response import ApiResponse
 
 router = APIRouter(prefix="/clergy", tags=["Clergy & Appointments"])
 
 
-@router.get("/priests", response_model=ApiResponse[List[PriestResponse]])
+@router.get("/priests", response_model=ApiResponse[list[PriestResponse]])
 async def list_priests(
-    parish_id: Optional[uuid.UUID] = None,
+    parish_id: uuid.UUID | None = None,
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -48,7 +53,9 @@ async def create_priest(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     service = ClergyService(db)
-    return ApiResponse.ok(data=await service.create_priest(data), message="success.priest_registered")
+    return ApiResponse.ok(
+        data=await service.create_priest(data), message="success.priest_registered"
+    )
 
 
 @router.post(
@@ -63,4 +70,6 @@ async def create_assignment(
 ):
     """Record a new clergy assignment."""
     service = ClergyService(db)
-    return ApiResponse.ok(data=await service.record_assignment(data), message="success.assignment_recorded")
+    return ApiResponse.ok(
+        data=await service.record_assignment(data), message="success.assignment_recorded"
+    )

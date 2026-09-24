@@ -2,6 +2,7 @@
 Document & Archive Module Pydantic v2 Schemas
 Covers generic Document/DocumentType registry as well as historical ledger books.
 """
+
 import uuid
 from datetime import datetime
 
@@ -13,8 +14,11 @@ from app.models.sacrament import SacramentType
 # Document Type Schemas
 # ---------------------------------------------------------------------------
 
+
 class DocumentTypeBase(BaseModel):
-    code: str = Field(min_length=1, max_length=50, description="Unique alphanumeric code (e.g. 'DECREE_OFFICIAL')")
+    code: str = Field(
+        min_length=1, max_length=50, description="Unique alphanumeric code (e.g. 'DECREE_OFFICIAL')"
+    )
     name_en: str = Field(min_length=1, max_length=200)
     name_fr: str = Field(min_length=1, max_length=200)
     name_rw: str = Field(min_length=1, max_length=200)
@@ -22,16 +26,20 @@ class DocumentTypeBase(BaseModel):
     category: str = Field(default="GENERAL", max_length=50)
     is_active: bool = True
     retention_years: int | None = Field(
-        default=None, ge=0,
+        default=None,
+        ge=0,
         description="Years to retain documents of this type from creation date. Null = indefinite.",
     )
     disposition_action: str | None = Field(
-        default=None, max_length=50,
+        default=None,
+        max_length=50,
         description="Action when retention expires: DESTROY|TRANSFER|MANUAL_REVIEW|PRESERVE_INDEFINITELY.",
     )
 
+
 class DocumentTypeCreate(DocumentTypeBase):
     pass
+
 
 class DocumentTypeUpdate(BaseModel):
     name_en: str | None = Field(default=None, min_length=1, max_length=200)
@@ -43,6 +51,7 @@ class DocumentTypeUpdate(BaseModel):
     retention_years: int | None = Field(default=None, ge=0)
     disposition_action: str | None = Field(default=None, max_length=50)
 
+
 class DocumentTypeResponse(DocumentTypeBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -50,9 +59,11 @@ class DocumentTypeResponse(DocumentTypeBase):
     created_at: datetime
     updated_at: datetime
 
+
 # ---------------------------------------------------------------------------
 # Generic Document Schemas
 # ---------------------------------------------------------------------------
+
 
 class DocumentBase(BaseModel):
     title: str = Field(min_length=1, max_length=200)
@@ -60,7 +71,8 @@ class DocumentBase(BaseModel):
     classification: str = Field(default="OFFICIAL", max_length=50)
     notes: str | None = None
     disposition_status: str | None = Field(
-        default=None, max_length=50,
+        default=None,
+        max_length=50,
         description="ACTIVE|DUE_FOR_REVIEW|DISPOSED|PRESERVE_INDEFINITELY",
     )
 
@@ -73,6 +85,7 @@ class DocumentBase(BaseModel):
     meeting_id: uuid.UUID | None = None
     priest_id: uuid.UUID | None = None
     parcel_id: uuid.UUID | None = None
+
 
 class DocumentCreate(DocumentBase):
     file_path: str = Field(min_length=1, max_length=500)
@@ -99,6 +112,7 @@ class DocumentCreate(DocumentBase):
             )
         return self
 
+
 class DocumentUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     document_type_id: uuid.UUID | None = None
@@ -114,6 +128,7 @@ class DocumentUpdate(BaseModel):
     priest_id: uuid.UUID | None = None
     parcel_id: uuid.UUID | None = None
 
+
 class DocumentResponse(DocumentBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -127,9 +142,11 @@ class DocumentResponse(DocumentBase):
     created_at: datetime
     updated_at: datetime
 
+
 # ---------------------------------------------------------------------------
 # Historical Canonical Ledger Book Archive Schemas
 # ---------------------------------------------------------------------------
+
 
 class ArchiveLedgerBookBase(BaseModel):
     sacrament_type: SacramentType
@@ -139,8 +156,10 @@ class ArchiveLedgerBookBase(BaseModel):
     volume_number: str
     shelf_location: str | None = None
 
+
 class ArchiveLedgerBookCreate(ArchiveLedgerBookBase):
     parish_id: uuid.UUID
+
 
 class ArchiveLedgerBookResponse(ArchiveLedgerBookBase):
     model_config = ConfigDict(from_attributes=True)
@@ -150,11 +169,13 @@ class ArchiveLedgerBookResponse(ArchiveLedgerBookBase):
     total_scanned_pages: int
     created_at: datetime
 
+
 class ScannedPageCreate(BaseModel):
     ledger_book_id: uuid.UUID
     page_number: int
     image_file_path: str
     ocr_raw_text: str | None = None
+
 
 class ScannedPageResponse(ScannedPageCreate):
     model_config = ConfigDict(from_attributes=True)
@@ -162,4 +183,3 @@ class ScannedPageResponse(ScannedPageCreate):
     id: uuid.UUID
     ocr_metadata: dict | None = None
     created_at: datetime
-

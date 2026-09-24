@@ -9,8 +9,8 @@ Production hardening notes
 - ``health_probe()`` backs the application ``/health`` endpoint so deployments
   can detect Redis outages in monitoring.
 """
+
 import logging
-from typing import Optional
 
 import redis.asyncio as aioredis
 
@@ -23,7 +23,7 @@ logger = logging.getLogger("arkidi.core.redis")
 _CONNECT_TIMEOUT = 3
 _OPERATION_TIMEOUT = 3
 
-redis_client: Optional[aioredis.Redis] = None
+redis_client: aioredis.Redis | None = None
 
 
 async def get_redis() -> aioredis.Redis:
@@ -55,9 +55,7 @@ async def is_token_revoked(jti: str) -> bool:
     except Exception as exc:  # pragma: no cover - depends on external Redis
         logger.exception("Could not check token revocation for %s: %s", jti, exc)
         if settings.SECURITY_CRITICAL_MODE:
-            logger.error(
-                "SECURITY_CRITICAL_MODE is enabled; treating token %s as revoked.", jti
-            )
+            logger.error("SECURITY_CRITICAL_MODE is enabled; treating token %s as revoked.", jti)
             return True
         logger.warning(
             "Redis unavailable and SECURITY_CRITICAL_MODE is off; token %s not checked.",
@@ -81,9 +79,7 @@ async def revoke_token(jti: str, expire_seconds: int) -> bool:
     except Exception as exc:
         logger.error("Failed to revoke token %s: %s", jti, exc)
         if settings.SECURITY_CRITICAL_MODE:
-            logger.critical(
-                "Revocation failed in critical mode; raising for operator alert."
-            )
+            logger.critical("Revocation failed in critical mode; raising for operator alert.")
             raise
         return False
 
@@ -139,7 +135,7 @@ async def set_password_reset_token(token: str, user_id: str, ttl_seconds: int) -
         return False
 
 
-async def consume_password_reset_token(token: str) -> Optional[str]:
+async def consume_password_reset_token(token: str) -> str | None:
     """Atomically read-and-delete a password-reset token.
 
     Returns the associated ``user_id`` when the token exists and is unexpired,
@@ -152,7 +148,9 @@ async def consume_password_reset_token(token: str) -> Optional[str]:
         if user_id is None:
             return None
         await r.delete(key)
-        return user_id
+        # ``decode_responses=True`` guarantees ``str`` at runtime; the explicit
+        # branch keeps the declared ``str | None`` return type honest.
+        return user_id.decode() if isinstance(user_id, bytes) else str(user_id)
     except Exception as exc:
         logger.error("Failed to consume password-reset token: %s", exc)
         return None

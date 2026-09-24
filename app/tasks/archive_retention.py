@@ -9,10 +9,10 @@ retention period has passed is flagged for archivist manual review (the
 ``retention_flagged_at`` is stamped).  Documents with ``retention_years``
 set to NULL are never flagged (indefinite retention).
 """
+
 import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import List
+from datetime import UTC, datetime
 
 from sqlalchemy import or_, select
 from sqlalchemy.sql import func
@@ -86,11 +86,11 @@ def flag_documents_due_for_review() -> dict:
             )
 
             result = await db.execute(stmt)
-            due_docs: List[Document] = result.scalars().all()
+            due_docs = list(result.scalars().all())
 
             for doc in due_docs:
                 doc.disposition_status = DISPOSITION_DUE_FOR_REVIEW
-                doc.retention_flagged_at = datetime.now(timezone.utc)
+                doc.retention_flagged_at = datetime.now(UTC)
 
             await db.commit()
             flagged_ids = [str(doc.id) for doc in due_docs]
@@ -101,11 +101,9 @@ def flag_documents_due_for_review() -> dict:
                 "flagged_ids": flagged_ids,
             }
             logger.info(
-                "flag_documents_due_for_review: flagged %d document(s) "
-                "for archivist review",
+                "flag_documents_due_for_review: flagged %d document(s) " "for archivist review",
                 summary["flagged"],
             )
             return summary
 
     return asyncio.run(_run())
-

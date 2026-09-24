@@ -1,18 +1,18 @@
 """
 Parish / Centrale / Small Christian Communities FastAPI Endpoints
 """
+
 import uuid
 
-from typing import List, Optional
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
 from app.schemas.parish import (
+    CentraleResponse,
     ParishCreate,
     ParishResponse,
-    CentraleResponse,
     SCCResponse,
 )
 from app.services.parish import ParishService
@@ -21,9 +21,9 @@ from app.utils.response import ApiResponse
 router = APIRouter(prefix="/geography", tags=["Ecclesiastical Geography"])
 
 
-@router.get("/parishes", response_model=ApiResponse[List[ParishResponse]])
+@router.get("/parishes", response_model=ApiResponse[list[ParishResponse]])
 async def list_parishes(
-    deanery_id: Optional[uuid.UUID] = None,
+    deanery_id: uuid.UUID | None = None,
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -61,7 +61,7 @@ async def create_parish(
     return ApiResponse.ok(data=created, message="success.parish_created")
 
 
-@router.get("/parishes/{parish_id}/centrales", response_model=ApiResponse[List[CentraleResponse]])
+@router.get("/parishes/{parish_id}/centrales", response_model=ApiResponse[list[CentraleResponse]])
 async def list_centrales(
     parish_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -73,7 +73,7 @@ async def list_centrales(
     return ApiResponse.ok(data=items)
 
 
-@router.get("/centrales/{centrale_id}/scc", response_model=ApiResponse[List[SCCResponse]])
+@router.get("/centrales/{centrale_id}/scc", response_model=ApiResponse[list[SCCResponse]])
 async def list_scc(
     centrale_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),

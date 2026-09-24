@@ -2,6 +2,7 @@
 Google OAuth 2.0 Integration Service
 Handles authorization URL generation, code exchange, and ID token verification.
 """
+
 import logging
 import secrets
 import urllib.parse

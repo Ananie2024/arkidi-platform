@@ -1,20 +1,22 @@
 """
 Mass Intention Model — parishioner-requested Mass intentions (Ibitambo bya Misa).
 """
+
 import uuid
 from datetime import date
 from enum import Enum
 
-from sqlalchemy import String, Date, Numeric, Enum as SQLEnum, ForeignKey, Text
+from sqlalchemy import Date, ForeignKey, Numeric, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class IntentionType(str, Enum):
-    REQUIEM = "REQUIEM"                  # Gusabira abitabye Imana / Repos de l'âme
-    THANKSGIVING = "THANKSGIVING"        # Gushimira Imana / Action de grâce
+    REQUIEM = "REQUIEM"  # Gusabira abitabye Imana / Repos de l'âme
+    THANKSGIVING = "THANKSGIVING"  # Gushimira Imana / Action de grâce
     SPECIAL_PETITION = "SPECIAL_PETITION"  # Gusabira uburwayi / Intention particulière
 
 
@@ -26,7 +28,9 @@ class MassIntention(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     mass_schedule_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("mass_schedules.id"), nullable=True
     )
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
 
     requested_by_name: Mapped[str] = mapped_column(String(200), nullable=False)
     requested_by_phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -42,4 +46,4 @@ class MassIntention(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     is_paid: Mapped[bool] = mapped_column(default=True, nullable=False)
     scheduled_date: Mapped[date] = mapped_column(Date, nullable=False)
 
-    mass_schedule: Mapped["MassSchedule"] = relationship("MassSchedule", back_populates="intentions")  # type: ignore[name-defined]
+    mass_schedule: Mapped["MassSchedule"] = relationship("MassSchedule", back_populates="intentions")  # type: ignore[name-defined]  # noqa: F821

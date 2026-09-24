@@ -1,6 +1,7 @@
 """
 Auth Module FastAPI Endpoints
 """
+
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -104,7 +105,9 @@ async def forgot_password(
     await AuthService(db).request_password_reset(data.email)
     return ApiResponse.ok(
         message="success.password_reset_requested",
-        data={"detail": "If an account exists for this email, a password reset link has been sent."},
+        data={
+            "detail": "If an account exists for this email, a password reset link has been sent."
+        },
     )
 
 
@@ -115,7 +118,9 @@ async def reset_password(
 ):
     """Consume a one-time reset token and update the user's password."""
     await AuthService(db).reset_password(data.token, data.new_password)
-    return ApiResponse.ok(message="success.password_reset_completed", data={"detail": "Password reset successfully"})
+    return ApiResponse.ok(
+        message="success.password_reset_completed", data={"detail": "Password reset successfully"}
+    )
 
 
 # ==========================================================================

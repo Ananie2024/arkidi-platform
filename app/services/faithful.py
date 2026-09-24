@@ -1,9 +1,12 @@
 """
 Faithful Module Business Logic Service
 """
+
 import uuid
-from typing import Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.exceptions import DuplicateRegistrationNumberException, FaithfulNotFoundException
 from app.repositories.faithful import FaithfulRepository
 from app.schemas.faithful import (
     FaithfulCreate,
@@ -11,7 +14,6 @@ from app.schemas.faithful import (
     FamilyCreate,
     FamilyResponse,
 )
-from app.core.exceptions import FaithfulNotFoundException, DuplicateRegistrationNumberException
 from app.utils.pagination import PaginatedResponse, PaginationParams
 
 
@@ -27,8 +29,8 @@ class FaithfulService:
 
     async def list_faithful(
         self,
-        parish_id: Optional[uuid.UUID],
-        search: Optional[str],
+        parish_id: uuid.UUID | None,
+        search: str | None,
         params: PaginationParams,
     ) -> PaginatedResponse[FaithfulResponse]:
         items, total = await self.repo.list_faithful(

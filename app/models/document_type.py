@@ -1,12 +1,11 @@
 """
 Document Type Model — canonical & administrative document categories.
 """
-import uuid
 
-from sqlalchemy import String, Boolean, Integer
+from sqlalchemy import Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class DocumentType(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -37,8 +36,12 @@ class DocumentType(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     # Retention & Disposition Scheduling
     # ------------------------------------------------------------------
     retention_years: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, comment="Years to retain documents of this type from creation date. NULL = indefinite."
+        Integer,
+        nullable=True,
+        comment="Years to retain documents of this type from creation date. NULL = indefinite.",
     )
     disposition_action: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, comment="Action to take when retention expires: DESTROY|TRANSFER|MANUAL_REVIEW|PRESERVE_INDEFINITELY."
+        String(50),
+        nullable=True,
+        comment="Action to take when retention expires: DESTROY|TRANSFER|MANUAL_REVIEW|PRESERVE_INDEFINITELY.",
     )

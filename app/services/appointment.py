@@ -1,24 +1,26 @@
 """
 Clergy Module Business Logic Service
 """
+
 import uuid
-from typing import List, Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.exceptions import PriestNotFoundException
 from app.repositories.appointment import ClergyRepository
 from app.schemas.appointment import (
-    PriestCreate,
-    PriestResponse,
     AssignmentCreate,
     AssignmentResponse,
+    PriestCreate,
+    PriestResponse,
 )
-from app.core.exceptions import PriestNotFoundException
 
 
 class ClergyService:
     def __init__(self, db: AsyncSession):
         self.repo = ClergyRepository(db)
 
-    async def list_priests(self, parish_id: Optional[uuid.UUID] = None) -> List[PriestResponse]:
+    async def list_priests(self, parish_id: uuid.UUID | None = None) -> list[PriestResponse]:
         priests = await self.repo.list_priests(parish_id)
         return [PriestResponse.model_validate(p) for p in priests]
 

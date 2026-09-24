@@ -12,6 +12,7 @@ They cover the extraction helper and every task status contract:
 * image_not_found      — page image file missing from storage
 * ocr_failed           — engine raised while reading the image
 """
+
 import sys
 import types
 import uuid

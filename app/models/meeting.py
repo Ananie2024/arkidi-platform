@@ -1,14 +1,15 @@
 """
 Meeting Model — council & commission meetings with agendas and decisions.
 """
+
 import uuid
 from datetime import date, time
 
-from sqlalchemy import String, Date, Time, Text, ForeignKey
+from sqlalchemy import Date, ForeignKey, String, Text, Time
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class Meeting(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -25,7 +26,9 @@ class Meeting(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     decisions: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="SCHEDULED", nullable=False)
 
-    council_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("councils.id"), nullable=True)
+    council_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("councils.id"), nullable=True
+    )
     commission_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("commissions.id"), nullable=True
     )
@@ -33,5 +36,5 @@ class Meeting(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     deanery_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
 
-    council: Mapped["Council | None"] = relationship("Council", back_populates="meetings")  # type: ignore[name-defined]
-    minutes: Mapped[list["MeetingMinute"]] = relationship("MeetingMinute", back_populates="meeting")  # type: ignore[name-defined]
+    council: Mapped["Council | None"] = relationship("Council", back_populates="meetings")  # type: ignore[name-defined]  # noqa: F821
+    minutes: Mapped[list["MeetingMinute"]] = relationship("MeetingMinute", back_populates="meeting")  # type: ignore[name-defined]  # noqa: F821

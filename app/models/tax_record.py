@@ -1,14 +1,15 @@
 """
 Tax Record Model — property tax assessments for church land parcels.
 """
+
 import uuid
 from datetime import date
 
-from sqlalchemy import String, Date, Numeric, ForeignKey, Text
+from sqlalchemy import Date, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class TaxRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -16,7 +17,9 @@ class TaxRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     __tablename__ = "tax_records"
 
-    parcel_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("land_parcels.id"), nullable=False)
+    parcel_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("land_parcels.id"), nullable=False
+    )
     tax_year: Mapped[int] = mapped_column(nullable=False)
     assessed_value_rwf: Mapped[float] = mapped_column(Numeric(14, 2), default=0.0, nullable=False)
     tax_amount_rwf: Mapped[float] = mapped_column(Numeric(14, 2), default=0.0, nullable=False)

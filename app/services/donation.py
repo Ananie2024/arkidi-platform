@@ -1,17 +1,19 @@
 """
 Finance Module Business Logic Service
 """
+
 import uuid
-from typing import List
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.exceptions import EntityNotFoundException
+from app.models.donation import DonationType
 from app.repositories.donation import FinanceRepository
 from app.schemas.donation import (
     DonationCreate,
     DonationResponse,
     FinancialSummaryResponse,
 )
-from app.core.exceptions import EntityNotFoundException
-from app.models.donation import DonationType
 
 
 class FinanceService:
@@ -29,7 +31,7 @@ class FinanceService:
         donation = await self.repo.create_donation(data, receipt_no)
         return DonationResponse.model_validate(donation)
 
-    async def list_donations(self, parish_id: uuid.UUID) -> List[DonationResponse]:
+    async def list_donations(self, parish_id: uuid.UUID) -> list[DonationResponse]:
         items = await self.repo.list_donations(parish_id)
         return [DonationResponse.model_validate(d) for d in items]
 

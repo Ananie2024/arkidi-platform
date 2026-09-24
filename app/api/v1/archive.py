@@ -1,6 +1,7 @@
 """
 Archive Module FastAPI Endpoints — Canonical Ledger Books & Scanned Pages
 """
+
 import uuid
 
 from fastapi import APIRouter, Depends, status
@@ -41,7 +42,9 @@ async def create_book(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.ARCHBISHOP])),
 ):
     service = ArchiveService(db)
-    return ApiResponse.ok(data=await service.create_book(data), message="success.ledger_book_created")
+    return ApiResponse.ok(
+        data=await service.create_book(data), message="success.ledger_book_created"
+    )
 
 
 @router.get("/books/{book_id}/pages", response_model=ApiResponse[list[ScannedPageResponse]])
@@ -79,7 +82,9 @@ async def get_page(
 async def trigger_page_ocr(
     page_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_SECRETARY])),
+    _: dict = Depends(
+        require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_SECRETARY])
+    ),
 ):
     service = ArchiveService(db)
     return ApiResponse.ok(data=await service.trigger_ocr(page_id), message="success.ocr_enqueued")
@@ -93,8 +98,9 @@ async def trigger_page_ocr(
 async def add_page(
     data: ScannedPageCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_SECRETARY])),
+    _: dict = Depends(
+        require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_SECRETARY])
+    ),
 ):
     service = ArchiveService(db)
     return ApiResponse.ok(data=await service.add_page(data), message="success.scanned_page_added")
-

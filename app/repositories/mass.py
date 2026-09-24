@@ -1,9 +1,9 @@
 """
 Mass Schedule Module Database Repository
 """
+
 import uuid
 from datetime import date
-from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +16,9 @@ class MassScheduleRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def list_mass_schedules(self, parish_id: uuid.UUID, for_date: Optional[date] = None) -> List[MassSchedule]:
+    async def list_mass_schedules(
+        self, parish_id: uuid.UUID, for_date: date | None = None
+    ) -> list[MassSchedule]:
         stmt = select(MassSchedule).where(
             MassSchedule.parish_id == parish_id,
             MassSchedule.is_deleted.is_(False),

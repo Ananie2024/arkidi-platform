@@ -9,6 +9,7 @@ repository never joins across hierarchy tables — the single exception is the
 per-indicator via-join (e.g. ``ScannedPage -> ArchiveLedgerBook``), which is
 declared explicitly in the indicator configuration.
 """
+
 import uuid
 from collections.abc import Iterable, Sequence
 from datetime import date
@@ -62,6 +63,7 @@ class IndicatorRepository:
         false rows.
         """
         if via_model is not None:
+            assert via_local_field is not None  # required when via_model is supplied
             scope_col = getattr(via_model, via_scope_field)
             stmt = (
                 select(model, scope_col)
@@ -74,26 +76,18 @@ class IndicatorRepository:
             # resolved deaneries, or the scope archdiocese itself.
             clauses = []
             if org_scope.get("parish_ids"):
-                clauses.append(
-                    getattr(model, PARISH_ID_ATTRIBUTE).in_(org_scope["parish_ids"])
-                )
+                clauses.append(getattr(model, PARISH_ID_ATTRIBUTE).in_(org_scope["parish_ids"]))
             if org_scope.get("deanery_ids"):
-                clauses.append(
-                    getattr(model, "deanery_id").in_(org_scope["deanery_ids"])
-                )
+                clauses.append(getattr(model, "deanery_id").in_(org_scope["deanery_ids"]))
             if org_scope.get("archdiocese_id") is not None:
-                clauses.append(
-                    getattr(model, "archdiocese_id") == org_scope["archdiocese_id"]
-                )
+                clauses.append(getattr(model, "archdiocese_id") == org_scope["archdiocese_id"])
             if not clauses:
                 return []
             stmt = select(model).where(or_(*clauses))
         else:
             if not parish_ids:
                 return []
-            stmt = select(model).where(
-                getattr(model, PARISH_ID_ATTRIBUTE).in_(parish_ids)
-            )
+            stmt = select(model).where(getattr(model, PARISH_ID_ATTRIBUTE).in_(parish_ids))
 
         if hasattr(model, "is_deleted"):
             stmt = stmt.where(model.is_deleted.is_(False))  # type: ignore[attr-defined]
@@ -143,7 +137,7 @@ class IndicatorRepository:
         if not concrete or not hasattr(model, field):
             return {}
 
-        stmt = select(model.id, getattr(model, field)).where(
+        stmt = select(model.id, getattr(model, field)).where(  # type: ignore[attr-defined]
             model.id.in_(concrete)  # type: ignore[attr-defined]
         )
         result = await self.db.execute(stmt)

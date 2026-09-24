@@ -1,9 +1,11 @@
 """
 Structured JSON and Console Logging Configuration
 """
+
 import logging
 import os
 import sys
+
 from pythonjsonlogger import jsonlogger
 
 from app.config import settings

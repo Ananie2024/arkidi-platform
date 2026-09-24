@@ -1,4 +1,3 @@
-
 """
 Generic Statistic Indicator Engine — Pydantic v2 Schemas.
 
@@ -8,6 +7,7 @@ hierarchical level (archdiocese / deanery / parish) using the rollup helpers in
 ``app/services/org/hierarchy_resolver.py``. New statistics are configuration
 entries (see ``app/services/indicators.py``), not one-off hand-written methods.
 """
+
 import uuid
 from datetime import date, datetime
 from enum import Enum
@@ -116,15 +116,11 @@ class StatisticIndicator(BaseModel):
         if self.aggregation in (Aggregation.SUM, Aggregation.AVG, Aggregation.RATE) and (
             not self.metric_field
         ):
-            raise ValueError(
-                "metric_field is required when aggregation is SUM, AVG or RATE"
-            )
+            raise ValueError("metric_field is required when aggregation is SUM, AVG or RATE")
         if self.scope_mode == ScopeMode.VIA_JOIN and (
             not self.via_model or not self.via_local_field
         ):
-            raise ValueError(
-                "scope_mode VIA_JOIN requires both via_model and via_local_field"
-            )
+            raise ValueError("scope_mode VIA_JOIN requires both via_model and via_local_field")
         if self.group_by_field and self.label_model is None:
             raise ValueError("label_model is required when group_by_field is set")
         return self

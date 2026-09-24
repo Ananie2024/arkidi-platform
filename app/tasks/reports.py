@@ -2,6 +2,7 @@
 Statistical Report Generation Background Tasks
 Builds annual diocesan statistical returns (Annuario Pontificio extracts) asynchronously.
 """
+
 import asyncio
 import logging
 

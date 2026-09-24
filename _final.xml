@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="3" failures="13" skipped="0" tests="114" time="54.605" timestamp="2026-09-17T12:43:08.008714" hostname="DESKTOP-KKVVU1F"><testcase classname="tests.test_auth" name="test_login_invalid_credentials" time="3.085" /><testcase classname="tests.test_auth" name="test_logout_revokes_access_token" time="2.924" /><testcase classname="tests.test_certificate_integration" name="test_certificate_issue_download_verify" time="2.178" /><testcase classname="tests.test_certificate_integration" name="test_certificate_batch_task" time="0.845" /><testcase classname="tests.test_health" name="test_health_check" time="0.011" /><testcase classname="tests.test_module_routes_integration" name="test_governance_update_delete_and_404s" time="1.866" /><testcase classname="tests.test_module_routes_integration" name="test_governance_role_enforcement" time="1.467" /><testcase classname="tests.test_module_routes_integration" name="test_finance_donation_lifecycle_and_summary" time="1.389"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x000001802681FCB0&gt;
+auth_users = &lt;function auth_users.&lt;locals&gt;.get_headers at 0x00000180268BF9C0&gt;
+geo_setup = (UUID('35b9cd09-0403-4581-bf50-c0bbf166b36f'), UUID('24adf68f-2621-4171-828e-daf465547b0c'), UUID('e2e1d300-0ddc-4f11-acad-bf7483b38bf8'))
+
+    @pytest.mark.asyncio
+    async def test_finance_donation_lifecycle_and_summary(client: AsyncClient, auth_users, geo_setup):
+        _, _, par_id = geo_setup
+        secretary_headers = await auth_users(client, UserRole.PARISH_SECRETARY)
+&gt;       leader_headers = await auth_users(client, UserRole.MINISTRY_LEADER)
+
+tests\test_module_routes_integration.py:293: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = &lt;httpx.AsyncClient object at 0x000001802681FCB0&gt;
+role = &lt;UserRole.MINISTRY_LEADER: 'MINISTRY_LEADER'&gt;
+
+    async def get_headers(client: AsyncClient, role: UserRole) -&gt; dict:
+        uname, pwd = creds_by_role[role]
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username_or_email": uname, "password": pwd},
+        )
+&gt;       assert resp.status_code == 200, resp.text
+E       AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E       assert 429 == 200
+E        +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_module_routes_integration.py:77: AssertionError</failure></testcase><testcase classname="tests.test_module_routes_integration" name="test_liturgy_mass_schedules_and_intentions" time="1.340"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x00000180268F5460&gt;
+auth_users = &lt;function auth_users.&lt;locals&gt;.get_headers at 0x00000180268BFEC0&gt;
+geo_setup = (UUID('7db173e7-4d7e-4522-a58a-4f0227545ac8'), UUID('eedf7a9a-23e0-4f1d-bec1-a5df10b84976'), UUID('9e6d898d-e1dc-408d-a50a-9450d8ec986d'))
+
+    @pytest.mark.asyncio
+    async def test_liturgy_mass_schedules_and_intentions(client: AsyncClient, auth_users, geo_setup):
+        _, _, par_id = geo_setup
+&gt;       priest_headers = await auth_users(client, UserRole.PARISH_PRIEST)
+
+tests\test_module_routes_integration.py:368: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = &lt;httpx.AsyncClient object at 0x00000180268F5460&gt;
+role = &lt;UserRole.PARISH_PRIEST: 'PARISH_PRIEST'&gt;
+
+    async def get_headers(client: AsyncClient, role: UserRole) -&gt; dict:
+        uname, pwd = creds_by_role[role]
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username_or_email": uname, "password": pwd},
+        )
+&gt;       assert resp.status_code == 200, resp.text
+E       AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E       assert 429 == 200
+E        +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_module_routes_integration.py:77: AssertionError</failure></testcase><testcase classname="tests.test_module_routes_integration" name="test_archive_indicator_documents_by_type_via_api" time="1.269"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x000001802692D7F0&gt;
+auth_users = &lt;function auth_users.&lt;locals&gt;.get_headers at 0x000001802687A2A0&gt;
+geo_setup = (UUID('0e3ffd6b-e7ca-4956-9f91-23613b45e377'), UUID('e464b3d2-73af-4bf3-96a7-7eca1cfbd4fb'), UUID('fad46a25-094c-4998-a47e-cb3206cb5996'))
+
+    @pytest.mark.asyncio
+    async def test_archive_indicator_documents_by_type_via_api(
+        client: AsyncClient, auth_users, geo_setup
+    ):
+        arch_id, _dea_id, par_id = geo_setup
+&gt;       auditor_headers = await auth_users(client, UserRole.READ_ONLY_AUDITOR)
+
+tests\test_module_routes_integration.py:481: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = &lt;httpx.AsyncClient object at 0x000001802692D7F0&gt;
+role = &lt;UserRole.READ_ONLY_AUDITOR: 'READ_ONLY_AUDITOR'&gt;
+
+    async def get_headers(client: AsyncClient, role: UserRole) -&gt; dict:
+        uname, pwd = creds_by_role[role]
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username_or_email": uname, "password": pwd},
+        )
+&gt;       assert resp.status_code == 200, resp.text
+E       AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E       assert 429 == 200
+E        +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_module_routes_integration.py:77: AssertionError</failure></testcase><testcase classname="tests.test_new_apis_integration" name="test_survey_lifecycle_and_responses" time="1.053"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x000001802692D520&gt;
+auth_users = &lt;function auth_users.&lt;locals&gt;.get_headers at 0x0000018026934E00&gt;
+geo_setup = (UUID('ba7b04eb-41fa-4ba1-bce4-c97ca5fb2bf9'), UUID('4abb9838-2460-4c98-b072-951108b1f483'), UUID('78c4b4d9-7be2-491a-8272-d9b77cea0b0d'))
+
+    @pytest.mark.asyncio
+    async def test_survey_lifecycle_and_responses(client: AsyncClient, auth_users, geo_setup):
+        arch_id, dea_id, par_id = geo_setup
+&gt;       priest_headers = await auth_users(client, UserRole.PARISH_PRIEST)
+
+tests\test_new_apis_integration.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = &lt;httpx.AsyncClient object at 0x000001802692D520&gt;
+role = &lt;UserRole.PARISH_PRIEST: 'PARISH_PRIEST'&gt;
+
+    async def get_headers(client: AsyncClient, role: UserRole) -&gt; dict:
+        uname, pwd, _ = headers_by_role[role]
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username_or_email": uname, "password": pwd},
+        )
+&gt;       assert resp.status_code == 200, resp.text
+E       AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E       assert 429 == 200
+E        +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_new_apis_integration.py:71: AssertionError</failure></testcase><testcase classname="tests.test_new_apis_integration" name="test_document_and_type_lifecycle" time="1.385"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x00000180268D63C0&gt;
+auth_users = &lt;function auth_users.&lt;locals&gt;.get_headers at 0x00000180268BE980&gt;
+geo_setup = (UUID('032ef535-14e2-4aa1-9e07-60ca4dfc585e'), UUID('6808b8c7-cf40-4f27-b80c-73e5ebc502f6'), UUID('9bca2282-28ca-4a5c-afa4-c1b947766a28'))
+
+    @pytest.mark.asyncio
+    async def test_document_and_type_lifecycle(client: AsyncClient, auth_users, geo_setup):
+        _, _, par_id = geo_setup
+&gt;       admin_headers = await auth_users(client, UserRole.SUPER_ADMIN)
+
+tests\test_new_apis_integration.py:219: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = &lt;httpx.AsyncClient object at 0x00000180268D63C0&gt;
+role = &lt;UserRole.SUPER_ADMIN: 'SUPER_ADMIN'&gt;
+
+    async def get_headers(client: AsyncClient, role: UserRole) -&gt; dict:
+        uname, pwd, _ = headers_by_role[role]
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username_or_email": uname, "password": pwd},
+        )
+&gt;       assert resp.status_code == 200, resp.text
+E       AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E       assert 429 == 200
+E        +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_new_apis_integration.py:71: AssertionError</failure></testcase><testcase classname="tests.test_new_apis_integration" name="test_governance_layer_crud" time="1.675"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x000001802692C710&gt;
+auth_users = &lt;function auth_users.&lt;locals&gt;.get_headers at 0x00000180268534C0&gt;
+geo_setup = (UUID('3c94de69-8e5f-4221-9318-7192ef914218'), UUID('4eb624d7-a959-41c7-a5f4-3a38ada3ec12'), UUID('70e5c06b-0206-4e1a-a00e-336e45e1b064'))
+
+    @pytest.mark.asyncio
+    async def test_governance_layer_crud(client: AsyncClient, auth_users, geo_setup):
+        _, _, par_id = geo_setup
+&gt;       priest_headers = await auth_users(client, UserRole.PARISH_PRIEST)
+
+tests\test_new_apis_integration.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = &lt;httpx.AsyncClient object at 0x000001802692C710&gt;
+role = &lt;UserRole.PARISH_PRIEST: 'PARISH_PRIEST'&gt;
+
+    async def get_headers(client: AsyncClient, role: UserRole) -&gt; dict:
+        uname, pwd, _ = headers_by_role[role]
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username_or_email": uname, "password": pwd},
+        )
+&gt;       assert resp.status_code == 200, resp.text
+E       AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E       assert 429 == 200
+E        +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_new_apis_integration.py:71: AssertionError</failure></testcase><testcase classname="tests.test_new_apis_integration" name="test_sacramental_amendment_workflow" time="1.377"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x00000180268F5100&gt;
+auth_users = &lt;function auth_users.&lt;locals&gt;.get_headers at 0x0000018026896F20&gt;
+geo_setup = (UUID('d76d6443-3af9-481c-ba00-bc11a6566d7c'), UUID('e80ba1b6-3482-43aa-82be-c7e9a5c4ba71'), UUID('b45595e0-72fe-4eee-94be-2335086ea9ca'))
+
+    @pytest.mark.asyncio
+    async def test_sacramental_amendment_workflow(client: AsyncClient, auth_users, geo_setup):
+        _, _, par_id = geo_setup
+&gt;       secretary_headers = await auth_users(client, UserRole.PARISH_SECRETARY)
+
+tests\test_new_apis_integration.py:371: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = &lt;httpx.AsyncClient object at 0x00000180268F5100&gt;
+role = &lt;UserRole.PARISH_SECRETARY: 'PARISH_SECRETARY'&gt;
+
+    async def get_headers(client: AsyncClient, role: UserRole) -&gt; dict:
+        uname, pwd, _ = headers_by_role[role]
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username_or_email": uname, "password": pwd},
+        )
+&gt;       assert resp.status_code == 200, resp.text
+E       AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E       assert 429 == 200
+E        +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_new_apis_integration.py:71: AssertionError</failure></testcase><testcase classname="tests.test_password_reset" name="test_forgot_password_returns_success_for_existing_user" time="0.002"><error message="failed on setup with &quot;file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 29&#10;  @pytest.mark.asyncio&#10;  async def test_forgot_password_returns_success_for_existing_user(test_user: User):&#10;      &quot;&quot;&quot;POST /auth/forgot-password should return success for an existing active user.&quot;&quot;&quot;&#10;      transport = ASGITransport(app=app)&#10;      async with AsyncClient(transport=transport, base_url=&quot;http://test&quot;) as client:&#10;          response = await client.post(&#10;              &quot;/auth/forgot-password&quot;, json={&quot;email&quot;: &quot;resetuser@archidiocesekigali.org&quot;}&#10;          )&#10;      assert response.status_code == 200&#10;      data = response.json()&#10;      assert data[&quot;success&quot;] is True&#10;file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 12&#10;  @pytest.fixture&#10;  async def test_user(db: AsyncSession) -&gt; User:&#10;      &quot;&quot;&quot;Create an active test user for password reset tests.&quot;&quot;&quot;&#10;      user = User(&#10;          id=uuid.uuid4(),&#10;          username=&quot;resetuser&quot;,&#10;          email=&quot;resetuser@archidiocesekigali.org&quot;,&#10;          hashed_password=get_password_hash(&quot;OldPassword123!&quot;),&#10;          first_name=&quot;Reset&quot;,&#10;          last_name=&quot;User&quot;,&#10;          is_active=True,&#10;      )&#10;      db.add(user)&#10;      await db.flush()&#10;      return user&#10;E       fixture 'db' not found&#10;&gt;       available fixtures: _pin_session_event_loop, _session_event_loop, anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, doctest_namespace, event_loop, event_loop_policy, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tests/test_password_reset.py::&lt;event_loop&gt;, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory&#10;&gt;       use 'pytest --fixtures [testpath]' for help on them.&#10;&#10;C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py:12&quot;">file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 29
+  @pytest.mark.asyncio
+  async def test_forgot_password_returns_success_for_existing_user(test_user: User):
+      """POST /auth/forgot-password should return success for an existing active user."""
+      transport = ASGITransport(app=app)
+      async with AsyncClient(transport=transport, base_url="http://test") as client:
+          response = await client.post(
+              "/auth/forgot-password", json={"email": "resetuser@archidiocesekigali.org"}
+          )
+      assert response.status_code == 200
+      data = response.json()
+      assert data["success"] is True
+file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 12
+  @pytest.fixture
+  async def test_user(db: AsyncSession) -&gt; User:
+      """Create an active test user for password reset tests."""
+      user = User(
+          id=uuid.uuid4(),
+          username="resetuser",
+          email="resetuser@archidiocesekigali.org",
+          hashed_password=get_password_hash("OldPassword123!"),
+          first_name="Reset",
+          last_name="User",
+          is_active=True,
+      )
+      db.add(user)
+      await db.flush()
+      return user
+E       fixture 'db' not found
+&gt;       available fixtures: _pin_session_event_loop, _session_event_loop, anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, doctest_namespace, event_loop, event_loop_policy, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tests/test_password_reset.py::&lt;event_loop&gt;, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+&gt;       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py:12</error></testcase><testcase classname="tests.test_password_reset" name="test_forgot_password_returns_success_for_unknown_email" time="0.021"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404 Not Found]&gt;.status_code">@pytest.mark.asyncio
+    async def test_forgot_password_returns_success_for_unknown_email():
+        """POST /auth/forgot-password should return success even for unknown emails (no user enumeration)."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/auth/forgot-password", json={"email": "nonexistent@archidiocesekigali.org"}
+            )
+&gt;       assert response.status_code == 200
+E       assert 404 == 200
+E        +  where 404 = &lt;Response [404 Not Found]&gt;.status_code
+
+tests\test_password_reset.py:50: AssertionError</failure></testcase><testcase classname="tests.test_password_reset" name="test_reset_password_with_valid_token" time="0.002"><error message="failed on setup with &quot;file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 55&#10;  @pytest.mark.asyncio&#10;  async def test_reset_password_with_valid_token(test_user: User):&#10;      &quot;&quot;&quot;POST /auth/reset-password should update password when token is valid.&quot;&quot;&quot;&#10;      from app.core.redis import set_password_reset_token&#10;&#10;      reset_token = &quot;test-reset-token-12345&quot;&#10;      await set_password_reset_token(reset_token, str(test_user.id), 3600)&#10;&#10;      transport = ASGITransport(app=app)&#10;      async with AsyncClient(transport=transport, base_url=&quot;http://test&quot;) as client:&#10;          response = await client.post(&#10;              &quot;/auth/reset-password&quot;,&#10;              json={&#10;                  &quot;token&quot;: reset_token,&#10;                  &quot;new_password&quot;: &quot;NewSecurePass456!&quot;,&#10;              },&#10;          )&#10;      assert response.status_code == 200&#10;      data = response.json()&#10;      assert data[&quot;success&quot;] is True&#10;file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 12&#10;  @pytest.fixture&#10;  async def test_user(db: AsyncSession) -&gt; User:&#10;      &quot;&quot;&quot;Create an active test user for password reset tests.&quot;&quot;&quot;&#10;      user = User(&#10;          id=uuid.uuid4(),&#10;          username=&quot;resetuser&quot;,&#10;          email=&quot;resetuser@archidiocesekigali.org&quot;,&#10;          hashed_password=get_password_hash(&quot;OldPassword123!&quot;),&#10;          first_name=&quot;Reset&quot;,&#10;          last_name=&quot;User&quot;,&#10;          is_active=True,&#10;      )&#10;      db.add(user)&#10;      await db.flush()&#10;      return user&#10;E       fixture 'db' not found&#10;&gt;       available fixtures: _pin_session_event_loop, _session_event_loop, anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, doctest_namespace, event_loop, event_loop_policy, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tests/test_password_reset.py::&lt;event_loop&gt;, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory&#10;&gt;       use 'pytest --fixtures [testpath]' for help on them.&#10;&#10;C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py:12&quot;">file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 55
+  @pytest.mark.asyncio
+  async def test_reset_password_with_valid_token(test_user: User):
+      """POST /auth/reset-password should update password when token is valid."""
+      from app.core.redis import set_password_reset_token
+
+      reset_token = "test-reset-token-12345"
+      await set_password_reset_token(reset_token, str(test_user.id), 3600)
+
+      transport = ASGITransport(app=app)
+      async with AsyncClient(transport=transport, base_url="http://test") as client:
+          response = await client.post(
+              "/auth/reset-password",
+              json={
+                  "token": reset_token,
+                  "new_password": "NewSecurePass456!",
+              },
+          )
+      assert response.status_code == 200
+      data = response.json()
+      assert data["success"] is True
+file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 12
+  @pytest.fixture
+  async def test_user(db: AsyncSession) -&gt; User:
+      """Create an active test user for password reset tests."""
+      user = User(
+          id=uuid.uuid4(),
+          username="resetuser",
+          email="resetuser@archidiocesekigali.org",
+          hashed_password=get_password_hash("OldPassword123!"),
+          first_name="Reset",
+          last_name="User",
+          is_active=True,
+      )
+      db.add(user)
+      await db.flush()
+      return user
+E       fixture 'db' not found
+&gt;       available fixtures: _pin_session_event_loop, _session_event_loop, anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, doctest_namespace, event_loop, event_loop_policy, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tests/test_password_reset.py::&lt;event_loop&gt;, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+&gt;       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py:12</error></testcase><testcase classname="tests.test_password_reset" name="test_reset_password_with_invalid_token" time="0.012"><failure message="assert 404 == 400&#10; +  where 404 = &lt;Response [404 Not Found]&gt;.status_code">@pytest.mark.asyncio
+    async def test_reset_password_with_invalid_token():
+        """POST /auth/reset-password should reject an invalid token."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/auth/reset-password",
+                json={
+                    "token": "invalid-token",
+                    "new_password": "NewSecurePass456!",
+                },
+            )
+&gt;       assert response.status_code == 400
+E       assert 404 == 400
+E        +  where 404 = &lt;Response [404 Not Found]&gt;.status_code
+
+tests\test_password_reset.py:89: AssertionError</failure></testcase><testcase classname="tests.test_password_reset" name="test_reset_password_token_is_single_use" time="0.002"><error message="failed on setup with &quot;file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 92&#10;  @pytest.mark.asyncio&#10;  async def test_reset_password_token_is_single_use(test_user: User):&#10;      &quot;&quot;&quot;A reset token should be consumed after one use and cannot be reused.&quot;&quot;&quot;&#10;      from app.core.redis import set_password_reset_token&#10;&#10;      reset_token = &quot;single-use-token-12345&quot;&#10;      await set_password_reset_token(reset_token, str(test_user.id), 3600)&#10;&#10;      transport = ASGITransport(app=app)&#10;      async with AsyncClient(transport=transport, base_url=&quot;http://test&quot;) as client:&#10;          # First use should succeed&#10;          response1 = await client.post(&#10;              &quot;/auth/reset-password&quot;,&#10;              json={&#10;                  &quot;token&quot;: reset_token,&#10;                  &quot;new_password&quot;: &quot;NewSecurePass456!&quot;,&#10;              },&#10;          )&#10;          assert response1.status_code == 200&#10;&#10;          # Second use should fail (token consumed)&#10;          response2 = await client.post(&#10;              &quot;/auth/reset-password&quot;,&#10;              json={&#10;                  &quot;token&quot;: reset_token,&#10;                  &quot;new_password&quot;: &quot;AnotherPass789!&quot;,&#10;              },&#10;          )&#10;          assert response2.status_code == 400&#10;file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 12&#10;  @pytest.fixture&#10;  async def test_user(db: AsyncSession) -&gt; User:&#10;      &quot;&quot;&quot;Create an active test user for password reset tests.&quot;&quot;&quot;&#10;      user = User(&#10;          id=uuid.uuid4(),&#10;          username=&quot;resetuser&quot;,&#10;          email=&quot;resetuser@archidiocesekigali.org&quot;,&#10;          hashed_password=get_password_hash(&quot;OldPassword123!&quot;),&#10;          first_name=&quot;Reset&quot;,&#10;          last_name=&quot;User&quot;,&#10;          is_active=True,&#10;      )&#10;      db.add(user)&#10;      await db.flush()&#10;      return user&#10;E       fixture 'db' not found&#10;&gt;       available fixtures: _pin_session_event_loop, _session_event_loop, anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, doctest_namespace, event_loop, event_loop_policy, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tests/test_password_reset.py::&lt;event_loop&gt;, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory&#10;&gt;       use 'pytest --fixtures [testpath]' for help on them.&#10;&#10;C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py:12&quot;">file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 92
+  @pytest.mark.asyncio
+  async def test_reset_password_token_is_single_use(test_user: User):
+      """A reset token should be consumed after one use and cannot be reused."""
+      from app.core.redis import set_password_reset_token
+
+      reset_token = "single-use-token-12345"
+      await set_password_reset_token(reset_token, str(test_user.id), 3600)
+
+      transport = ASGITransport(app=app)
+      async with AsyncClient(transport=transport, base_url="http://test") as client:
+          # First use should succeed
+          response1 = await client.post(
+              "/auth/reset-password",
+              json={
+                  "token": reset_token,
+                  "new_password": "NewSecurePass456!",
+              },
+          )
+          assert response1.status_code == 200
+
+          # Second use should fail (token consumed)
+          response2 = await client.post(
+              "/auth/reset-password",
+              json={
+                  "token": reset_token,
+                  "new_password": "AnotherPass789!",
+              },
+          )
+          assert response2.status_code == 400
+file C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py, line 12
+  @pytest.fixture
+  async def test_user(db: AsyncSession) -&gt; User:
+      """Create an active test user for password reset tests."""
+      user = User(
+          id=uuid.uuid4(),
+          username="resetuser",
+          email="resetuser@archidiocesekigali.org",
+          hashed_password=get_password_hash("OldPassword123!"),
+          first_name="Reset",
+          last_name="User",
+          is_active=True,
+      )
+      db.add(user)
+      await db.flush()
+      return user
+E       fixture 'db' not found
+&gt;       available fixtures: _pin_session_event_loop, _session_event_loop, anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, doctest_namespace, event_loop, event_loop_policy, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tests/test_password_reset.py::&lt;event_loop&gt;, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+&gt;       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\User\Desktop\Ananie\Dev_Workspace\arkidi-platform\tests\test_password_reset.py:12</error></testcase><testcase classname="tests.test_restore_drill" name="test_restore_drill_end_to_end" time="24.489" /><testcase classname="tests.test_security_integration" name="test_refresh_rotates_and_revokes_old_refresh_token" time="0.377"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x00000180268F4830&gt;
+
+    @pytest.mark.asyncio
+    async def test_refresh_rotates_and_revokes_old_refresh_token(client: AsyncClient):
+        username, password, uid = await _create_user()
+        try:
+&gt;           tokens = await _login(client, username, password)
+
+tests\test_security_integration.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = &lt;httpx.AsyncClient object at 0x00000180268F4830&gt;
+username = 'sec_64b1b592', password = 'test-sec-c6de312932'
+
+    async def _login(client: AsyncClient, username: str, password: str) -&gt; dict:
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username_or_email": username, "password": password},
+        )
+&gt;       assert resp.status_code == 200, resp.text
+E       AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E       assert 429 == 200
+E        +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_security_integration.py:58: AssertionError</failure></testcase><testcase classname="tests.test_security_integration" name="test_logout_revokes_access_and_refresh_family" time="0.494"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x00000180268F9BB0&gt;
+
+    @pytest.mark.asyncio
+    async def test_logout_revokes_access_and_refresh_family(client: AsyncClient):
+        username, password, uid = await _create_user()
+        try:
+&gt;           tokens = await _login(client, username, password)
+
+tests\test_security_integration.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = &lt;httpx.AsyncClient object at 0x00000180268F9BB0&gt;
+username = 'sec_78c3f478', password = 'test-sec-364a1c0a2a'
+
+    async def _login(client: AsyncClient, username: str, password: str) -&gt; dict:
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username_or_email": username, "password": password},
+        )
+&gt;       assert resp.status_code == 200, resp.text
+E       AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E       assert 429 == 200
+E        +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_security_integration.py:58: AssertionError</failure></testcase><testcase classname="tests.test_security_integration" name="test_health_exposes_dependency_probes" time="0.693" /><testcase classname="tests.test_statistics_integration" name="test_statistics_end_to_end" time="0.261"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x000001802692E4E0&gt;
+org = (UUID('80b69754-149e-4895-b12e-1a3cd0a98552'), UUID('7faf6472-d4b8-4ab2-80ea-a51cbd14e2b1'), UUID('a767d149-f065-49bd-b168-4e3df70e2987'))
+
+    @pytest.mark.asyncio
+    async def test_statistics_end_to_end(client: AsyncClient, org):
+        _, _, parish_id = org
+        year = 2025
+    
+        # Create active user with PARISH_SECRETARY role
+        username = f"stat_{uuid.uuid4().hex[:8]}"
+        password = f"stat-pass-{uuid.uuid4().hex[:8]}"
+        user_id = None
+        async with AsyncSessionLocal() as db:
+            user = User(
+                email=f"{username}@arkidi.test",
+                username=username,
+                hashed_password=get_password_hash(password),
+                full_name="Stat Test User",
+                role=UserRole.PARISH_SECRETARY,
+                is_active=True,
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            user_id = user.id
+    
+        try:
+            login_resp = await client.post(
+                "/api/v1/auth/login",
+                json={"username_or_email": username, "password": password},
+            )
+&gt;           assert login_resp.status_code == 200, login_resp.text
+E           AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E           assert 429 == 200
+E            +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_statistics_integration.py:84: AssertionError</failure></testcase><testcase classname="tests.test_statistics_integration" name="test_statistic_indicator_endpoints" time="0.335"><failure message="AssertionError: {&quot;success&quot;:false,&quot;error&quot;:{&quot;message&quot;:&quot;Too many requests. Please try again later.&quot;,&quot;type&quot;:&quot;RateLimitExceeded&quot;,&quot;details&quot;:{&quot;detail&quot;:&quot;10 per 1 minute&quot;},&quot;language&quot;:&quot;en&quot;}}&#10;assert 429 == 200&#10; +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code">client = &lt;httpx.AsyncClient object at 0x0000018026A3C410&gt;
+org = (UUID('6c7ba38f-631b-478e-a1d2-95840493afd5'), UUID('4232d0c1-8ef6-477d-aa86-3d9e49dded35'), UUID('66ea5c0a-3704-451d-b172-91a3dc90cdd9'))
+
+    @pytest.mark.asyncio
+    async def test_statistic_indicator_endpoints(client, org):
+        """Config-driven indicators are served by the API end-to-end.
+    
+        Verifies the list/config endpoint and that computing each configured
+        indicator (faithful by deanery, land value by vicariate, donations trend by
+        parish) aggregates real DB rows through the hierarchy_resolver rollups.
+        """
+        arch_id, dea_id, parish_id = org
+    
+        donation_id = parcel_id = faithful_id = None
+        async with AsyncSessionLocal() as db:
+            faithful = Faithful(
+                registration_number=f"IND-{uuid.uuid4().hex[:8]}",
+                first_name="Indicator",
+                last_name="Faithful",
+                christian_name="Christian",
+                gender=Gender.MALE,
+                parish_id=parish_id,
+            )
+            db.add(faithful)
+            await db.flush()
+            faithful_id = faithful.id
+    
+            donation = Donation(
+                parish_id=parish_id,
+                amount=250,
+                donation_date=date(2024, 3, 7),
+                receipt_number=f"IND-REC-{uuid.uuid4().hex[:8]}",
+            )
+            db.add(donation)
+            await db.flush()
+            donation_id = donation.id
+    
+            parcel = LandParcel(
+                upi=f"IND-UPI-{uuid.uuid4().hex[:8]}",
+                parcel_name="Indicator Parcel",
+                area_sqm=50.0,
+                estimated_value_rwf=7000,
+                parish_id=parish_id,
+            )
+            db.add(parcel)
+            await db.flush()
+            parcel_id = parcel.id
+            await db.commit()
+    
+        username = f"ind_{uuid.uuid4().hex[:8]}"
+        password = f"ind-pass-{uuid.uuid4().hex[:8]}"
+        user_id = None
+        async with AsyncSessionLocal() as db:
+            user = User(
+                email=f"{username}@arkidi.test",
+                username=username,
+                hashed_password=get_password_hash(password),
+                full_name="Indicator Test User",
+                role=UserRole.PARISH_SECRETARY,
+                is_active=True,
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            user_id = user.id
+    
+        try:
+            login_resp = await client.post(
+                "/api/v1/auth/login",
+                json={"username_or_email": username, "password": password},
+            )
+&gt;           assert login_resp.status_code == 200, login_resp.text
+E           AssertionError: {"success":false,"error":{"message":"Too many requests. Please try again later.","type":"RateLimitExceeded","details":{"detail":"10 per 1 minute"},"language":"en"}}
+E           assert 429 == 200
+E            +  where 429 = &lt;Response [429 Too Many Requests]&gt;.status_code
+
+tests\test_statistics_integration.py:198: AssertionError</failure></testcase><testcase classname="tests.unit.test_archive_ocr" name="test_extract_ocr_text_returns_text_and_engine_metadata" time="0.028" /><testcase classname="tests.unit.test_archive_ocr" name="test_extract_ocr_text_missing_image_raises_file_not_found" time="0.012" /><testcase classname="tests.unit.test_archive_ocr" name="test_extract_ocr_text_missing_binary_maps_to_engine_unavailable" time="0.006" /><testcase classname="tests.unit.test_archive_ocr" name="test_task_success_indexes_extracted_text" time="0.033" /><testcase classname="tests.unit.test_archive_ocr" name="test_task_page_not_found" time="0.004" /><testcase classname="tests.unit.test_archive_ocr" name="test_task_ocr_disabled_indexes_preattached_text" time="0.004" /><testcase classname="tests.unit.test_archive_ocr" name="test_task_engine_unavailable" time="0.007" /><testcase classname="tests.unit.test_archive_ocr" name="test_task_image_not_found" time="0.005" /><testcase classname="tests.unit.test_archive_ocr" name="test_task_engine_error_maps_to_ocr_failed" time="0.019" /><testcase classname="tests.unit.test_auth_edge_cases" name="test_get_current_user_payload_rejects_refresh_token" time="0.022" /><testcase classname="tests.unit.test_auth_edge_cases" name="test_get_current_user_payload_accepts_valid_access_token" time="0.002" /><testcase classname="tests.unit.test_auth_edge_cases" name="test_require_roles_rejects_malformed_role_without_500" time="0.002" /><testcase classname="tests.unit.test_auth_edge_cases" name="test_require_roles_rejects_missing_role" time="0.001" /><testcase classname="tests.unit.test_auth_edge_cases" name="test_require_roles_allows_matching_role" time="0.001" /><testcase classname="tests.unit.test_auth_edge_cases" name="test_auth_service_register_checks_duplicate_username" time="0.022" /><testcase classname="tests.unit.test_auth_edge_cases" name="test_auth_service_register_catches_integrity_error" time="0.004" /><testcase classname="tests.unit.test_auth_edge_cases" name="test_rate_limiter_blocks_excessive_requests" time="0.018" /><testcase classname="tests.unit.test_document_deduplication" name="test_save_file_same_filename_different_content_never_overwrites" time="0.015" /><testcase classname="tests.unit.test_document_deduplication" name="test_save_file_identical_content_stored_only_once" time="0.007" /><testcase classname="tests.unit.test_document_deduplication" name="test_save_file_cleans_path_traversal_filenames" time="0.007" /><testcase classname="tests.unit.test_document_deduplication" name="test_save_bytes_content_addressed" time="0.007" /><testcase classname="tests.unit.test_document_deduplication" name="test_upload_duplicate_content_rejected_before_save" time="0.005" /><testcase classname="tests.unit.test_document_deduplication" name="test_upload_happy_path_persists_with_checksum" time="0.016" /><testcase classname="tests.unit.test_document_deduplication" name="test_create_document_rejects_duplicate_checksum" time="0.009" /><testcase classname="tests.unit.test_document_deduplication" name="test_create_document_raises_duplicate_on_integrity_race" time="0.002" /><testcase classname="tests.unit.test_document_deduplication" name="test_create_document_reraises_unrelated_integrity_error" time="0.002" /><testcase classname="tests.unit.test_document_deduplication" name="test_create_book_rejects_duplicate_natural_key" time="0.003" /><testcase classname="tests.unit.test_document_deduplication" name="test_create_book_happy_path" time="0.002" /><testcase classname="tests.unit.test_document_deduplication" name="test_add_page_rejects_duplicate_book_page" time="0.002" /><testcase classname="tests.unit.test_document_deduplication" name="test_add_page_happy_path_enqueues_ocr_and_returns_page" time="0.004" /><testcase classname="tests.unit.test_document_scoping" name="test_document_scoped_insert_succeeds_with_default_classification" time="0.011" /><testcase classname="tests.unit.test_document_scoping" name="test_unscoped_document_rejected" time="0.017" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_ancestors_resolves_full_chain_from_parish" time="0.026" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_ancestors_resolves_full_chain_from_scc" time="0.008" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_ancestors_requires_exactly_one_level" time="0.008" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_ancestors_unknown_parish_returns_none_chain" time="0.015" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_descendant_parish_ids_deanery" time="0.011" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_descendant_parish_ids_archdiocese" time="0.034" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_descendant_parish_ids_empty_deanery" time="0.011" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_descendant_parish_ids_no_scope" time="0.009" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_parish_ancestry_map_resolves_chain" time="0.013" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_parish_ancestry_map_multiple" time="0.012" /><testcase classname="tests.unit.test_hierarchy_resolver" name="test_get_parish_ancestry_map_empty" time="0.008" /><testcase classname="tests.unit.test_i18n_catalog.TestCatalogParity" name="test_key_parity_with_english[fr]" time="0.005" /><testcase classname="tests.unit.test_i18n_catalog.TestCatalogParity" name="test_key_parity_with_english[rw]" time="0.005" /><testcase classname="tests.unit.test_i18n_catalog.TestTranslationService" name="test_get_translation_english" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestTranslationService" name="test_get_translation_french" time="0.002" /><testcase classname="tests.unit.test_i18n_catalog.TestTranslationService" name="test_get_translation_kinyarwanda" time="0.002" /><testcase classname="tests.unit.test_i18n_catalog.TestTranslationService" name="test_unknown_language_falls_back_to_english" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestTranslationService" name="test_missing_key_returns_default" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestTranslationService" name="test_missing_key_returns_key" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestTranslationService" name="test_placeholder_interpolation" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestTranslationService" name="test_is_translation_key" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestTranslationService" name="test_current_language_context" time="0.002" /><testcase classname="tests.unit.test_i18n_catalog.TestExceptionLocalization" name="test_entity_not_found_french" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestExceptionLocalization" name="test_invalid_credentials_uses_request_language" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestExceptionLocalization" name="test_permission_denied_with_params" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestExceptionLocalization" name="test_duplicate_upi_key_is_registered" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestResponseEnvelopeLocalization" name="test_ok_message_translated" time="0.003" /><testcase classname="tests.unit.test_i18n_catalog.TestResponseEnvelopeLocalization" name="test_ok_plain_message_passes_through" time="0.001" /><testcase classname="tests.unit.test_i18n_catalog.TestResponseEnvelopeLocalization" name="test_ok_interpolated" time="0.001" /><testcase classname="tests.unit.test_indicators" name="test_list_indicators_returns_config" time="0.095" /><testcase classname="tests.unit.test_indicators" name="test_faithful_by_deanery_archdiocese_scope" time="0.034" /><testcase classname="tests.unit.test_indicators" name="test_faithful_by_deanery_deanery_scope_filters" time="0.030" /><testcase classname="tests.unit.test_indicators" name="test_land_value_by_vicariate" time="0.037" /><testcase classname="tests.unit.test_indicators" name="test_donations_trend_by_parish" time="0.033" /><testcase classname="tests.unit.test_indicators" name="test_donations_trend_date_range_filter" time="0.332" /><testcase classname="tests.unit.test_indicators" name="test_unknown_indicator_raises" time="0.028" /><testcase classname="tests.unit.test_indicators" name="test_compute_requires_scope" time="0.022" /><testcase classname="tests.unit.test_indicators" name="test_documents_by_parish" time="0.031" /><testcase classname="tests.unit.test_indicators" name="test_documents_by_type" time="0.026" /><testcase classname="tests.unit.test_indicators" name="test_retention_review_backlog" time="0.030" /><testcase classname="tests.unit.test_indicators" name="test_ocr_completion_rate" time="0.036" /><testcase classname="tests.unit.test_indicators" name="test_ocr_completion_rate_deanery_scope" time="0.025" /><testcase classname="tests.unit.test_indicators" name="test_annual_indicators_respect_param_filters" time="0.028" /><testcase classname="tests.unit.test_indicators" name="test_annual_param_filter_for_other_year_yields_no_rows" time="0.022" /><testcase classname="tests.unit.test_indicators" name="test_empty_scope_returns_no_rows" time="0.026" /><testcase classname="tests.unit.test_indicators" name="test_unknown_scope_id_returns_no_rows" time="0.022" /><testcase classname="tests.unit.test_indicators" name="test_rate_aggregation_requires_metric_field" time="0.004" /><testcase classname="tests.unit.test_indicators" name="test_via_join_requires_via_model_and_field" time="0.001" /><testcase classname="tests.unit.test_indicators" name="test_group_by_field_requires_label_model" time="0.001" /><testcase classname="tests.unit.test_indicators" name="test_list_indicators_exposes_archives_config" time="0.024" /><testcase classname="tests.unit.test_pdf_generator" name="test_generate_certificate_pdf_produces_valid_pdf[True]" time="0.042" /><testcase classname="tests.unit.test_pdf_generator" name="test_generate_certificate_pdf_produces_valid_pdf[False]" time="0.005" /><testcase classname="tests.unit.test_sacrament_amendment_review" name="test_approval_applies_changes_marginal_note_and_audit" time="0.067" /><testcase classname="tests.unit.test_sacrament_amendment_review" name="test_rejection_leaves_record_untouched_and_audits" time="0.015" /><testcase classname="tests.unit.test_sacrament_amendment_review" name="test_second_review_of_decided_amendment_raises" time="0.015" /><testcase classname="tests.unit.test_sacrament_amendment_review" name="test_review_unknown_amendment_raises" time="0.011" /><testcase classname="tests.unit.test_sacrament_amendment_review" name="test_approval_with_missing_target_record_raises" time="0.020" /></testsuite></testsuites>

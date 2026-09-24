@@ -1,14 +1,16 @@
 """
 QR Code Registry Model — certificate & document verification codes.
 """
+
 import uuid
 from enum import Enum
 
-from sqlalchemy import String, Text, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class QrCodePurpose(str, Enum):
@@ -29,7 +31,11 @@ class QrCodeRegistry(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin)
     )
     payload: Mapped[str] = mapped_column(Text, nullable=False)
     document_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    certificate_issue_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    parcel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("land_parcels.id"), nullable=True)
+    certificate_issue_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    parcel_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("land_parcels.id"), nullable=True
+    )
     scanned_count: Mapped[int] = mapped_column(default=0, nullable=False)
     last_scanned_at: Mapped[uuid.UUID | None] = mapped_column(nullable=True)

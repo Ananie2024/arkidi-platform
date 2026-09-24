@@ -2,6 +2,7 @@
 Document & Archive Module Database Repository
 Handles generic Documents, Document Types, and Historical Ledger Books.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -27,10 +28,14 @@ class ArchiveRepository:
         self.db = db
 
     async def list_ledger_books(self, parish_id: uuid.UUID) -> list[ArchiveLedgerBook]:
-        stmt = select(ArchiveLedgerBook).where(
-            ArchiveLedgerBook.parish_id == parish_id,
-            ArchiveLedgerBook.is_deleted.is_(False),
-        ).order_by(ArchiveLedgerBook.start_year.desc())
+        stmt = (
+            select(ArchiveLedgerBook)
+            .where(
+                ArchiveLedgerBook.parish_id == parish_id,
+                ArchiveLedgerBook.is_deleted.is_(False),
+            )
+            .order_by(ArchiveLedgerBook.start_year.desc())
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -86,12 +91,20 @@ class ArchiveRepository:
         return result.scalar_one_or_none()
 
     async def list_pages(self, ledger_book_id: uuid.UUID) -> list[ScannedPage]:
-        stmt = select(ScannedPage).where(ScannedPage.ledger_book_id == ledger_book_id).order_by(ScannedPage.page_number)
+        stmt = (
+            select(ScannedPage)
+            .where(ScannedPage.ledger_book_id == ledger_book_id)
+            .order_by(ScannedPage.page_number)
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def search_pages(self, query: str, parish_id: uuid.UUID | None = None) -> list[ScannedPage]:
-        stmt = select(ScannedPage).join(ArchiveLedgerBook, ScannedPage.ledger_book_id == ArchiveLedgerBook.id)
+    async def search_pages(
+        self, query: str, parish_id: uuid.UUID | None = None
+    ) -> list[ScannedPage]:
+        stmt = select(ScannedPage).join(
+            ArchiveLedgerBook, ScannedPage.ledger_book_id == ArchiveLedgerBook.id
+        )
         if parish_id:
             stmt = stmt.where(ArchiveLedgerBook.parish_id == parish_id)
         stmt = stmt.where(
@@ -102,7 +115,6 @@ class ArchiveRepository:
         ).order_by(ArchiveLedgerBook.start_year.desc(), ScannedPage.page_number)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
-
 
 
 class DocumentRepository:
@@ -149,7 +161,9 @@ class DocumentRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def update_document_type(self, doc_type: DocumentType, data: DocumentTypeUpdate) -> DocumentType:
+    async def update_document_type(
+        self, doc_type: DocumentType, data: DocumentTypeUpdate
+    ) -> DocumentType:
         update_dict = data.model_dump(exclude_unset=True)
         for key, val in update_dict.items():
             setattr(doc_type, key, val)

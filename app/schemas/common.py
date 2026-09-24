@@ -1,9 +1,10 @@
 """
 Statistics Module Pydantic v2 Schemas
 """
+
 import uuid
 from datetime import datetime
-from typing import Optional, List
+
 from pydantic import BaseModel, ConfigDict
 
 

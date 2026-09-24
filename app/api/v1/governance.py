@@ -2,9 +2,10 @@
 Governance Module FastAPI Endpoints
 Commissions, Councils, Meetings, and Meeting Minutes
 """
+
 import uuid
 from datetime import date
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,18 +13,18 @@ from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
 from app.schemas.governance import (
     CommissionCreate,
-    CommissionUpdate,
     CommissionResponse,
+    CommissionUpdate,
     CouncilCreate,
-    CouncilUpdate,
     CouncilResponse,
+    CouncilUpdate,
     MeetingCreate,
-    MeetingUpdate,
-    MeetingResponse,
     MeetingMinuteBase,
     MeetingMinuteCreate,
-    MeetingMinuteUpdate,
     MeetingMinuteResponse,
+    MeetingMinuteUpdate,
+    MeetingResponse,
+    MeetingUpdate,
 )
 from app.services.governance import GovernanceService
 from app.utils.response import ApiResponse
@@ -35,6 +36,7 @@ router = APIRouter(prefix="/governance", tags=["Governance & Consultative Bodies
 # Commission Endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.post(
     "/commissions",
     response_model=ApiResponse[CommissionResponse],
@@ -43,7 +45,9 @@ router = APIRouter(prefix="/governance", tags=["Governance & Consultative Bodies
 async def create_commission(
     data: CommissionCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])),
+    _: dict = Depends(
+        require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])
+    ),
 ):
     """Create a new pastoral commission."""
     service = GovernanceService(db)
@@ -51,13 +55,13 @@ async def create_commission(
     return ApiResponse.ok(data=created, message="success.commission_created")
 
 
-@router.get("/commissions", response_model=ApiResponse[List[CommissionResponse]])
+@router.get("/commissions", response_model=ApiResponse[list[CommissionResponse]])
 async def list_commissions(
-    archdiocese_id: Optional[uuid.UUID] = Query(default=None),
-    deanery_id: Optional[uuid.UUID] = Query(default=None),
-    parish_id: Optional[uuid.UUID] = Query(default=None),
-    category: Optional[str] = Query(default=None),
-    is_active: Optional[bool] = Query(default=None),
+    archdiocese_id: uuid.UUID | None = Query(default=None),
+    deanery_id: uuid.UUID | None = Query(default=None),
+    parish_id: uuid.UUID | None = Query(default=None),
+    category: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -90,7 +94,9 @@ async def update_commission(
     commission_id: uuid.UUID,
     data: CommissionUpdate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])),
+    _: dict = Depends(
+        require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])
+    ),
 ):
     """Update commission details."""
     service = GovernanceService(db)
@@ -102,7 +108,9 @@ async def update_commission(
 async def delete_commission(
     commission_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])),
+    _: dict = Depends(
+        require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])
+    ),
 ):
     """Soft delete a commission."""
     service = GovernanceService(db)
@@ -114,6 +122,7 @@ async def delete_commission(
 # Council Endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.post(
     "/councils",
     response_model=ApiResponse[CouncilResponse],
@@ -122,7 +131,9 @@ async def delete_commission(
 async def create_council(
     data: CouncilCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])),
+    _: dict = Depends(
+        require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])
+    ),
 ):
     """Create a new diocesan or parish consultative council."""
     service = GovernanceService(db)
@@ -130,13 +141,13 @@ async def create_council(
     return ApiResponse.ok(data=created, message="success.council_created")
 
 
-@router.get("/councils", response_model=ApiResponse[List[CouncilResponse]])
+@router.get("/councils", response_model=ApiResponse[list[CouncilResponse]])
 async def list_councils(
-    archdiocese_id: Optional[uuid.UUID] = Query(default=None),
-    deanery_id: Optional[uuid.UUID] = Query(default=None),
-    parish_id: Optional[uuid.UUID] = Query(default=None),
-    council_type: Optional[str] = Query(default=None),
-    is_active: Optional[bool] = Query(default=None),
+    archdiocese_id: uuid.UUID | None = Query(default=None),
+    deanery_id: uuid.UUID | None = Query(default=None),
+    parish_id: uuid.UUID | None = Query(default=None),
+    council_type: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -169,7 +180,9 @@ async def update_council(
     council_id: uuid.UUID,
     data: CouncilUpdate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])),
+    _: dict = Depends(
+        require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])
+    ),
 ):
     """Update council details."""
     service = GovernanceService(db)
@@ -181,7 +194,9 @@ async def update_council(
 async def delete_council(
     council_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])),
+    _: dict = Depends(
+        require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])
+    ),
 ):
     """Soft delete a council."""
     service = GovernanceService(db)
@@ -192,6 +207,7 @@ async def delete_council(
 # ---------------------------------------------------------------------------
 # Meeting Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.post(
     "/meetings",
@@ -209,16 +225,16 @@ async def create_meeting(
     return ApiResponse.ok(data=created, message="success.meeting_created")
 
 
-@router.get("/meetings", response_model=ApiResponse[List[MeetingResponse]])
+@router.get("/meetings", response_model=ApiResponse[list[MeetingResponse]])
 async def list_meetings(
-    council_id: Optional[uuid.UUID] = Query(default=None),
-    commission_id: Optional[uuid.UUID] = Query(default=None),
-    archdiocese_id: Optional[uuid.UUID] = Query(default=None),
-    deanery_id: Optional[uuid.UUID] = Query(default=None),
-    parish_id: Optional[uuid.UUID] = Query(default=None),
-    meeting_status: Optional[str] = Query(default=None, alias="status"),
-    from_date: Optional[date] = Query(default=None),
-    to_date: Optional[date] = Query(default=None),
+    council_id: uuid.UUID | None = Query(default=None),
+    commission_id: uuid.UUID | None = Query(default=None),
+    archdiocese_id: uuid.UUID | None = Query(default=None),
+    deanery_id: uuid.UUID | None = Query(default=None),
+    parish_id: uuid.UUID | None = Query(default=None),
+    meeting_status: str | None = Query(default=None, alias="status"),
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -278,6 +294,7 @@ async def delete_meeting(
 # Meeting Minute Endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.post(
     "/meetings/{meeting_id}/minutes",
     response_model=ApiResponse[MeetingMinuteResponse],
@@ -287,7 +304,9 @@ async def add_meeting_minute(
     meeting_id: uuid.UUID,
     data: MeetingMinuteBase,
     db: AsyncSession = Depends(get_db),
-    user_payload: dict = Depends(require_roles([UserRole.PARISH_SECRETARY, UserRole.MINISTRY_LEADER])),
+    user_payload: dict = Depends(
+        require_roles([UserRole.PARISH_SECRETARY, UserRole.MINISTRY_LEADER])
+    ),
 ):
     """Attach official minutes or report to a meeting."""
     user_id = uuid.UUID(user_payload["sub"]) if user_payload and "sub" in user_payload else None
@@ -302,7 +321,9 @@ async def add_meeting_minute(
     return ApiResponse.ok(data=created, message="success.minute_created")
 
 
-@router.get("/meetings/{meeting_id}/minutes", response_model=ApiResponse[List[MeetingMinuteResponse]])
+@router.get(
+    "/meetings/{meeting_id}/minutes", response_model=ApiResponse[list[MeetingMinuteResponse]]
+)
 async def list_meeting_minutes(
     meeting_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),

@@ -2,15 +2,16 @@
 Parish Structure Models — Parish, Centrale (sub-parish) and
 Small Christian Communities (CEB / Imiryango-remezo).
 """
+
 import uuid
 from datetime import date
 
-from sqlalchemy import String, Date, ForeignKey, Text
+from geoalchemy2 import Geometry
+from sqlalchemy import Date, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from geoalchemy2 import Geometry
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class Parish(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -36,7 +37,7 @@ class Parish(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     # GIS Location Point (SRID 4326)
     location = mapped_column(Geometry(geometry_type="POINT", srid=4326), nullable=True)
 
-    deanery: Mapped["Deanery"] = relationship("Deanery", back_populates="parishes")  # type: ignore[name-defined]
+    deanery: Mapped["Deanery"] = relationship("Deanery", back_populates="parishes")  # type: ignore[name-defined]  # noqa: F821
     centrales: Mapped[list["Centrale"]] = relationship("Centrale", back_populates="parish")
 
 

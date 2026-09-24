@@ -1,23 +1,27 @@
 """
 Statistics Module Database Repository
 """
+
 import uuid
-from typing import List, Optional
-from sqlalchemy import select, func
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.deanery import Archdiocese
 from app.models.parish import Parish
 from app.models.priest import Priest
 from app.models.survey import AnnualParishStatistic, Survey, SurveyResponse
 from app.schemas.common import AnnualStatisticCreate
-from app.schemas.survey import SurveyCreate, SurveyUpdate, SurveyAnswerSubmit
+from app.schemas.survey import SurveyAnswerSubmit, SurveyCreate, SurveyUpdate
 
 
 class StatisticsRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_by_parish_and_year(self, parish_id: uuid.UUID, year: int) -> Optional[AnnualParishStatistic]:
+    async def get_by_parish_and_year(
+        self, parish_id: uuid.UUID, year: int
+    ) -> AnnualParishStatistic | None:
         stmt = select(AnnualParishStatistic).where(
             AnnualParishStatistic.parish_id == parish_id,
             AnnualParishStatistic.report_year == year,
@@ -31,7 +35,7 @@ class StatisticsRepository:
         await self.db.flush()
         return stat
 
-    async def list_statistics(self, year: Optional[int] = None) -> List[AnnualParishStatistic]:
+    async def list_statistics(self, year: int | None = None) -> list[AnnualParishStatistic]:
         stmt = select(AnnualParishStatistic).order_by(
             AnnualParishStatistic.report_year.desc(),
             AnnualParishStatistic.created_at.desc(),
@@ -51,7 +55,7 @@ class StatisticsRepository:
         result = await self.db.execute(stmt)
         return int(result.scalar_one() or 0)
 
-    async def list_archdioceses(self) -> List[Archdiocese]:
+    async def list_archdioceses(self) -> list[Archdiocese]:
         """Every archdiocese, oldest first.
 
         The Annuario Pontificio composition iterates these as indicator
@@ -81,7 +85,7 @@ class SurveyRepository:
         await self.db.flush()
         return survey
 
-    async def get_survey_by_id(self, survey_id: uuid.UUID) -> Optional[Survey]:
+    async def get_survey_by_id(self, survey_id: uuid.UUID) -> Survey | None:
         stmt = select(Survey).where(
             Survey.id == survey_id,
             Survey.is_deleted.is_(False),
@@ -91,11 +95,11 @@ class SurveyRepository:
 
     async def list_surveys(
         self,
-        archdiocese_id: Optional[uuid.UUID] = None,
-        deanery_id: Optional[uuid.UUID] = None,
-        parish_id: Optional[uuid.UUID] = None,
-        status: Optional[str] = None,
-    ) -> List[Survey]:
+        archdiocese_id: uuid.UUID | None = None,
+        deanery_id: uuid.UUID | None = None,
+        parish_id: uuid.UUID | None = None,
+        status: str | None = None,
+    ) -> list[Survey]:
         stmt = select(Survey).where(Survey.is_deleted.is_(False))
         if archdiocese_id is not None:
             stmt = stmt.where(Survey.archdiocese_id == archdiocese_id)
@@ -138,7 +142,7 @@ class SurveyRepository:
         self,
         survey_id: uuid.UUID,
         data: SurveyAnswerSubmit,
-        submitted_by_user_id: Optional[uuid.UUID] = None,
+        submitted_by_user_id: uuid.UUID | None = None,
     ) -> SurveyResponse:
         resp = SurveyResponse(
             survey_id=survey_id,
@@ -151,7 +155,7 @@ class SurveyRepository:
         await self.db.flush()
         return resp
 
-    async def get_response_by_id(self, response_id: uuid.UUID) -> Optional[SurveyResponse]:
+    async def get_response_by_id(self, response_id: uuid.UUID) -> SurveyResponse | None:
         stmt = select(SurveyResponse).where(
             SurveyResponse.id == response_id,
             SurveyResponse.is_deleted.is_(False),
@@ -159,19 +163,26 @@ class SurveyRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_responses(self, survey_id: uuid.UUID) -> List[SurveyResponse]:
-        stmt = select(SurveyResponse).where(
-            SurveyResponse.survey_id == survey_id,
-            SurveyResponse.is_deleted.is_(False),
-        ).order_by(SurveyResponse.created_at.desc())
+    async def list_responses(self, survey_id: uuid.UUID) -> list[SurveyResponse]:
+        stmt = (
+            select(SurveyResponse)
+            .where(
+                SurveyResponse.survey_id == survey_id,
+                SurveyResponse.is_deleted.is_(False),
+            )
+            .order_by(SurveyResponse.created_at.desc())
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def count_responses(self, survey_id: uuid.UUID) -> int:
-        stmt = select(func.count()).select_from(SurveyResponse).where(
-            SurveyResponse.survey_id == survey_id,
-            SurveyResponse.is_deleted.is_(False),
+        stmt = (
+            select(func.count())
+            .select_from(SurveyResponse)
+            .where(
+                SurveyResponse.survey_id == survey_id,
+                SurveyResponse.is_deleted.is_(False),
+            )
         )
         result = await self.db.execute(stmt)
         return int(result.scalar_one() or 0)
-

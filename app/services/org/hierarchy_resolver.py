@@ -20,21 +20,20 @@ joins, which is what this module encapsulates.
 """
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.parish import Parish, Centrale, SmallChristianCommunity
 from app.models.deanery import Deanery
+from app.models.parish import Centrale, Parish, SmallChristianCommunity
 
 
 async def get_ancestors(
     db: AsyncSession,
     *,
-    parish_id: Optional[uuid.UUID] = None,
-    centrale_id: Optional[uuid.UUID] = None,
-    scc_id: Optional[uuid.UUID] = None,
+    parish_id: uuid.UUID | None = None,
+    centrale_id: uuid.UUID | None = None,
+    scc_id: uuid.UUID | None = None,
 ) -> dict:
     """Resolve the full ancestor chain up to the Archdiocese for a given node.
 
@@ -51,7 +50,7 @@ async def get_ancestors(
     ...     "archdiocese_id": "…",
     ... }
     """
-    chain: dict[str, Optional[uuid.UUID]] = {
+    chain: dict[str, uuid.UUID | None] = {
         "scc_id": None,
         "centrale_id": None,
         "parish_id": None,
@@ -59,15 +58,9 @@ async def get_ancestors(
         "archdiocese_id": None,
     }
 
-    supplied = [
-        value
-        for value in (parish_id, centrale_id, scc_id)
-        if value is not None
-    ]
+    supplied = [value for value in (parish_id, centrale_id, scc_id) if value is not None]
     if len(supplied) != 1:
-        raise ValueError(
-            "get_ancestors requires exactly one of parish_id, centrale_id, scc_id"
-        )
+        raise ValueError("get_ancestors requires exactly one of parish_id, centrale_id, scc_id")
 
     if scc_id is not None:
         chain["scc_id"] = scc_id
@@ -102,8 +95,8 @@ async def get_ancestors(
 async def get_descendant_parish_ids(
     db: AsyncSession,
     *,
-    deanery_id: Optional[uuid.UUID] = None,
-    archdiocese_id: Optional[uuid.UUID] = None,
+    deanery_id: uuid.UUID | None = None,
+    archdiocese_id: uuid.UUID | None = None,
 ) -> list[uuid.UUID]:
     """Return every ``Parish.id`` under a deanery or the whole archdiocese.
 
@@ -128,10 +121,11 @@ async def get_descendant_parish_ids(
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
+
 async def get_parish_ancestry_map(
     db: AsyncSession,
     parish_ids: list[uuid.UUID],
-) -> dict[uuid.UUID, dict[str, Optional[uuid.UUID]]]:
+) -> dict[uuid.UUID, dict[str, uuid.UUID | None]]:
     """Resolve the deanery/archdiocese ancestry of many parishes in one query.
 
     Returns ``{parish_id: {"parish_id": …, "deanery_id": …, "archdiocese_id": …}}``.

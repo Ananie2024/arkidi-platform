@@ -1,6 +1,7 @@
 """
 FastAPI Route Dependencies (Database Session, Current User, Role Authorization)
 """
+
 from collections.abc import AsyncGenerator
 
 from fastapi import Depends, HTTPException, status
@@ -68,6 +69,7 @@ async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> dict:
 
 def require_roles(allowed_roles: list[UserRole]):
     """Enforce role-based access control dependency on endpoints."""
+
     async def role_checker(payload: dict = Depends(get_current_user_payload)) -> dict:
         user_role_raw = payload.get("role")
         user_role: UserRole | None = None
@@ -85,4 +87,5 @@ def require_roles(allowed_roles: list[UserRole]):
                 message_params={"roles": roles_str},
             )
         return payload
+
     return role_checker

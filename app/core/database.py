@@ -3,7 +3,8 @@ Database Engine & Session Management
 SQLAlchemy 2.0 Async + PostgreSQL/PostGIS.
 The declarative ``Base`` and mixins live in ``app.models.base``.
 """
-from typing import AsyncGenerator
+
+from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,

@@ -1,4 +1,5 @@
 """One-off status check: list tables, alembic version, entity counts."""
+
 import asyncio
 
 from sqlalchemy import text
@@ -9,10 +10,7 @@ from app.core.database import AsyncSessionLocal
 async def main() -> None:
     async with AsyncSessionLocal() as db:
         r = await db.execute(
-            text(
-                "SELECT tablename FROM pg_tables "
-                "WHERE schemaname='public' ORDER BY tablename"
-            )
+            text("SELECT tablename FROM pg_tables " "WHERE schemaname='public' ORDER BY tablename")
         )
         tables = [t[0] for t in r.all()]
         print(f"TABLES ({len(tables)}): {', '.join(tables)}")

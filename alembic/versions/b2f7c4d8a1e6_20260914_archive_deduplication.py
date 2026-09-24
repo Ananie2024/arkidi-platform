@@ -14,6 +14,7 @@ The archive must never store the same content twice:
 Existing duplicate rows are collapsed before the constraints are installed so
 the migration is safe on databases that already accumulated duplicates.
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -36,7 +37,7 @@ def upgrade() -> None:
     # to active rows so a soft-deleted document can be re-archived again later.
     connection.execute(
         sa.text(
-        """
+            """
         WITH ranked AS (
             SELECT id,
                    ROW_NUMBER() OVER (
@@ -50,7 +51,7 @@ def upgrade() -> None:
         SET is_deleted = true, deleted_at = NOW()
         WHERE id IN (SELECT id FROM ranked WHERE rn > 1)
         """
-    )
+        )
     )
 
     op.create_index(
@@ -67,7 +68,7 @@ def upgrade() -> None:
     # partial unique index can be created.
     connection.execute(
         sa.text(
-        """
+            """
         WITH ranked AS (
             SELECT id,
                    ROW_NUMBER() OVER (
@@ -81,7 +82,7 @@ def upgrade() -> None:
         SET is_deleted = true, deleted_at = NOW()
         WHERE id IN (SELECT id FROM ranked WHERE rn > 1)
         """
-    )
+        )
     )
 
     op.create_index(
@@ -98,7 +99,7 @@ def upgrade() -> None:
     # row, and the owning book page counters are recomputed afterwards.
     connection.execute(
         sa.text(
-        """
+            """
         DELETE FROM archive_scanned_pages p
         USING archive_scanned_pages dup
         WHERE p.id <> dup.id
@@ -109,7 +110,7 @@ def upgrade() -> None:
               OR (p.created_at = dup.created_at AND p.id > dup.id)
           )
         """
-    )
+        )
     )
 
     op.create_unique_constraint(
@@ -120,7 +121,7 @@ def upgrade() -> None:
 
     connection.execute(
         sa.text(
-        """
+            """
         UPDATE archive_ledger_books b
         SET total_scanned_pages = (
             SELECT COUNT(*)
@@ -128,7 +129,7 @@ def upgrade() -> None:
             WHERE p.ledger_book_id = b.id
         )
         """
-    )
+        )
     )
 
 

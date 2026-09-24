@@ -1,10 +1,12 @@
 """
 Finance Module Pydantic v2 Schemas
 """
+
 import uuid
 from datetime import date, datetime
-from typing import Optional
+
 from pydantic import BaseModel, ConfigDict
+
 from app.models.donation import DonationType, PaymentMethod
 
 
@@ -14,15 +16,15 @@ class DonationBase(BaseModel):
     amount: float
     currency: str = "RWF"
     donation_date: date
-    donor_name_override: Optional[str] = None
-    reference_transaction_id: Optional[str] = None
-    notes: Optional[str] = None
+    donor_name_override: str | None = None
+    reference_transaction_id: str | None = None
+    notes: str | None = None
 
 
 class DonationCreate(DonationBase):
     parish_id: uuid.UUID
-    faithful_id: Optional[uuid.UUID] = None
-    family_id: Optional[uuid.UUID] = None
+    faithful_id: uuid.UUID | None = None
+    family_id: uuid.UUID | None = None
 
 
 class DonationResponse(DonationBase):
@@ -31,8 +33,8 @@ class DonationResponse(DonationBase):
     id: uuid.UUID
     receipt_number: str
     parish_id: uuid.UUID
-    faithful_id: Optional[uuid.UUID] = None
-    family_id: Optional[uuid.UUID] = None
+    faithful_id: uuid.UUID | None = None
+    family_id: uuid.UUID | None = None
     created_at: datetime
 
 

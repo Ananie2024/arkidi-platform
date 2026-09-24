@@ -39,7 +39,7 @@
     "parcel_registered": "Igitambaro cy'ubutaka cyanditswe",
     "building_registered": "Inyubako yanditswe",
     "mass_created": "Gahunda ya Misa yaremwe",
-    "intention_registered": "Intoyi yanditswe",
+    "intention_registered": "Ikifuzo yanditswe",
     "ministry_created": "Umurimo waremwe neza",
     "parish_created": "Paruwasi yaremwe neza",
     "baptism_recorded": "Batisimu yanditswe neza",
@@ -47,8 +47,8 @@
     "matrimony_recorded": "Ugushyingirwa kwanditswe neza",
     "first_communion_recorded": "Ukaristiya ya mbere yanditswe neza",
     "holy_orders_recorded": "Ubupadiri bwanditswe neza",
-    "religious_profession_recorded": "Ihiga ry'abihayimana ryanditswe neza",
-    "anointing_recorded": "Amavuta y'abarwayi yanditswe neza",
+    "religious_profession_recorded": "amasezerano y'abihayimana ryanditswe neza",
+    "anointing_recorded": "ugusigwa kw'abarwayi yanditswe neza",
     "funeral_recorded": "Gushyingura umukirisitu byanditswe neza",
     "certificate_generated": "Icyemezo cyakozwe neza",
     "certificate_verified": "Icyemezo cyakozwe kandi cyimbitse",
@@ -119,13 +119,10 @@
     "amendment_not_pending": "Isabwa imaze kuba '{{status}}' ntishobora kongera gusuzumwa.",
     "target_amend_record_not_found": "Icyandikwa cy'isakaramentu cyo gukosora nticyabonetse.",
     "target_record_not_found": "Icyandikwa cy'{{type}} '{{record_id}}' nticyabonetse.",
-    "field_not_valid": "Umurima '{{field}}' nturi ku cyandikwa cya {{type}}.",
+    "field_not_valid": "Umwanya wo kwandika'{{field}}' nturi ku cyandikwa cya {{type}}.",
     "rate_limit_exceeded": "Ibyifuzo byinshi birenze urugero. Ongera ugerageze nyuma.",
     "google_auth_failed": "Kwinjira ukoresheje Google byanze.",
     "google_not_configured": "Google OAuth ntabwo yagenzuwe kuri iyi seriveri.",
     "google_account_not_registered": "Nta konti ya sisitemu yabonetse kuri imeyili ya Google '{{email}}'. Nyamuneka baza umuyobozi wawe."
-  },
-  "errors.invalid_reset_token": "Ihurirwa ryo gusubiza ijambobanga ntiririmba cyangwa ryararenje igihe.",
-  "success.password_reset_requested": "Niba konti iriho kuri iyi imeyili, ihurirwa ryoatanzwe.",
-  "success.password_reset_completed": "Ijambobanga ryasubijwe neza."
+  }
 }

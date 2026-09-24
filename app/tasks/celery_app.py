@@ -1,8 +1,10 @@
 """
 Celery Distributed Task Queue Configuration
 """
+
 from celery import Celery
 from celery.schedules import crontab
+
 from app.config import settings
 
 celery_app = Celery(
@@ -69,5 +71,3 @@ celery_app.conf.beat_schedule = {
         "options": {"queue": "archive"},
     },
 }
-
-

@@ -8,6 +8,7 @@ Covers:
 - reusing a rotated/revoked refresh token is rejected
 - /health exposes database + redis probes
 """
+
 import uuid
 
 import pytest
@@ -66,15 +67,11 @@ async def test_refresh_rotates_and_revokes_old_refresh_token(client: AsyncClient
         old_access, old_refresh = tokens["access_token"], tokens["refresh_token"]
 
         # Access token works before refresh.
-        me = await client.get(
-            "/api/v1/auth/me", headers={"Authorization": f"Bearer {old_access}"}
-        )
+        me = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {old_access}"})
         assert me.status_code == 200
 
         # Refresh rotates into a fresh pair.
-        refreshed = await client.post(
-            "/api/v1/auth/refresh", json={"refresh_token": old_refresh}
-        )
+        refreshed = await client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh})
         assert refreshed.status_code == 200, refreshed.text
         new_tokens = refreshed.json()["data"]
         assert new_tokens["access_token"] != old_access
@@ -82,9 +79,7 @@ async def test_refresh_rotates_and_revokes_old_refresh_token(client: AsyncClient
 
         # Old access token is unaffected (still valid) but the old *refresh*
         # token is now consumed -> rejected.
-        reused = await client.post(
-            "/api/v1/auth/refresh", json={"refresh_token": old_refresh}
-        )
+        reused = await client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh})
         assert reused.status_code == 401
 
         # New access token works.

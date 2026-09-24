@@ -5,6 +5,7 @@ catalog of document types, and land-use categories for production/staging.
 
 Idempotent: safe to run multiple times without duplicating entities.
 """
+
 import asyncio
 from datetime import date
 from sqlalchemy import select
@@ -313,9 +314,7 @@ async def seed_kigali_reference():
 
         # 2. Deaneries & Parishes
         for d_info in KIGALI_DEANERIES:
-            d_res = await session.execute(
-                select(Deanery).where(Deanery.code == d_info["code"])
-            )
+            d_res = await session.execute(select(Deanery).where(Deanery.code == d_info["code"]))
             deanery = d_res.scalar_one_or_none()
             if not deanery:
                 deanery = Deanery(
@@ -329,9 +328,7 @@ async def seed_kigali_reference():
                 print(f"  ✓ Created {d_info['name']} ({d_info['code']})")
 
             for p_info in d_info["parishes"]:
-                p_res = await session.execute(
-                    select(Parish).where(Parish.code == p_info["code"])
-                )
+                p_res = await session.execute(select(Parish).where(Parish.code == p_info["code"]))
                 parish = p_res.scalar_one_or_none()
                 if not parish:
                     parish = Parish(
@@ -346,7 +343,9 @@ async def seed_kigali_reference():
                     )
                     session.add(parish)
                     await session.flush()
-                    print(f"    ✓ Created Parish: {p_info['name']} [{p_info['district']}/{p_info['sector']}]")
+                    print(
+                        f"    ✓ Created Parish: {p_info['name']} [{p_info['district']}/{p_info['sector']}]"
+                    )
 
                     # Add default Centrales
                     for c_name in p_info.get("centrales", []):

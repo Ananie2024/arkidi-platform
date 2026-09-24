@@ -1,11 +1,13 @@
 """
 Clergy Module Pydantic v2 Schemas
 """
+
 import uuid
 from datetime import date, datetime
-from typing import Optional, List
+
 from pydantic import BaseModel, ConfigDict
-from app.models.priest import ClergyType, ClergyStatus
+
+from app.models.priest import ClergyStatus, ClergyType
 
 
 class PriestBase(BaseModel):
@@ -14,15 +16,15 @@ class PriestBase(BaseModel):
     title: str = "Padiri"
     clergy_type: ClergyType = ClergyType.DIOCESAN_PRIEST
     status: ClergyStatus = ClergyStatus.ACTIVE_DUTY
-    date_of_birth: Optional[date] = None
-    ordination_date: Optional[date] = None
-    ordaining_bishop: Optional[str] = None
-    congregation: Optional[str] = None
-    phone_number: Optional[str] = None
-    email: Optional[str] = None
-    biography: Optional[str] = None
-    current_parish_id: Optional[uuid.UUID] = None
-    current_role: Optional[str] = None
+    date_of_birth: date | None = None
+    ordination_date: date | None = None
+    ordaining_bishop: str | None = None
+    congregation: str | None = None
+    phone_number: str | None = None
+    email: str | None = None
+    biography: str | None = None
+    current_parish_id: uuid.UUID | None = None
+    current_role: str | None = None
 
 
 class PriestCreate(PriestBase):
@@ -30,13 +32,13 @@ class PriestCreate(PriestBase):
 
 
 class PriestUpdate(BaseModel):
-    title: Optional[str] = None
-    status: Optional[ClergyStatus] = None
-    phone_number: Optional[str] = None
-    email: Optional[str] = None
-    biography: Optional[str] = None
-    current_parish_id: Optional[uuid.UUID] = None
-    current_role: Optional[str] = None
+    title: str | None = None
+    status: ClergyStatus | None = None
+    phone_number: str | None = None
+    email: str | None = None
+    biography: str | None = None
+    current_parish_id: uuid.UUID | None = None
+    current_role: str | None = None
 
 
 class PriestResponse(PriestBase):
@@ -50,14 +52,14 @@ class PriestResponse(PriestBase):
 class AssignmentBase(BaseModel):
     role_title: str
     start_date: date
-    end_date: Optional[date] = None
-    decree_reference_number: Optional[str] = None
+    end_date: date | None = None
+    decree_reference_number: str | None = None
     is_current: bool = True
 
 
 class AssignmentCreate(AssignmentBase):
     priest_id: uuid.UUID
-    parish_id: Optional[uuid.UUID] = None
+    parish_id: uuid.UUID | None = None
 
 
 class AssignmentResponse(AssignmentBase):
@@ -65,5 +67,5 @@ class AssignmentResponse(AssignmentBase):
 
     id: uuid.UUID
     priest_id: uuid.UUID
-    parish_id: Optional[uuid.UUID] = None
+    parish_id: uuid.UUID | None = None
     created_at: datetime

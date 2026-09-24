@@ -1,9 +1,9 @@
 """
 Mass Schedule Module Business Logic Service
 """
+
 import uuid
 from datetime import date
-from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,8 +16,8 @@ class MassService:
         self.repo = MassScheduleRepository(db)
 
     async def get_mass_schedules(
-        self, parish_id: uuid.UUID, for_date: Optional[date] = None
-    ) -> List[MassScheduleResponse]:
+        self, parish_id: uuid.UUID, for_date: date | None = None
+    ) -> list[MassScheduleResponse]:
         schedules = await self.repo.list_mass_schedules(parish_id, for_date)
         return [MassScheduleResponse.model_validate(s) for s in schedules]
 

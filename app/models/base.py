@@ -2,10 +2,11 @@
 SQLAlchemy Declarative Base and shared mixins.
 All Arkidi ORM models inherit from :class:`Base` and the provided mixins.
 """
-from datetime import datetime, timezone
-import uuid
 
-from sqlalchemy import DateTime, Boolean, func
+import uuid
+from datetime import UTC, datetime
+
+from sqlalchemy import Boolean, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -20,7 +21,7 @@ def _utcnow() -> datetime:
     building a Pydantic response inside a service) triggers a lazy SELECT that
     raises ``sqlalchemy.exc.MissingGreenlet`` in async code.
     """
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Base(DeclarativeBase):

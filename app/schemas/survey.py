@@ -1,10 +1,12 @@
 """
 Survey Module Pydantic v2 Schemas
 """
+
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -29,19 +31,21 @@ class SurveyQuestion(BaseModel):
     id: str = Field(description="Unique question identifier within the survey (e.g. 'q1')")
     question_text: str = Field(min_length=1, max_length=500)
     question_type: QuestionType = QuestionType.TEXT
-    options: Optional[List[str]] = Field(default=None, description="Available choices for choice questions")
+    options: list[str] | None = Field(
+        default=None, description="Available choices for choice questions"
+    )
     required: bool = True
-    help_text: Optional[str] = None
+    help_text: str | None = None
 
 
 class SurveyBase(BaseModel):
     title: str = Field(min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     status: SurveyStatus = SurveyStatus.DRAFT
-    questions: List[SurveyQuestion] = Field(default_factory=list)
-    archdiocese_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
-    parish_id: Optional[uuid.UUID] = None
+    questions: list[SurveyQuestion] = Field(default_factory=list)
+    archdiocese_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
+    parish_id: uuid.UUID | None = None
 
 
 class SurveyCreate(SurveyBase):
@@ -49,13 +53,13 @@ class SurveyCreate(SurveyBase):
 
 
 class SurveyUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    status: Optional[SurveyStatus] = None
-    questions: Optional[List[SurveyQuestion]] = None
-    archdiocese_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
-    parish_id: Optional[uuid.UUID] = None
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = None
+    status: SurveyStatus | None = None
+    questions: list[SurveyQuestion] | None = None
+    archdiocese_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
+    parish_id: uuid.UUID | None = None
 
 
 class SurveyResponse(BaseModel):
@@ -63,21 +67,21 @@ class SurveyResponse(BaseModel):
 
     id: uuid.UUID
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     status: str
-    questions: List[SurveyQuestion] = Field(default_factory=list)
-    archdiocese_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
-    parish_id: Optional[uuid.UUID] = None
+    questions: list[SurveyQuestion] = Field(default_factory=list)
+    archdiocese_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
+    parish_id: uuid.UUID | None = None
     response_count: int = 0
     created_at: datetime
     updated_at: datetime
 
 
 class SurveyAnswerSubmit(BaseModel):
-    respondent_name: Optional[str] = None
-    respondent_parish_id: Optional[uuid.UUID] = None
-    answers: Dict[str, Any] = Field(
+    respondent_name: str | None = None
+    respondent_parish_id: uuid.UUID | None = None
+    answers: dict[str, Any] = Field(
         default_factory=dict,
         description="Key-value mapping of question ID to submitted answer",
     )
@@ -88,10 +92,10 @@ class SurveyResponseRecord(BaseModel):
 
     id: uuid.UUID
     survey_id: uuid.UUID
-    respondent_name: Optional[str] = None
-    respondent_parish_id: Optional[uuid.UUID] = None
-    submitted_by_user_id: Optional[uuid.UUID] = None
-    answers: Dict[str, Any] = Field(default_factory=dict)
+    respondent_name: str | None = None
+    respondent_parish_id: uuid.UUID | None = None
+    submitted_by_user_id: uuid.UUID | None = None
+    answers: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
 
@@ -100,4 +104,4 @@ class SurveySummaryResponse(BaseModel):
     survey_id: uuid.UUID
     title: str
     total_responses: int
-    question_summaries: Dict[str, Any]
+    question_summaries: dict[str, Any]

@@ -71,7 +71,10 @@ def _upload_to_b2(filepath: str) -> str:
     file_info = bucket.upload_local_file(local_file=filepath)
     logger.info(
         "[b2] uploaded %s -> b2://%s/%s (file_id=%s)",
-        filepath, settings.B2_BUCKET_NAME, file_info.file_name, file_info.id_,
+        filepath,
+        settings.B2_BUCKET_NAME,
+        file_info.file_name,
+        file_info.id_,
     )
     return file_info.id_
 

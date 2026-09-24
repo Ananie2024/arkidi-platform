@@ -1,11 +1,11 @@
 """
 Land Use Category Model — canonical land usage classification catalog.
 """
-from sqlalchemy import String, Boolean
 
+from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class LandUseCategory(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):

@@ -1,38 +1,39 @@
 """
 Sacraments Module Database Repository
 """
+
 import uuid
-from datetime import datetime, timezone
-from typing import Any, List, Optional
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.sacrament import (
-    SacramentType,
-    BaptismRecord,
-    ConfirmationRecord,
-    MatrimonyRecord,
-    FirstCommunionRecord,
-    HolyOrdersRecord,
-    ReligiousProfessionRecord,
-    AnointingOfTheSickRecord,
-    ChristianFuneralRecord,
-    CertificateIssue,
-    SacramentalAmendment,
-    AmendmentStatus,
-    AmendmentType,
-)
+
 from app.models.faithful import Faithful
 from app.models.parish import Parish
+from app.models.sacrament import (
+    AmendmentStatus,
+    AnointingOfTheSickRecord,
+    BaptismRecord,
+    CertificateIssue,
+    ChristianFuneralRecord,
+    ConfirmationRecord,
+    FirstCommunionRecord,
+    HolyOrdersRecord,
+    MatrimonyRecord,
+    ReligiousProfessionRecord,
+    SacramentalAmendment,
+    SacramentType,
+)
 from app.schemas.sacrament import (
+    AmendmentRequestCreate,
+    AnointingOfTheSickCreate,
     BaptismCreate,
+    ChristianFuneralCreate,
     ConfirmationCreate,
-    MatrimonyCreate,
     FirstCommunionCreate,
     HolyOrdersCreate,
+    MatrimonyCreate,
     ReligiousProfessionCreate,
-    AnointingOfTheSickCreate,
-    ChristianFuneralCreate,
-    AmendmentRequestCreate,
 )
 
 
@@ -40,17 +41,21 @@ class SacramentsRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_baptism_by_id(self, record_id: uuid.UUID) -> Optional[BaptismRecord]:
-        stmt = select(BaptismRecord).where(BaptismRecord.id == record_id, BaptismRecord.is_deleted.is_(False))
+    async def get_baptism_by_id(self, record_id: uuid.UUID) -> BaptismRecord | None:
+        stmt = select(BaptismRecord).where(
+            BaptismRecord.id == record_id, BaptismRecord.is_deleted.is_(False)
+        )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_baptism_by_faithful(self, faithful_id: uuid.UUID) -> Optional[BaptismRecord]:
-        stmt = select(BaptismRecord).where(BaptismRecord.faithful_id == faithful_id, BaptismRecord.is_deleted.is_(False))
+    async def get_baptism_by_faithful(self, faithful_id: uuid.UUID) -> BaptismRecord | None:
+        stmt = select(BaptismRecord).where(
+            BaptismRecord.faithful_id == faithful_id, BaptismRecord.is_deleted.is_(False)
+        )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_baptisms(self, parish_id: Optional[uuid.UUID] = None) -> List[BaptismRecord]:
+    async def list_baptisms(self, parish_id: uuid.UUID | None = None) -> list[BaptismRecord]:
         stmt = select(BaptismRecord).where(BaptismRecord.is_deleted.is_(False))
         if parish_id:
             stmt = stmt.where(BaptismRecord.parish_id == parish_id)
@@ -58,19 +63,25 @@ class SacramentsRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_confirmations(self, parish_id: Optional[uuid.UUID] = None) -> List[ConfirmationRecord]:
+    async def list_confirmations(
+        self, parish_id: uuid.UUID | None = None
+    ) -> list[ConfirmationRecord]:
         stmt = select(ConfirmationRecord).where(ConfirmationRecord.is_deleted.is_(False))
         if parish_id:
             stmt = stmt.where(ConfirmationRecord.parish_id == parish_id)
-        stmt = stmt.order_by(ConfirmationRecord.celebration_date.desc(), ConfirmationRecord.act_number.desc())
+        stmt = stmt.order_by(
+            ConfirmationRecord.celebration_date.desc(), ConfirmationRecord.act_number.desc()
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_matrimonies(self, parish_id: Optional[uuid.UUID] = None) -> List[MatrimonyRecord]:
+    async def list_matrimonies(self, parish_id: uuid.UUID | None = None) -> list[MatrimonyRecord]:
         stmt = select(MatrimonyRecord).where(MatrimonyRecord.is_deleted.is_(False))
         if parish_id:
             stmt = stmt.where(MatrimonyRecord.parish_id == parish_id)
-        stmt = stmt.order_by(MatrimonyRecord.celebration_date.desc(), MatrimonyRecord.act_number.desc())
+        stmt = stmt.order_by(
+            MatrimonyRecord.celebration_date.desc(), MatrimonyRecord.act_number.desc()
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -104,19 +115,25 @@ class SacramentsRepository:
         await self.db.flush()
         return record
 
-    async def create_religious_profession(self, data: ReligiousProfessionCreate) -> ReligiousProfessionRecord:
+    async def create_religious_profession(
+        self, data: ReligiousProfessionCreate
+    ) -> ReligiousProfessionRecord:
         record = ReligiousProfessionRecord(**data.model_dump())
         self.db.add(record)
         await self.db.flush()
         return record
 
-    async def create_anointing_of_the_sick(self, data: AnointingOfTheSickCreate) -> AnointingOfTheSickRecord:
+    async def create_anointing_of_the_sick(
+        self, data: AnointingOfTheSickCreate
+    ) -> AnointingOfTheSickRecord:
         record = AnointingOfTheSickRecord(**data.model_dump())
         self.db.add(record)
         await self.db.flush()
         return record
 
-    async def create_christian_funeral(self, data: ChristianFuneralCreate) -> ChristianFuneralRecord:
+    async def create_christian_funeral(
+        self, data: ChristianFuneralCreate
+    ) -> ChristianFuneralRecord:
         record = ChristianFuneralRecord(**data.model_dump())
         self.db.add(record)
         await self.db.flush()
@@ -127,22 +144,22 @@ class SacramentsRepository:
         await self.db.flush()
         return issue
 
-    async def get_certificate_by_token(self, token: str) -> Optional[CertificateIssue]:
+    async def get_certificate_by_token(self, token: str) -> CertificateIssue | None:
         stmt = select(CertificateIssue).where(CertificateIssue.verification_token == token)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_certificate_by_id(self, certificate_id: uuid.UUID) -> Optional[CertificateIssue]:
+    async def get_certificate_by_id(self, certificate_id: uuid.UUID) -> CertificateIssue | None:
         stmt = select(CertificateIssue).where(CertificateIssue.id == certificate_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_faithful_by_id(self, faithful_id: uuid.UUID) -> Optional[Faithful]:
+    async def get_faithful_by_id(self, faithful_id: uuid.UUID) -> Faithful | None:
         stmt = select(Faithful).where(Faithful.id == faithful_id, Faithful.is_deleted.is_(False))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_parish_by_id(self, parish_id: uuid.UUID) -> Optional[Parish]:
+    async def get_parish_by_id(self, parish_id: uuid.UUID) -> Parish | None:
         stmt = select(Parish).where(Parish.id == parish_id, Parish.is_deleted.is_(False))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -168,7 +185,7 @@ class SacramentsRepository:
         self,
         sacrament_type: SacramentType,
         record_id: uuid.UUID,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         model_cls = self.get_model_for_sacrament(sacrament_type)
         if not model_cls:
             return None
@@ -179,7 +196,7 @@ class SacramentsRepository:
     async def create_amendment(
         self,
         data: AmendmentRequestCreate,
-        requested_by_user_id: Optional[uuid.UUID] = None,
+        requested_by_user_id: uuid.UUID | None = None,
     ) -> SacramentalAmendment:
         amendment = SacramentalAmendment(
             sacrament_type=data.sacrament_type,
@@ -195,7 +212,7 @@ class SacramentsRepository:
         await self.db.flush()
         return amendment
 
-    async def get_amendment_by_id(self, amendment_id: uuid.UUID) -> Optional[SacramentalAmendment]:
+    async def get_amendment_by_id(self, amendment_id: uuid.UUID) -> SacramentalAmendment | None:
         stmt = select(SacramentalAmendment).where(
             SacramentalAmendment.id == amendment_id,
             SacramentalAmendment.is_deleted.is_(False),
@@ -205,10 +222,10 @@ class SacramentsRepository:
 
     async def list_amendments(
         self,
-        sacrament_type: Optional[SacramentType] = None,
-        record_id: Optional[uuid.UUID] = None,
-        status: Optional[str] = None,
-    ) -> List[SacramentalAmendment]:
+        sacrament_type: SacramentType | None = None,
+        record_id: uuid.UUID | None = None,
+        status: str | None = None,
+    ) -> list[SacramentalAmendment]:
         stmt = select(SacramentalAmendment).where(SacramentalAmendment.is_deleted.is_(False))
         if sacrament_type is not None:
             stmt = stmt.where(SacramentalAmendment.sacrament_type == sacrament_type)

@@ -1,21 +1,25 @@
 """
 Survey Module Business Logic Service
 """
+
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import EntityNotFoundException, ValidationException
-from app.models.survey import Survey, SurveyResponse
+from app.models.survey import Survey
 from app.repositories.survey import SurveyRepository
 from app.schemas.survey import (
-    SurveyCreate,
-    SurveyUpdate,
-    SurveyResponse as SurveyResponseSchema,
     SurveyAnswerSubmit,
+    SurveyCreate,
+    SurveyQuestion,
     SurveyResponseRecord,
     SurveySummaryResponse,
-    SurveyQuestion,
+    SurveyUpdate,
+)
+from app.schemas.survey import (
+    SurveyResponse as SurveyResponseSchema,
 )
 
 
@@ -53,11 +57,11 @@ class SurveyService:
 
     async def list_surveys(
         self,
-        archdiocese_id: Optional[uuid.UUID] = None,
-        deanery_id: Optional[uuid.UUID] = None,
-        parish_id: Optional[uuid.UUID] = None,
-        survey_status: Optional[str] = None,
-    ) -> List[SurveyResponseSchema]:
+        archdiocese_id: uuid.UUID | None = None,
+        deanery_id: uuid.UUID | None = None,
+        parish_id: uuid.UUID | None = None,
+        survey_status: str | None = None,
+    ) -> list[SurveyResponseSchema]:
         surveys = await self.repo.list_surveys(
             archdiocese_id=archdiocese_id,
             deanery_id=deanery_id,
@@ -88,7 +92,7 @@ class SurveyService:
         self,
         survey_id: uuid.UUID,
         data: SurveyAnswerSubmit,
-        submitted_by_user_id: Optional[uuid.UUID] = None,
+        submitted_by_user_id: uuid.UUID | None = None,
     ) -> SurveyResponseRecord:
         survey = await self.repo.get_survey_by_id(survey_id)
         if not survey:
@@ -105,7 +109,9 @@ class SurveyService:
         for q in questions_raw:
             q_id = q.get("id")
             is_required = q.get("required", True)
-            if is_required and (q_id not in data.answers or data.answers[q_id] is None or data.answers[q_id] == ""):
+            if is_required and (
+                q_id not in data.answers or data.answers[q_id] is None or data.answers[q_id] == ""
+            ):
                 raise ValidationException(
                     "errors.missing_required_answer",
                     message_params={"question": q.get("question_text", q_id)},
@@ -118,14 +124,16 @@ class SurveyService:
         )
         return SurveyResponseRecord.model_validate(resp)
 
-    async def list_responses(self, survey_id: uuid.UUID) -> List[SurveyResponseRecord]:
+    async def list_responses(self, survey_id: uuid.UUID) -> list[SurveyResponseRecord]:
         survey = await self.repo.get_survey_by_id(survey_id)
         if not survey:
             raise EntityNotFoundException("errors.survey_not_found")
         responses = await self.repo.list_responses(survey_id)
         return [SurveyResponseRecord.model_validate(r) for r in responses]
 
-    async def get_response(self, survey_id: uuid.UUID, response_id: uuid.UUID) -> SurveyResponseRecord:
+    async def get_response(
+        self, survey_id: uuid.UUID, response_id: uuid.UUID
+    ) -> SurveyResponseRecord:
         resp = await self.repo.get_response_by_id(response_id)
         if not resp or resp.survey_id != survey_id:
             raise EntityNotFoundException("errors.survey_response_not_found")
@@ -139,30 +147,44 @@ class SurveyService:
         responses = await self.repo.list_responses(survey_id)
         questions_raw = (survey.survey_schema or {}).get("questions", [])
 
-        question_summaries: Dict[str, Any] = {}
+        question_summaries: dict[str, Any] = {}
         for q in questions_raw:
             qid = q.get("id", "")
             qtype = q.get("question_type", "TEXT")
-            answers = [r.answers.get(qid) for r in responses if r.answers and qid in r.answers and r.answers[qid] is not None]
+            answers = [
+                r.answers.get(qid)
+                for r in responses
+                if r.answers and qid in r.answers and r.answers[qid] is not None
+            ]
 
             if qtype in ("SINGLE_CHOICE", "BOOLEAN"):
-                freq: Dict[str, int] = {}
+                freq: dict[str, int] = {}
                 for a in answers:
                     key = str(a)
                     freq[key] = freq.get(key, 0) + 1
-                question_summaries[qid] = {"type": qtype, "total_answered": len(answers), "frequencies": freq}
+                question_summaries[qid] = {
+                    "type": qtype,
+                    "total_answered": len(answers),
+                    "frequencies": freq,
+                }
             elif qtype == "MULTIPLE_CHOICE":
-                freq: Dict[str, int] = {}
+                multi_freq: dict[str, int] = {}
                 for a in answers:
                     if isinstance(a, list):
                         for item in a:
-                            freq[str(item)] = freq.get(str(item), 0) + 1
+                            multi_freq[str(item)] = multi_freq.get(str(item), 0) + 1
                     else:
-                        freq[str(a)] = freq.get(str(a), 0) + 1
-                question_summaries[qid] = {"type": qtype, "total_answered": len(answers), "frequencies": freq}
+                        multi_freq[str(a)] = multi_freq.get(str(a), 0) + 1
+                question_summaries[qid] = {
+                    "type": qtype,
+                    "total_answered": len(answers),
+                    "frequencies": multi_freq,
+                }
             elif qtype in ("NUMBER", "RATING"):
-                numeric_answers = []
+                numeric_answers: list[float] = []
                 for a in answers:
+                    if a is None:
+                        continue
                     try:
                         numeric_answers.append(float(a))
                     except (ValueError, TypeError):
@@ -176,7 +198,11 @@ class SurveyService:
                     "max": max(numeric_answers) if numeric_answers else 0,
                 }
             else:
-                question_summaries[qid] = {"type": qtype, "total_answered": len(answers), "sample_answers": answers[:5]}
+                question_summaries[qid] = {
+                    "type": qtype,
+                    "total_answered": len(answers),
+                    "sample_answers": answers[:5],
+                }
 
         return SurveySummaryResponse(
             survey_id=survey_id,

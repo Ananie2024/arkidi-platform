@@ -1,9 +1,9 @@
 """
 Mass Intention Module Database Repository
 """
+
 import uuid
 from datetime import date
-from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +16,7 @@ class IntentionRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_intention(self, intention_id: uuid.UUID) -> Optional[MassIntention]:
+    async def get_intention(self, intention_id: uuid.UUID) -> MassIntention | None:
         stmt = select(MassIntention).where(
             MassIntention.id == intention_id,
             MassIntention.is_deleted.is_(False),
@@ -25,8 +25,8 @@ class IntentionRepository:
         return result.scalar_one_or_none()
 
     async def list_intentions(
-        self, parish_id: uuid.UUID, target_date: Optional[date] = None
-    ) -> List[MassIntention]:
+        self, parish_id: uuid.UUID, target_date: date | None = None
+    ) -> list[MassIntention]:
         stmt = select(MassIntention).where(
             MassIntention.parish_id == parish_id,
             MassIntention.is_deleted.is_(False),

@@ -1,39 +1,49 @@
 """
 Finance Module SQLAlchemy Models
 """
+
 import uuid
 from datetime import date
 from enum import Enum
-from sqlalchemy import String, Date, Numeric, Enum as SQLEnum, ForeignKey, Text
+
+from sqlalchemy import Date, ForeignKey, Numeric, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class DonationType(str, Enum):
-    TITHE = "TITHE"                    # Dîme / Ituro ry'umuryango
-    OFFERTORY = "OFFERTORY"            # Amaturo asanzwe yo mu Misa
-    CONSTRUCTION_FUND = "CONSTRUCTION_FUND" # Umusanzu wo kubaka kiliziya
-    CARITAS_POOR = "CARITAS_POOR"      # Caritas / Abakene
-    SPECIAL_COLLECTION = "SPECIAL_COLLECTION" # Ikoraniro ryihariye
-    MASS_STIPEND = "MASS_STIPEND"      # Igitambo cya Misa
+    TITHE = "TITHE"  # Dîme / Ituro ry'umuryango
+    OFFERTORY = "OFFERTORY"  # Amaturo asanzwe yo mu Misa
+    CONSTRUCTION_FUND = "CONSTRUCTION_FUND"  # Umusanzu wo kubaka kiliziya
+    CARITAS_POOR = "CARITAS_POOR"  # Caritas / Abakene
+    SPECIAL_COLLECTION = "SPECIAL_COLLECTION"  # Ikoraniro ryihariye
+    MASS_STIPEND = "MASS_STIPEND"  # Igitambo cya Misa
 
 
 class PaymentMethod(str, Enum):
     CASH = "CASH"
-    MOMO = "MOMO"                      # MTN Mobile Money / Airtel Money
+    MOMO = "MOMO"  # MTN Mobile Money / Airtel Money
     BANK_TRANSFER = "BANK_TRANSFER"
     CHECK = "CHECK"
 
 
 class Donation(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Financial Contribution / Donation Record."""
+
     __tablename__ = "donations"
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
-    faithful_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=True)
-    family_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("families.id"), nullable=True)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
+    faithful_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=True
+    )
+    family_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("families.id"), nullable=True
+    )
 
     donation_type: Mapped[DonationType] = mapped_column(
         SQLEnum(DonationType, name="donation_type_enum"),

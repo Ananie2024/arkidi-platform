@@ -1,8 +1,9 @@
 """
 Finance Module FastAPI Endpoints — Donations & Financial Summaries
 """
+
 import uuid
-from typing import List
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,10 +27,12 @@ async def record_donation(
     _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.PARISH_SECRETARY])),
 ):
     service = FinanceService(db)
-    return ApiResponse.ok(data=await service.record_donation(data), message="success.donation_recorded")
+    return ApiResponse.ok(
+        data=await service.record_donation(data), message="success.donation_recorded"
+    )
 
 
-@router.get("/donations", response_model=ApiResponse[List[DonationResponse]])
+@router.get("/donations", response_model=ApiResponse[list[DonationResponse]])
 async def list_donations(
     parish_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -47,7 +50,6 @@ async def get_donation(
 ):
     service = FinanceService(db)
     return ApiResponse.ok(data=await service.get_donation(donation_id))
-
 
 
 @router.get("/summary", response_model=ApiResponse[FinancialSummaryResponse])

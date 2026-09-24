@@ -1,29 +1,33 @@
 """
 Land Assets Module Database Repository
 """
+
 import uuid
-from typing import List, Optional
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.parcel import LandParcel, LandDocument, BuildingAsset
-from app.schemas.land import LandParcelCreate, LandParcelUpdate, BuildingAssetCreate
+
+from app.models.parcel import BuildingAsset, LandParcel
+from app.schemas.land import BuildingAssetCreate, LandParcelCreate, LandParcelUpdate
 
 
 class LandAssetsRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_by_id(self, parcel_id: uuid.UUID) -> Optional[LandParcel]:
-        stmt = select(LandParcel).where(LandParcel.id == parcel_id, LandParcel.is_deleted.is_(False))
+    async def get_by_id(self, parcel_id: uuid.UUID) -> LandParcel | None:
+        stmt = select(LandParcel).where(
+            LandParcel.id == parcel_id, LandParcel.is_deleted.is_(False)
+        )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_upi(self, upi: str) -> Optional[LandParcel]:
+    async def get_by_upi(self, upi: str) -> LandParcel | None:
         stmt = select(LandParcel).where(LandParcel.upi == upi, LandParcel.is_deleted.is_(False))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_parcels(self, parish_id: Optional[uuid.UUID] = None) -> List[LandParcel]:
+    async def list_parcels(self, parish_id: uuid.UUID | None = None) -> list[LandParcel]:
         stmt = select(LandParcel).where(LandParcel.is_deleted.is_(False))
         if parish_id:
             stmt = stmt.where(LandParcel.parish_id == parish_id)
@@ -36,8 +40,9 @@ class LandAssetsRepository:
         parcel = LandParcel(**data_dict)
         if data.geojson_geometry:
             try:
-                from shapely.geometry import shape
                 from geoalchemy2.shape import from_shape
+                from shapely.geometry import shape
+
                 parcel.boundary = from_shape(shape(data.geojson_geometry), srid=4326)
             except Exception:
                 pass
@@ -45,7 +50,9 @@ class LandAssetsRepository:
         await self.db.flush()
         return parcel
 
-    async def update_parcel(self, parcel_id: uuid.UUID, data: LandParcelUpdate) -> Optional[LandParcel]:
+    async def update_parcel(
+        self, parcel_id: uuid.UUID, data: LandParcelUpdate
+    ) -> LandParcel | None:
         parcel = await self.get_by_id(parcel_id)
         if not parcel:
             return None
@@ -54,19 +61,21 @@ class LandAssetsRepository:
             setattr(parcel, key, value)
         if data.geojson_geometry is not None:
             try:
-                from shapely.geometry import shape
                 from geoalchemy2.shape import from_shape
+                from shapely.geometry import shape
+
                 parcel.boundary = from_shape(shape(data.geojson_geometry), srid=4326)
             except Exception:
                 pass
         await self.db.flush()
         return parcel
 
-    async def list_buildings(self, parcel_id: uuid.UUID) -> List[BuildingAsset]:
-        stmt = select(BuildingAsset).where(
-            BuildingAsset.parcel_id == parcel_id,
-            BuildingAsset.is_deleted.is_(False)
-        ).order_by(BuildingAsset.name)
+    async def list_buildings(self, parcel_id: uuid.UUID) -> list[BuildingAsset]:
+        stmt = (
+            select(BuildingAsset)
+            .where(BuildingAsset.parcel_id == parcel_id, BuildingAsset.is_deleted.is_(False))
+            .order_by(BuildingAsset.name)
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -75,4 +84,3 @@ class LandAssetsRepository:
         self.db.add(building)
         await self.db.flush()
         return building
-

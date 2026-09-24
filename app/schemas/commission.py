@@ -1,21 +1,23 @@
 """
 Ministries Module Pydantic v2 Schemas
 """
+
 import uuid
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel, ConfigDict
+
 from app.models.ministry import MinistryCategory
 
 
 class MinistryBase(BaseModel):
     name: str
     category: MinistryCategory = MinistryCategory.COMMISSION
-    patron_saint: Optional[str] = None
-    description: Optional[str] = None
-    leader_name: Optional[str] = None
-    leader_phone: Optional[str] = None
-    meeting_schedule: Optional[str] = None
+    patron_saint: str | None = None
+    description: str | None = None
+    leader_name: str | None = None
+    leader_phone: str | None = None
+    meeting_schedule: str | None = None
     is_active: bool = True
 
 

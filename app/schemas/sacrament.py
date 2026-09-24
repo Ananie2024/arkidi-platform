@@ -1,16 +1,18 @@
 """
 Sacraments Module Pydantic v2 Schemas
 """
+
 import uuid
 from datetime import date, datetime
-from typing import Optional, Dict, Any
+
 from pydantic import BaseModel, ConfigDict, Field
+
 from app.models.sacrament import (
-    SacramentType,
-    HolyOrdersOrderType,
-    ReligiousProfessionType,
     AmendmentStatus,
     AmendmentType,
+    HolyOrdersOrderType,
+    ReligiousProfessionType,
+    SacramentType,
 )
 
 
@@ -21,9 +23,9 @@ class BaptismBase(BaseModel):
     act_number: str
     celebration_date: date
     minister_name: str
-    godfather_name: Optional[str] = None
-    godmother_name: Optional[str] = None
-    marginal_notes: Optional[str] = None
+    godfather_name: str | None = None
+    godmother_name: str | None = None
+    marginal_notes: str | None = None
 
 
 class BaptismCreate(BaptismBase):
@@ -47,7 +49,7 @@ class ConfirmationBase(BaseModel):
     act_number: str
     celebration_date: date
     administering_bishop_or_vicar: str
-    sponsor_name: Optional[str] = None
+    sponsor_name: str | None = None
 
 
 class ConfirmationCreate(ConfirmationBase):
@@ -73,7 +75,7 @@ class MatrimonyBase(BaseModel):
     priest_celebrant: str
     witness_1_name: str
     witness_2_name: str
-    dispensations_or_canonical_notes: Optional[str] = None
+    dispensations_or_canonical_notes: str | None = None
 
 
 class MatrimonyCreate(MatrimonyBase):
@@ -99,9 +101,9 @@ class FirstCommunionBase(BaseModel):
     act_number: str
     celebration_date: date
     celebrant_name: str
-    catechetical_program_name: Optional[str] = None
-    sponsor_name: Optional[str] = None
-    marginal_notes: Optional[str] = None
+    catechetical_program_name: str | None = None
+    sponsor_name: str | None = None
+    marginal_notes: str | None = None
 
 
 class FirstCommunionCreate(FirstCommunionBase):
@@ -124,9 +126,9 @@ class HolyOrdersBase(BaseModel):
     ordination_date: date
     order_type: HolyOrdersOrderType
     ordaining_prelate: str
-    diocese_of_incardination: Optional[str] = None
+    diocese_of_incardination: str | None = None
     permanent: bool = True
-    marginal_notes: Optional[str] = None
+    marginal_notes: str | None = None
 
 
 class HolyOrdersCreate(HolyOrdersBase):
@@ -149,8 +151,8 @@ class ReligiousProfessionBase(BaseModel):
     profession_date: date
     profession_type: ReligiousProfessionType
     congregation_or_institute: str
-    superior_name: Optional[str] = None
-    marginal_notes: Optional[str] = None
+    superior_name: str | None = None
+    marginal_notes: str | None = None
 
 
 class ReligiousProfessionCreate(ReligiousProfessionBase):
@@ -170,8 +172,8 @@ class ReligiousProfessionResponse(ReligiousProfessionBase):
 class AnointingOfTheSickBase(BaseModel):
     anointing_date: date
     minister_name: str
-    place_of_anointing: Optional[str] = None
-    notes: Optional[str] = None
+    place_of_anointing: str | None = None
+    notes: str | None = None
 
 
 class AnointingOfTheSickCreate(AnointingOfTheSickBase):
@@ -191,10 +193,10 @@ class AnointingOfTheSickResponse(AnointingOfTheSickBase):
 class ChristianFuneralBase(BaseModel):
     date_of_death: date
     funeral_date: date
-    burial_site: Optional[str] = None
+    burial_site: str | None = None
     officiating_priest: str
     last_sacraments_received: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ChristianFuneralCreate(ChristianFuneralBase):
@@ -234,6 +236,7 @@ class CertificateResponse(BaseModel):
 # Sacramental Amendment Workflow Schemas
 # ---------------------------------------------------------------------------
 
+
 class AmendmentRequestCreate(BaseModel):
     sacrament_type: SacramentType
     record_id: uuid.UUID
@@ -243,12 +246,12 @@ class AmendmentRequestCreate(BaseModel):
         ...,
         description="Structured dictionary of field modifications with old and new values",
     )
-    supporting_document_id: Optional[uuid.UUID] = None
+    supporting_document_id: uuid.UUID | None = None
 
 
 class AmendmentReviewRequest(BaseModel):
     action: str = Field(pattern="^(APPROVE|REJECT)$", description="'APPROVE' or 'REJECT'")
-    review_notes: Optional[str] = None
+    review_notes: str | None = None
 
 
 class SacramentalAmendmentResponse(BaseModel):
@@ -260,12 +263,11 @@ class SacramentalAmendmentResponse(BaseModel):
     amendment_type: AmendmentType
     reason: str
     field_changes: dict
-    supporting_document_id: Optional[uuid.UUID] = None
+    supporting_document_id: uuid.UUID | None = None
     status: AmendmentStatus
-    requested_by_user_id: Optional[uuid.UUID] = None
-    reviewed_by_user_id: Optional[uuid.UUID] = None
-    reviewed_at: Optional[datetime] = None
-    review_notes: Optional[str] = None
+    requested_by_user_id: uuid.UUID | None = None
+    reviewed_by_user_id: uuid.UUID | None = None
+    reviewed_at: datetime | None = None
+    review_notes: str | None = None
     created_at: datetime
     updated_at: datetime
-

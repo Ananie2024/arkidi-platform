@@ -1,14 +1,15 @@
 """
 Deanery Model — the Archdiocese root and its Deaneries (Doyennés).
 """
+
 import uuid
 from datetime import date
 
-from sqlalchemy import String, Date, ForeignKey
+from sqlalchemy import Date, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class Archdiocese(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -18,7 +19,9 @@ class Archdiocese(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String(200), default="Archidiocèse de Kigali", nullable=False)
     canonical_erection_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    patron_saint: Mapped[str | None] = mapped_column(String(100), default="Saint Michel", nullable=True)
+    patron_saint: Mapped[str | None] = mapped_column(
+        String(100), default="Saint Michel", nullable=True
+    )
     see_city: Mapped[str] = mapped_column(String(100), default="Kigali", nullable=False)
 
     deaneries: Mapped[list["Deanery"]] = relationship("Deanery", back_populates="archdiocese")
@@ -37,4 +40,4 @@ class Deanery(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     vicar_forane_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     archdiocese: Mapped["Archdiocese"] = relationship("Archdiocese", back_populates="deaneries")
-    parishes: Mapped[list["Parish"]] = relationship("Parish", back_populates="deanery")  # type: ignore[name-defined]
+    parishes: Mapped[list["Parish"]] = relationship("Parish", back_populates="deanery")  # type: ignore[name-defined]  # noqa: F821

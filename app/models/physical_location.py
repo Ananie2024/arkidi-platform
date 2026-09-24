@@ -1,11 +1,12 @@
 """
 Physical Location Model — physical archival storage locations.
 """
-from sqlalchemy import String, ForeignKey
+
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class PhysicalLocation(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -20,8 +21,10 @@ class PhysicalLocation(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     shelf: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(nullable=True)
 
-    parish_id: Mapped[str | None] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True)
+    parish_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True
+    )
 
-    storage_cabinets: Mapped[list["StorageCabinet"]] = relationship(  # type: ignore[name-defined]
+    storage_cabinets: Mapped[list["StorageCabinet"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "StorageCabinet", back_populates="physical_location"
     )

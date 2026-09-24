@@ -2,20 +2,21 @@
 Surveys Module FastAPI Endpoints
 Pastoral Surveys, Questionnaires, and Parish/Diocesan Responses
 """
+
 import uuid
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
 from app.schemas.survey import (
-    SurveyCreate,
-    SurveyUpdate,
-    SurveyResponse,
     SurveyAnswerSubmit,
+    SurveyCreate,
+    SurveyResponse,
     SurveyResponseRecord,
     SurveySummaryResponse,
+    SurveyUpdate,
 )
 from app.services.survey import SurveyService
 from app.utils.response import ApiResponse
@@ -39,12 +40,12 @@ async def create_survey(
     return ApiResponse.ok(data=created, message="success.survey_created")
 
 
-@router.get("", response_model=ApiResponse[List[SurveyResponse]])
+@router.get("", response_model=ApiResponse[list[SurveyResponse]])
 async def list_surveys(
-    archdiocese_id: Optional[uuid.UUID] = Query(default=None),
-    deanery_id: Optional[uuid.UUID] = Query(default=None),
-    parish_id: Optional[uuid.UUID] = Query(default=None),
-    survey_status: Optional[str] = Query(default=None, alias="status"),
+    archdiocese_id: uuid.UUID | None = Query(default=None),
+    deanery_id: uuid.UUID | None = Query(default=None),
+    parish_id: uuid.UUID | None = Query(default=None),
+    survey_status: str | None = Query(default=None, alias="status"),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -118,7 +119,7 @@ async def submit_response(
     return ApiResponse.ok(data=response, message="success.survey_response_submitted")
 
 
-@router.get("/{survey_id}/responses", response_model=ApiResponse[List[SurveyResponseRecord]])
+@router.get("/{survey_id}/responses", response_model=ApiResponse[list[SurveyResponseRecord]])
 async def list_responses(
     survey_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -130,7 +131,9 @@ async def list_responses(
     return ApiResponse.ok(data=responses)
 
 
-@router.get("/{survey_id}/responses/{response_id}", response_model=ApiResponse[SurveyResponseRecord])
+@router.get(
+    "/{survey_id}/responses/{response_id}", response_model=ApiResponse[SurveyResponseRecord]
+)
 async def get_response(
     survey_id: uuid.UUID,
     response_id: uuid.UUID,

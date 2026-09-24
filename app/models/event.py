@@ -1,23 +1,25 @@
 """
 Event Model — parish and archdiocesan calendar events.
 """
+
 import uuid
 from datetime import date, time
 from enum import Enum
 
-from sqlalchemy import String, Date, Time, Text, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Date, ForeignKey, String, Text, Time
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class EventType(str, Enum):
-    LITURGICAL = "LITURGICAL"            # Fêtes, processions
-    PASTORAL = "PASTORAL"                # Catéchèse, retraites
-    ADMINISTRATIVE = "ADMINISTRATIVE"    # Réunions, sessions
-    SOCIAL = "SOCIAL"                    # Caritas, jeunes, sport
-    TRAINING = "TRAINING"                # Formations
+    LITURGICAL = "LITURGICAL"  # Fêtes, processions
+    PASTORAL = "PASTORAL"  # Catéchèse, retraites
+    ADMINISTRATIVE = "ADMINISTRATIVE"  # Réunions, sessions
+    SOCIAL = "SOCIAL"  # Caritas, jeunes, sport
+    TRAINING = "TRAINING"  # Formations
 
 
 class Event(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -40,4 +42,6 @@ class Event(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     archdiocese_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     deanery_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True)
+    parish_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True
+    )

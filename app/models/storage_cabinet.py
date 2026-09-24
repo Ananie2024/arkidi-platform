@@ -1,13 +1,14 @@
 """
 Storage Cabinet Model — physical drawer/cabinet units in the archives.
 """
+
 import uuid
 
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class StorageCabinet(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -23,6 +24,6 @@ class StorageCabinet(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin)
     )
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
-    physical_location: Mapped["PhysicalLocation"] = relationship(  # type: ignore[name-defined]
+    physical_location: Mapped["PhysicalLocation"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "PhysicalLocation", back_populates="storage_cabinets"
     )

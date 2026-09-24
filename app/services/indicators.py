@@ -11,6 +11,7 @@ also serves the Archives domain: polymorphic org-scoped ``Document`` counts,
 via-join ``ScannedPage`` OCR completion rates, and the annual parish returns
 that back the *Annuario Pontificio* report.
 """
+
 import uuid
 from datetime import UTC, date, datetime
 from typing import Any
@@ -237,6 +238,8 @@ INDICATORS: list[StatisticIndicator] = [
 INDICATOR_INDEX: dict[str, StatisticIndicator] = {
     indicator.key: indicator for indicator in INDICATORS
 }
+
+
 class AggregationService:
     """Runs the same generic pipeline over any configured indicator.
 
@@ -271,15 +274,11 @@ class AggregationService:
                 filters=indicator.filters,
                 unit=indicator.unit,
                 scope_mode=indicator.scope_mode,
-                via_model=(
-                    indicator.via_model.__name__ if indicator.via_model else None
-                ),
+                via_model=(indicator.via_model.__name__ if indicator.via_model else None),
                 via_local_field=indicator.via_local_field,
                 via_scope_field=indicator.via_scope_field,
                 group_by_field=indicator.group_by_field,
-                label_model=(
-                    indicator.label_model.__name__ if indicator.label_model else None
-                ),
+                label_model=(indicator.label_model.__name__ if indicator.label_model else None),
                 label_field=indicator.label_field,
             )
             for indicator in INDICATORS
@@ -337,8 +336,12 @@ class AggregationService:
         if indicator.scope_mode == ScopeMode.POLYMORPHIC_ORG:
             if deanery_id is not None:
                 deanery_ids = [deanery_id]
-            else:
+            elif archdiocese_id is not None:
                 deanery_ids = await self.repo.get_deanery_ids(archdiocese_id)
+            else:
+                # Unreachable via the public API: compute() rejects a scope with
+                # neither deanery nor archdiocese before reaching this point.
+                deanery_ids = []
             org_scope = {
                 "parish_ids": list(parish_ids),
                 "deanery_ids": deanery_ids,
@@ -384,15 +387,17 @@ class AggregationService:
             )
             state["n"] += 1.0
             if indicator.aggregation in (Aggregation.SUM, Aggregation.AVG):
+                assert indicator.metric_field is not None  # required by the indicator schema
                 state["sum"] += float(getattr(row, indicator.metric_field))
-            elif indicator.aggregation == Aggregation.RATE and (
-                getattr(row, indicator.metric_field) is not None
-            ):
-                state["done"] += 1.0
+            elif indicator.aggregation == Aggregation.RATE:
+                assert indicator.metric_field is not None  # required by the indicator schema
+                if getattr(row, indicator.metric_field) is not None:
+                    state["done"] += 1.0
 
         # 5. Resolve human-readable labels for the buckets.
         group_ids = {group for _period, group in acc if group is not None}
         if indicator.group_by_field:
+            assert indicator.label_model is not None  # required when group_by_field is set
             label_model = indicator.label_model
             label_field = indicator.label_field
         else:
@@ -433,8 +438,11 @@ class AggregationService:
     # ------------------------------------------------------------------ #
     def _validate_source(self, indicator: StatisticIndicator) -> None:
         if indicator.scope_mode == ScopeMode.VIA_JOIN:
-            if not hasattr(indicator.via_model, indicator.via_scope_field) or not hasattr(
-                indicator.source_model, indicator.via_local_field
+            via_scope_field = indicator.via_scope_field
+            via_local_field = indicator.via_local_field
+            assert via_scope_field is not None and via_local_field is not None
+            if not hasattr(indicator.via_model, via_scope_field) or not hasattr(
+                indicator.source_model, via_local_field
             ):
                 raise ValidationException(
                     "errors.indicator_source_no_parish",
@@ -477,9 +485,7 @@ class AggregationService:
     ) -> tuple[str | None, uuid.UUID | None]:
         period = None
         if indicator.date_field:
-            period = self._bucket_label(
-                indicator.trend_bucket, getattr(row, indicator.date_field)
-            )
+            period = self._bucket_label(indicator.trend_bucket, getattr(row, indicator.date_field))
 
         # Non-hierarchical grouping dimension (e.g. documents by type).
         if indicator.group_by_field:
@@ -487,9 +493,7 @@ class AggregationService:
 
         level_attr = _GROUP_LEVEL_ATTR[indicator.group_by]
         row_parish = (
-            scope_parish_id
-            if scope_parish_id is not None
-            else getattr(row, "parish_id", None)
+            scope_parish_id if scope_parish_id is not None else getattr(row, "parish_id", None)
         )
         if level_attr == "parish_id":
             group_id = row_parish

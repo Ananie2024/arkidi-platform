@@ -1,10 +1,12 @@
 """
 Faithful Module FastAPI Endpoints
 """
+
 import uuid
-from typing import Optional
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.dependencies import get_db, require_roles
 from app.models.enums import UserRole
 from app.schemas.faithful import (
@@ -22,8 +24,8 @@ router = APIRouter(prefix="/faithful", tags=["Faithful & Families"])
 
 @router.get("", response_model=ApiResponse[PaginatedResponse[FaithfulResponse]])
 async def list_faithful(
-    parish_id: Optional[uuid.UUID] = None,
-    search: Optional[str] = None,
+    parish_id: uuid.UUID | None = None,
+    search: str | None = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -60,7 +62,9 @@ async def create_faithful(
     return ApiResponse.ok(data=created, message="success.faithful_registered")
 
 
-@router.post("/families", response_model=ApiResponse[FamilyResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/families", response_model=ApiResponse[FamilyResponse], status_code=status.HTTP_201_CREATED
+)
 async def create_family(
     data: FamilyCreate,
     db: AsyncSession = Depends(get_db),

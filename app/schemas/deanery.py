@@ -1,9 +1,9 @@
 """
 Deanery Pydantic v2 Schemas
 """
+
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 class DeaneryBase(BaseModel):
     name: str
     code: str
-    vicar_forane_name: Optional[str] = None
+    vicar_forane_name: str | None = None
 
 
 class DeaneryCreate(DeaneryBase):
@@ -19,8 +19,8 @@ class DeaneryCreate(DeaneryBase):
 
 
 class DeaneryUpdate(BaseModel):
-    name: Optional[str] = None
-    vicar_forane_name: Optional[str] = None
+    name: str | None = None
+    vicar_forane_name: str | None = None
 
 
 class DeaneryResponse(DeaneryBase):

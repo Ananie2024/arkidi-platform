@@ -1,21 +1,21 @@
 """
 Deanery Module Business Logic Service
 """
+
 import uuid
-from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import DeaneryNotFoundException
 from app.repositories.deanery import DeaneryRepository
 from app.schemas.deanery import DeaneryResponse
-from app.core.exceptions import DeaneryNotFoundException
 
 
 class DeaneryService:
     def __init__(self, db: AsyncSession):
         self.repo = DeaneryRepository(db)
 
-    async def get_all_deaneries(self) -> List[DeaneryResponse]:
+    async def get_all_deaneries(self) -> list[DeaneryResponse]:
         deaneries = await self.repo.list_deaneries()
         return [DeaneryResponse.model_validate(d) for d in deaneries]
 

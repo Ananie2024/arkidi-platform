@@ -1,4 +1,5 @@
 """Unit tests for the ReportLab-based sacramental certificate PDF generator."""
+
 import pytest
 
 from app.utils.pdf import generate_certificate_pdf
@@ -10,7 +11,11 @@ from app.utils.qr import generate_qr_code_bytes
     [True, False],
 )
 def test_generate_certificate_pdf_produces_valid_pdf(with_qr):
-    qr_bytes = generate_qr_code_bytes("https://arkidi.archidiocesekigali.org/verify/TOKEN") if with_qr else None
+    qr_bytes = (
+        generate_qr_code_bytes("https://arkidi.archidiocesekigali.org/verify/TOKEN")
+        if with_qr
+        else None
+    )
     pdf = generate_certificate_pdf(
         title="Certificate of Baptism",
         recipient="Jean Baptiste Karemera",

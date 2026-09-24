@@ -2,26 +2,27 @@
 Governance Module Business Logic Service
 Commissions, Councils, Meetings, and Meeting Minutes
 """
+
 import uuid
 from datetime import date
-from typing import List, Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import EntityNotFoundException, ValidationException
 from app.repositories.governance import GovernanceRepository
 from app.schemas.governance import (
     CommissionCreate,
-    CommissionUpdate,
     CommissionResponse,
+    CommissionUpdate,
     CouncilCreate,
-    CouncilUpdate,
     CouncilResponse,
+    CouncilUpdate,
     MeetingCreate,
-    MeetingUpdate,
-    MeetingResponse,
     MeetingMinuteCreate,
-    MeetingMinuteUpdate,
     MeetingMinuteResponse,
+    MeetingMinuteUpdate,
+    MeetingResponse,
+    MeetingUpdate,
 )
 
 
@@ -45,12 +46,12 @@ class GovernanceService:
 
     async def list_commissions(
         self,
-        archdiocese_id: Optional[uuid.UUID] = None,
-        deanery_id: Optional[uuid.UUID] = None,
-        parish_id: Optional[uuid.UUID] = None,
-        category: Optional[str] = None,
-        is_active: Optional[bool] = None,
-    ) -> List[CommissionResponse]:
+        archdiocese_id: uuid.UUID | None = None,
+        deanery_id: uuid.UUID | None = None,
+        parish_id: uuid.UUID | None = None,
+        category: str | None = None,
+        is_active: bool | None = None,
+    ) -> list[CommissionResponse]:
         items = await self.repo.list_commissions(
             archdiocese_id=archdiocese_id,
             deanery_id=deanery_id,
@@ -60,7 +61,9 @@ class GovernanceService:
         )
         return [CommissionResponse.model_validate(c) for c in items]
 
-    async def update_commission(self, commission_id: uuid.UUID, data: CommissionUpdate) -> CommissionResponse:
+    async def update_commission(
+        self, commission_id: uuid.UUID, data: CommissionUpdate
+    ) -> CommissionResponse:
         comm = await self.repo.get_commission_by_id(commission_id)
         if not comm:
             raise EntityNotFoundException("errors.commission_not_found")
@@ -89,12 +92,12 @@ class GovernanceService:
 
     async def list_councils(
         self,
-        archdiocese_id: Optional[uuid.UUID] = None,
-        deanery_id: Optional[uuid.UUID] = None,
-        parish_id: Optional[uuid.UUID] = None,
-        council_type: Optional[str] = None,
-        is_active: Optional[bool] = None,
-    ) -> List[CouncilResponse]:
+        archdiocese_id: uuid.UUID | None = None,
+        deanery_id: uuid.UUID | None = None,
+        parish_id: uuid.UUID | None = None,
+        council_type: str | None = None,
+        is_active: bool | None = None,
+    ) -> list[CouncilResponse]:
         items = await self.repo.list_councils(
             archdiocese_id=archdiocese_id,
             deanery_id=deanery_id,
@@ -142,15 +145,15 @@ class GovernanceService:
 
     async def list_meetings(
         self,
-        council_id: Optional[uuid.UUID] = None,
-        commission_id: Optional[uuid.UUID] = None,
-        archdiocese_id: Optional[uuid.UUID] = None,
-        deanery_id: Optional[uuid.UUID] = None,
-        parish_id: Optional[uuid.UUID] = None,
-        status: Optional[str] = None,
-        from_date: Optional[date] = None,
-        to_date: Optional[date] = None,
-    ) -> List[MeetingResponse]:
+        council_id: uuid.UUID | None = None,
+        commission_id: uuid.UUID | None = None,
+        archdiocese_id: uuid.UUID | None = None,
+        deanery_id: uuid.UUID | None = None,
+        parish_id: uuid.UUID | None = None,
+        status: str | None = None,
+        from_date: date | None = None,
+        to_date: date | None = None,
+    ) -> list[MeetingResponse]:
         items = await self.repo.list_meetings(
             council_id=council_id,
             commission_id=commission_id,
@@ -183,7 +186,7 @@ class GovernanceService:
     async def add_minute(
         self,
         data: MeetingMinuteCreate,
-        recorded_by_user_id: Optional[uuid.UUID] = None,
+        recorded_by_user_id: uuid.UUID | None = None,
     ) -> MeetingMinuteResponse:
         meeting = await self.repo.get_meeting_by_id(data.meeting_id)
         if not meeting:
@@ -197,14 +200,16 @@ class GovernanceService:
             raise EntityNotFoundException("errors.meeting_minute_not_found")
         return MeetingMinuteResponse.model_validate(minute)
 
-    async def list_minutes_for_meeting(self, meeting_id: uuid.UUID) -> List[MeetingMinuteResponse]:
+    async def list_minutes_for_meeting(self, meeting_id: uuid.UUID) -> list[MeetingMinuteResponse]:
         meeting = await self.repo.get_meeting_by_id(meeting_id)
         if not meeting:
             raise EntityNotFoundException("errors.meeting_not_found")
         minutes = await self.repo.list_minutes_for_meeting(meeting_id)
         return [MeetingMinuteResponse.model_validate(m) for m in minutes]
 
-    async def update_minute(self, minute_id: uuid.UUID, data: MeetingMinuteUpdate) -> MeetingMinuteResponse:
+    async def update_minute(
+        self, minute_id: uuid.UUID, data: MeetingMinuteUpdate
+    ) -> MeetingMinuteResponse:
         minute = await self.repo.get_minute_by_id(minute_id)
         if not minute:
             raise EntityNotFoundException("errors.meeting_minute_not_found")

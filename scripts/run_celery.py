@@ -1,6 +1,7 @@
 """
 Celery Task Runner Entrypoint
 """
+
 import sys
 
 from app.tasks.celery_app import celery_app

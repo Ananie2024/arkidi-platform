@@ -65,7 +65,7 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[misc]
     @property
-    def DATABASE_URL(self) -> str:
+    def DATABASE_URL(self) -> str:  # noqa: N802 - mirrors the env var / Settings name
         """Synchronous connection string (used for Alembic or sync scripts)."""
         return (
             f"postgresql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
@@ -74,7 +74,7 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[misc]
     @property
-    def ASYNC_DATABASE_URL(self) -> str:
+    def ASYNC_DATABASE_URL(self) -> str:  # noqa: N802 - mirrors the env var / Settings name
         """Async connection string for asyncpg + SQLAlchemy 2.0."""
         return (
             f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
@@ -210,4 +210,4 @@ class Settings(BaseSettings):
     LOG_BACKUP_COUNT: int = Field(default=5)
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]  # values come from the environment

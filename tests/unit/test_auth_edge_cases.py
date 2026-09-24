@@ -4,6 +4,7 @@ Unit tests for Auth edge cases and RBAC dependencies:
 - Role claims validation & malformed role handling (no unhandled ValueError)
 - Registration duplicate username pre-check and IntegrityError handling
 """
+
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -128,7 +129,9 @@ async def test_auth_service_register_catches_integrity_error():
     )
 
     service.repo.get_by_username_or_email = AsyncMock(return_value=None)
-    service.repo.create_user = AsyncMock(side_effect=IntegrityError("duplicate key", params=None, orig=Exception()))
+    service.repo.create_user = AsyncMock(
+        side_effect=IntegrityError("duplicate key", params=None, orig=Exception())
+    )
 
     with pytest.raises(UserAlreadyExistsException):
         await service.register_user(user_data)
@@ -170,4 +173,3 @@ async def test_rate_limiter_blocks_excessive_requests():
         assert body["success"] is False
         assert body["error"]["type"] == "RateLimitExceeded"
         assert "Too many requests" in body["error"]["message"]
-

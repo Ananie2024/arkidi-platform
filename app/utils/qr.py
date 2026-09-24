@@ -1,8 +1,10 @@
 """
 QR Code Generation Utility for Sacramental Certificates & Land Deeds
 """
-import io
+
 import base64
+import io
+
 import qrcode
 from qrcode.image.pil import PilImage
 

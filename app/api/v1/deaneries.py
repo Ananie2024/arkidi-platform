@@ -1,8 +1,9 @@
 """
 Deanery FastAPI Endpoints
 """
+
 import uuid
-from typing import List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +16,7 @@ from app.utils.response import ApiResponse
 router = APIRouter(prefix="/geography", tags=["Ecclesiastical Geography"])
 
 
-@router.get("/deaneries", response_model=ApiResponse[List[DeaneryResponse]])
+@router.get("/deaneries", response_model=ApiResponse[list[DeaneryResponse]])
 async def list_deaneries(
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),

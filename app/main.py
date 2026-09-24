@@ -1,6 +1,7 @@
 """Arkidi Platform - FastAPI Application Entrypoint
 Archdiocese of Kigali Digital Archive, Parish Management & Statistical System
 """
+
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -27,9 +28,7 @@ logger = setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager for startup and shutdown hooks."""
-    logger.info(
-        "Starting up Arkidi Platform API...", extra={"version": settings.APP_VERSION}
-    )
+    logger.info("Starting up Arkidi Platform API...", extra={"version": settings.APP_VERSION})
     # Ensure storage directories exist
     os.makedirs(settings.FILE_STORAGE_PATH, exist_ok=True)
     os.makedirs(settings.BACKUP_BASE_PATH, exist_ok=True)
@@ -92,9 +91,7 @@ def create_application() -> FastAPI:
     # Static Files & Storage Mount
     # --------------------------------------------------------------------------
     if os.path.exists(settings.FILE_STORAGE_PATH):
-        app.mount(
-            "/static", StaticFiles(directory=settings.FILE_STORAGE_PATH), name="static"
-        )
+        app.mount("/static", StaticFiles(directory=settings.FILE_STORAGE_PATH), name="static")
 
     # --------------------------------------------------------------------------
     # API Routers

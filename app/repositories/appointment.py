@@ -1,24 +1,26 @@
 """
 Clergy Module Database Repository
 """
+
 import uuid
-from typing import List, Optional
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.priest import Priest, ClergyAssignment
-from app.schemas.appointment import PriestCreate, PriestUpdate, AssignmentCreate
+
+from app.models.priest import ClergyAssignment, Priest
+from app.schemas.appointment import AssignmentCreate, PriestCreate
 
 
 class ClergyRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_by_id(self, priest_id: uuid.UUID) -> Optional[Priest]:
+    async def get_by_id(self, priest_id: uuid.UUID) -> Priest | None:
         stmt = select(Priest).where(Priest.id == priest_id, Priest.is_deleted.is_(False))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_priests(self, parish_id: Optional[uuid.UUID] = None) -> List[Priest]:
+    async def list_priests(self, parish_id: uuid.UUID | None = None) -> list[Priest]:
         stmt = select(Priest).where(Priest.is_deleted.is_(False))
         if parish_id:
             stmt = stmt.where(Priest.current_parish_id == parish_id)
@@ -38,7 +40,11 @@ class ClergyRepository:
         await self.db.flush()
         return assignment
 
-    async def list_assignments(self, priest_id: uuid.UUID) -> List[ClergyAssignment]:
-        stmt = select(ClergyAssignment).where(ClergyAssignment.priest_id == priest_id).order_by(ClergyAssignment.start_date.desc())
+    async def list_assignments(self, priest_id: uuid.UUID) -> list[ClergyAssignment]:
+        stmt = (
+            select(ClergyAssignment)
+            .where(ClergyAssignment.priest_id == priest_id)
+            .order_by(ClergyAssignment.start_date.desc())
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())

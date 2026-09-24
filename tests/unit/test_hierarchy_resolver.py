@@ -2,14 +2,14 @@
 Unit tests for the organisational hierarchy rollup helpers
 (app/services/org/hierarchy_resolver.py).
 """
+
 import uuid
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal
 from app.models.deanery import Archdiocese, Deanery
-from app.models.parish import Parish, Centrale, SmallChristianCommunity
+from app.models.parish import Centrale, Parish, SmallChristianCommunity
 from app.services.org.hierarchy_resolver import (
     get_ancestors,
     get_descendant_parish_ids,
@@ -27,9 +27,7 @@ async def org_chain():
     inside a rolled-back transaction so the test database stays clean.
     """
     async with AsyncSessionLocal() as db:
-        archdiocese = Archdiocese(
-            name="Test Archdiocese", see_city="Kigali"
-        )
+        archdiocese = Archdiocese(name="Test Archdiocese", see_city="Kigali")
         db.add(archdiocese)
         await db.flush()
 
@@ -53,9 +51,7 @@ async def org_chain():
         db.add(centrale)
         await db.flush()
 
-        scc = SmallChristianCommunity(
-            centrale_id=centrale.id, name="Test SCC"
-        )
+        scc = SmallChristianCommunity(centrale_id=centrale.id, name="Test SCC")
         db.add(scc)
         await db.flush()
 
@@ -135,9 +131,7 @@ async def test_get_descendant_parish_ids_archdiocese(org_chain):
     """The archdiocese resolves every parish under all of its deaneries."""
     db, archdiocese, deanery, parish, centrale, scc = org_chain
 
-    parish_ids = await get_descendant_parish_ids(
-        db, archdiocese_id=archdiocese.id
-    )
+    parish_ids = await get_descendant_parish_ids(db, archdiocese_id=archdiocese.id)
 
     assert parish.id in parish_ids
 
@@ -155,9 +149,7 @@ async def test_get_descendant_parish_ids_empty_deanery(org_chain):
     db.add(empty_deanery)
     await db.flush()
 
-    parish_ids = await get_descendant_parish_ids(
-        db, deanery_id=empty_deanery.id
-    )
+    parish_ids = await get_descendant_parish_ids(db, deanery_id=empty_deanery.id)
 
     assert parish_ids == []
 
@@ -187,9 +179,7 @@ async def test_get_parish_ancestry_map_multiple(org_chain):
     """Two parishes under the same deanery share the same ancestry buckets."""
     db, archdiocese, deanery, parish, *_ = org_chain
 
-    parish2 = Parish(
-        deanery_id=deanery.id, name="Parish Two", code=_unique_code("PAR")
-    )
+    parish2 = Parish(deanery_id=deanery.id, name="Parish Two", code=_unique_code("PAR"))
     db.add(parish2)
     await db.flush()
 

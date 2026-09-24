@@ -22,6 +22,7 @@ This exercises the production-realistic non-superuser path so the bug this test
 guards (geometry-backed tables failing to restore) cannot hide behind a
 superuser Docker-image default again.
 """
+
 import os
 import shutil
 import subprocess
@@ -71,12 +72,18 @@ def _can_create_database(tools: dict) -> bool:
     res = _run(
         [
             tools["psql"],
-            "-h", settings.DATABASE_HOST,
-            "-p", str(settings.DATABASE_PORT),
-            "-U", settings.DATABASE_USER,
-            "-d", settings.DATABASE_NAME,
-            "-t", "-A",
-            "-c", "SELECT rolcreatedb FROM pg_roles WHERE rolname = current_user",
+            "-h",
+            settings.DATABASE_HOST,
+            "-p",
+            str(settings.DATABASE_PORT),
+            "-U",
+            settings.DATABASE_USER,
+            "-d",
+            settings.DATABASE_NAME,
+            "-t",
+            "-A",
+            "-c",
+            "SELECT rolcreatedb FROM pg_roles WHERE rolname = current_user",
         ],
         env=_env(settings.DATABASE_NAME),
     )
@@ -89,12 +96,18 @@ def _reached_database(tools: dict) -> bool:
     res = _run(
         [
             tools["psql"],
-            "-h", settings.DATABASE_HOST,
-            "-p", str(settings.DATABASE_PORT),
-            "-U", settings.DATABASE_USER,
-            "-d", settings.DATABASE_NAME,
-            "-t", "-A",
-            "-c", "SELECT 1",
+            "-h",
+            settings.DATABASE_HOST,
+            "-p",
+            str(settings.DATABASE_PORT),
+            "-U",
+            settings.DATABASE_USER,
+            "-d",
+            settings.DATABASE_NAME,
+            "-t",
+            "-A",
+            "-c",
+            "SELECT 1",
         ],
         env=_env(settings.DATABASE_NAME),
     )
@@ -105,12 +118,18 @@ def _psql_count(tools: dict, database: str, table: str):
     res = _run(
         [
             tools["psql"],
-            "-h", settings.DATABASE_HOST,
-            "-p", str(settings.DATABASE_PORT),
-            "-U", settings.DATABASE_USER,
-            "-d", database,
-            "-t", "-A",
-            "-c", f"SELECT count(*) FROM {table}",
+            "-h",
+            settings.DATABASE_HOST,
+            "-p",
+            str(settings.DATABASE_PORT),
+            "-U",
+            settings.DATABASE_USER,
+            "-d",
+            database,
+            "-t",
+            "-A",
+            "-c",
+            f"SELECT count(*) FROM {table}",
         ],
         env=_env(database),
     )
@@ -123,11 +142,16 @@ def _table_count(tools: dict, database: str) -> int:
     res = _run(
         [
             tools["psql"],
-            "-h", settings.DATABASE_HOST,
-            "-p", str(settings.DATABASE_PORT),
-            "-U", settings.DATABASE_USER,
-            "-d", database,
-            "-t", "-A",
+            "-h",
+            settings.DATABASE_HOST,
+            "-p",
+            str(settings.DATABASE_PORT),
+            "-U",
+            settings.DATABASE_USER,
+            "-d",
+            database,
+            "-t",
+            "-A",
             "-c",
             "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'",
         ],
@@ -143,11 +167,16 @@ def _geometry_count(tools: dict, database: str) -> int:
     res = _run(
         [
             tools["psql"],
-            "-h", settings.DATABASE_HOST,
-            "-p", str(settings.DATABASE_PORT),
-            "-U", settings.DATABASE_USER,
-            "-d", database,
-            "-t", "-A",
+            "-h",
+            settings.DATABASE_HOST,
+            "-p",
+            str(settings.DATABASE_PORT),
+            "-U",
+            settings.DATABASE_USER,
+            "-d",
+            database,
+            "-t",
+            "-A",
             "-c",
             "SELECT count(*) FROM information_schema.columns "
             "WHERE table_schema = 'public' AND udt_name IN ('geometry', 'geography')",
@@ -190,13 +219,19 @@ def test_restore_drill_end_to_end():
             dump_res = _run(
                 [
                     tools["pg_dump"],
-                    "--no-owner", "--no-acl",
-                    "-h", settings.DATABASE_HOST,
-                    "-p", str(settings.DATABASE_PORT),
-                    "-U", settings.DATABASE_USER,
-                    "-d", settings.DATABASE_NAME,
+                    "--no-owner",
+                    "--no-acl",
+                    "-h",
+                    settings.DATABASE_HOST,
+                    "-p",
+                    str(settings.DATABASE_PORT),
+                    "-U",
+                    settings.DATABASE_USER,
+                    "-d",
+                    settings.DATABASE_NAME,
                     "-Fc",
-                    "-f", dump_path,
+                    "-f",
+                    dump_path,
                 ],
                 env=_env(settings.DATABASE_NAME),
             )
@@ -210,11 +245,16 @@ def test_restore_drill_end_to_end():
             createdb = _run(
                 [
                     tools["psql"],
-                    "-h", settings.DATABASE_HOST,
-                    "-p", str(settings.DATABASE_PORT),
-                    "-U", settings.DATABASE_USER,
-                    "-d", settings.DATABASE_NAME,
-                    "-c", f"CREATE DATABASE {scratch}",
+                    "-h",
+                    settings.DATABASE_HOST,
+                    "-p",
+                    str(settings.DATABASE_PORT),
+                    "-U",
+                    settings.DATABASE_USER,
+                    "-d",
+                    settings.DATABASE_NAME,
+                    "-c",
+                    f"CREATE DATABASE {scratch}",
                 ],
                 env=_env(settings.DATABASE_NAME),
             )
@@ -227,11 +267,16 @@ def test_restore_drill_end_to_end():
             provision = _run(
                 [
                     tools["psql"],
-                    "-h", settings.DATABASE_HOST,
-                    "-p", str(settings.DATABASE_PORT),
-                    "-U", settings.effective_admin_user,
-                    "-d", scratch,
-                    "-c", "CREATE EXTENSION IF NOT EXISTS postgis",
+                    "-h",
+                    settings.DATABASE_HOST,
+                    "-p",
+                    str(settings.DATABASE_PORT),
+                    "-U",
+                    settings.effective_admin_user,
+                    "-d",
+                    scratch,
+                    "-c",
+                    "CREATE EXTENSION IF NOT EXISTS postgis",
                 ],
                 env=_env_admin(scratch),
             )
@@ -239,11 +284,16 @@ def test_restore_drill_end_to_end():
             grant = _run(
                 [
                     tools["psql"],
-                    "-h", settings.DATABASE_HOST,
-                    "-p", str(settings.DATABASE_PORT),
-                    "-U", settings.effective_admin_user,
-                    "-d", scratch,
-                    "-c", f"GRANT CREATE ON SCHEMA public TO {settings.DATABASE_USER}",
+                    "-h",
+                    settings.DATABASE_HOST,
+                    "-p",
+                    str(settings.DATABASE_PORT),
+                    "-U",
+                    settings.effective_admin_user,
+                    "-d",
+                    scratch,
+                    "-c",
+                    f"GRANT CREATE ON SCHEMA public TO {settings.DATABASE_USER}",
                 ],
                 env=_env_admin(scratch),
             )
@@ -254,7 +304,9 @@ def test_restore_drill_end_to_end():
             os.makedirs(restored_fs, exist_ok=True)
             with tarfile.open(files_tarball, "r:gz") as tar:
                 tar.extractall(restored_fs)
-            restored_probe = os.path.join(restored_fs, os.path.basename(tmp_file_storage), "probe.txt")
+            restored_probe = os.path.join(
+                restored_fs, os.path.basename(tmp_file_storage), "probe.txt"
+            )
             assert os.path.exists(restored_probe), "file-storage probe not restored"
             with open(restored_probe, "rb") as fh:
                 assert fh.read() == probe_bytes, "file-storage bytes did not round-trip"
@@ -272,20 +324,32 @@ def test_restore_drill_end_to_end():
             )
             assert list_res.returncode == 0, f"pg_restore --list failed: {list_res.stderr}"
             with open(list_path, encoding="utf-8", errors="replace") as fh:
-                entries = [ln for ln in fh
-                           if ln.strip() and "postgis" not in ln.lower()
-                           and "spatial_ref_sys" not in ln.lower()]
+                entries = [
+                    ln
+                    for ln in fh
+                    if ln.strip()
+                    and "postgis" not in ln.lower()
+                    and "spatial_ref_sys" not in ln.lower()
+                ]
             with open(filtered_list_path, "w", encoding="utf-8") as fh:
                 fh.writelines(entries)
             restore_res = _run(
                 [
                     tools["pg_restore"],
-                    "--no-owner", "--no-acl", "--clean", "--if-exists",
-                    "--use-list", filtered_list_path,
-                    "-h", settings.DATABASE_HOST,
-                    "-p", str(settings.DATABASE_PORT),
-                    "-U", settings.DATABASE_USER,
-                    "-d", scratch,
+                    "--no-owner",
+                    "--no-acl",
+                    "--clean",
+                    "--if-exists",
+                    "--use-list",
+                    filtered_list_path,
+                    "-h",
+                    settings.DATABASE_HOST,
+                    "-p",
+                    str(settings.DATABASE_PORT),
+                    "-U",
+                    settings.DATABASE_USER,
+                    "-d",
+                    scratch,
                     dump_path,
                 ],
                 env=_env(scratch),
@@ -295,9 +359,9 @@ def test_restore_drill_end_to_end():
             # --- 4. Verify: table graph + geometry columns + row counts match ---
             src_tables = _table_count(tools, settings.DATABASE_NAME)
             restored_tables = _table_count(tools, scratch)
-            assert restored_tables == src_tables, (
-                f"restored table count {restored_tables} != source {src_tables}"
-            )
+            assert (
+                restored_tables == src_tables
+            ), f"restored table count {restored_tables} != source {src_tables}"
 
             # Guard the PostGIS gap: geometry-backed tables must have restored columns.
             src_geo = _geometry_count(tools, settings.DATABASE_NAME)
@@ -317,10 +381,14 @@ def test_restore_drill_end_to_end():
             _run(
                 [
                     tools["psql"],
-                    "-h", settings.DATABASE_HOST,
-                    "-p", str(settings.DATABASE_PORT),
-                    "-U", settings.DATABASE_USER,
-                    "-d", settings.DATABASE_NAME,
+                    "-h",
+                    settings.DATABASE_HOST,
+                    "-p",
+                    str(settings.DATABASE_PORT),
+                    "-U",
+                    settings.DATABASE_USER,
+                    "-d",
+                    settings.DATABASE_NAME,
                     "-c",
                     "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
                     f"WHERE datname = '{scratch}' AND pid <> pg_backend_pid()",
@@ -330,11 +398,16 @@ def test_restore_drill_end_to_end():
             _run(
                 [
                     tools["psql"],
-                    "-h", settings.DATABASE_HOST,
-                    "-p", str(settings.DATABASE_PORT),
-                    "-U", settings.DATABASE_USER,
-                    "-d", settings.DATABASE_NAME,
-                    "-c", f"DROP DATABASE IF EXISTS {scratch}",
+                    "-h",
+                    settings.DATABASE_HOST,
+                    "-p",
+                    str(settings.DATABASE_PORT),
+                    "-U",
+                    settings.DATABASE_USER,
+                    "-d",
+                    settings.DATABASE_NAME,
+                    "-c",
+                    f"DROP DATABASE IF EXISTS {scratch}",
                 ],
                 env=_env(settings.DATABASE_NAME),
             )

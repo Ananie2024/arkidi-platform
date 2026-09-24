@@ -1,14 +1,15 @@
 """
 Lease Payment Schedule Model — planned & received lease rent installments.
 """
+
 import uuid
 from datetime import date
 
-from sqlalchemy import String, Date, Numeric, ForeignKey, Boolean
+from sqlalchemy import Boolean, Date, ForeignKey, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class LeasePaymentSchedule(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -25,6 +26,6 @@ class LeasePaymentSchedule(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDelete
     paid_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     receipt_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
-    lease_agreement: Mapped["LeaseAgreement"] = relationship(  # type: ignore[name-defined]
+    lease_agreement: Mapped["LeaseAgreement"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "LeaseAgreement", back_populates="payments"
     )

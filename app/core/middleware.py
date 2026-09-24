@@ -2,18 +2,22 @@
 Custom Application Middlewares
 Logging, Correlation ID, and Internationalization (i18n) handling
 """
+
 import time
 import uuid
-from typing import Callable
+from collections.abc import Callable
+from contextvars import ContextVar
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
-from contextvars import ContextVar
 
 from app.config import settings
 
 # Context variable for holding active language per request
-current_language_ctx: ContextVar[str] = ContextVar("current_language", default=settings.DEFAULT_LANGUAGE)
+current_language_ctx: ContextVar[str] = ContextVar(
+    "current_language", default=settings.DEFAULT_LANGUAGE
+)
 request_id_ctx: ContextVar[str] = ContextVar("request_id", default="")
 
 
@@ -25,7 +29,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         request_id_ctx.set(req_id)
 
         start_time = time.time()
-        response = await call_next(request)
+        response: Response = await call_next(request)
         process_time = (time.time() - start_time) * 1000
 
         response.headers["X-Request-ID"] = req_id
@@ -51,6 +55,6 @@ class LanguageMiddleware(BaseHTTPMiddleware):
 
         current_language_ctx.set(lang)
         request.state.lang = lang
-        response = await call_next(request)
+        response: Response = await call_next(request)
         response.headers["Content-Language"] = lang
         return response

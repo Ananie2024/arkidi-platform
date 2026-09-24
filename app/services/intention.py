@@ -1,15 +1,15 @@
 """
 Mass Intention Module Business Logic Service
 """
+
 import uuid
 from datetime import date
-from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import IntentionNotFoundException
 from app.repositories.intention import IntentionRepository
 from app.schemas.intention import MassIntentionCreate, MassIntentionResponse
-from app.core.exceptions import IntentionNotFoundException
 
 
 class IntentionService:
@@ -23,8 +23,8 @@ class IntentionService:
         return MassIntentionResponse.model_validate(intention)
 
     async def get_intentions(
-        self, parish_id: uuid.UUID, target_date: Optional[date] = None
-    ) -> List[MassIntentionResponse]:
+        self, parish_id: uuid.UUID, target_date: date | None = None
+    ) -> list[MassIntentionResponse]:
         intentions = await self.repo.list_intentions(parish_id, target_date)
         return [MassIntentionResponse.model_validate(i) for i in intentions]
 

@@ -2,9 +2,8 @@
 Unit tests for the backend i18n message catalog and the LanguageMiddleware
 integration through exception localization.
 """
+
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -49,13 +48,22 @@ class TestCatalogParity:
 
 class TestTranslationService:
     def test_get_translation_english(self):
-        assert get_translation("errors.invalid_credentials", lang="en") == "Invalid username or password."
+        assert (
+            get_translation("errors.invalid_credentials", lang="en")
+            == "Invalid username or password."
+        )
 
     def test_get_translation_french(self):
-        assert get_translation("errors.invalid_credentials", lang="fr") == "Identifiant ou mot de passe invalide."
+        assert (
+            get_translation("errors.invalid_credentials", lang="fr")
+            == "Identifiant ou mot de passe invalide."
+        )
 
     def test_get_translation_kinyarwanda(self):
-        assert get_translation("errors.invalid_credentials", lang="rw") == "Izina cyangwa ijambobanga ntibikwiye."
+        assert (
+            get_translation("errors.invalid_credentials", lang="rw")
+            == "Izina cyangwa ijambobanga ntibikwiye."
+        )
 
     def test_unknown_language_falls_back_to_english(self):
         assert get_translation("welcome", lang="xx") == "Welcome to Arkidi Platform"

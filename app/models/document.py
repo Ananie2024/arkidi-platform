@@ -5,6 +5,7 @@ Documents may be attached to any organisational entity:
 Parish, Deanery, Commission, Council, Meeting, Clergy person, Land parcel, etc.
 Also hosts the historical sacramental ledger books and scanned page archive.
 """
+
 import uuid
 from datetime import datetime
 
@@ -75,14 +76,30 @@ class Document(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     checksum_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Soft hierarchy scoping — one (or several) of these may be set
-    archdiocese_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("archdioceses.id"), nullable=True)
-    deanery_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("deaneries.id"), nullable=True)
-    parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True)
-    commission_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("commissions.id"), nullable=True)
-    council_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("councils.id"), nullable=True)
-    meeting_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("meetings.id"), nullable=True)
-    priest_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("priests.id"), nullable=True)
-    parcel_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("land_parcels.id"), nullable=True)
+    archdiocese_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("archdioceses.id"), nullable=True
+    )
+    deanery_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("deaneries.id"), nullable=True
+    )
+    parish_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True
+    )
+    commission_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("commissions.id"), nullable=True
+    )
+    council_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("councils.id"), nullable=True
+    )
+    meeting_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("meetings.id"), nullable=True
+    )
+    priest_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("priests.id"), nullable=True
+    )
+    parcel_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("land_parcels.id"), nullable=True
+    )
 
     uploaded_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     classification: Mapped[str] = mapped_column(String(50), default="OFFICIAL", nullable=False)
@@ -95,18 +112,22 @@ class Document(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     # document's DocumentType.retention_years deadline has passed, signalling
     # an archivist that the document is due for manual disposition review.
     retention_flagged_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     # disposition_status tracks where a document sits in its retention lifecycle.
     # Valid values are constrained by ck_documents_disposition_status above.
     disposition_status: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, default="ACTIVE",
+        String(50),
+        nullable=True,
+        default="ACTIVE",
         comment="ACTIVE|DUE_FOR_REVIEW|DISPOSED|PRESERVE_INDEFINITELY",
     )
 
 
 class ArchiveLedgerBook(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Physical Historical Registry Book."""
+
     __tablename__ = "archive_ledger_books"
 
     __table_args__ = (
@@ -123,7 +144,9 @@ class ArchiveLedgerBook(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMix
         ),
     )
 
-    parish_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False)
+    parish_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
+    )
     sacrament_type: Mapped[SacramentType] = mapped_column(
         SQLEnum(SacramentType, name="sacrament_type_archive_enum"),
         nullable=False,
@@ -132,12 +155,15 @@ class ArchiveLedgerBook(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMix
     start_year: Mapped[int] = mapped_column(nullable=False)
     end_year: Mapped[int] = mapped_column(nullable=False)
     volume_number: Mapped[str] = mapped_column(String(20), nullable=False)
-    shelf_location: Mapped[str | None] = mapped_column(String(100), nullable=True) # Archival room / Shelf / Box
+    shelf_location: Mapped[str | None] = mapped_column(
+        String(100), nullable=True
+    )  # Archival room / Shelf / Box
     total_scanned_pages: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
 
 class ScannedPage(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Individual Digitized Scan of a Canonical Ledger Page."""
+
     __tablename__ = "archive_scanned_pages"
 
     __table_args__ = (

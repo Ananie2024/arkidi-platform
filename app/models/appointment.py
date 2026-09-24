@@ -3,31 +3,33 @@ Curia & Leadership Appointment Model.
 Tracks canonical appointments and terms for the Archbishop, Vicar Generals,
 Episcopal Vicars, Chancellor, Économe, Deans, Parish Priests and Secretaries.
 """
+
 import uuid
 from datetime import date
 from enum import Enum
 
-from sqlalchemy import String, Date, Text, Boolean, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Boolean, Date, ForeignKey, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class AppointmentRole(str, Enum):
     """Official diocesan leadership roles."""
 
-    ARCHBISHOP = "ARCHBISHOP"                # Archevêque
-    AUXILIARY_BISHOP = "AUXILIARY_BISHOP"    # Évêque auxiliaire
-    VICAR_GENERAL = "VICAR_GENERAL"          # Vicaire général
-    EPISCOPAL_VICAR = "EPISCOPAL_VICAR"      # Vicaire épiscopal
-    CHANCELLOR = "CHANCELLOR"                # Chancelier de la Curie
-    VICE_CHANCELLOR = "VICE_CHANCELLOR"      # Vice-chancelier
-    ECONOMO = "ECONOMO"                      # Économe diocésain
-    DEAN = "DEAN"                            # Curé de doyenné / Vicaire forain
-    PARISH_PRIEST = "PARISH_PRIEST"          # Curé de paroisse
-    PARISH_VICAR = "PARISH_VICAR"            # Vicaire paroissial
-    PARISH_SECRETARY = "PARISH_SECRETARY"    # Secrétaire paroissial
+    ARCHBISHOP = "ARCHBISHOP"  # Archevêque
+    AUXILIARY_BISHOP = "AUXILIARY_BISHOP"  # Évêque auxiliaire
+    VICAR_GENERAL = "VICAR_GENERAL"  # Vicaire général
+    EPISCOPAL_VICAR = "EPISCOPAL_VICAR"  # Vicaire épiscopal
+    CHANCELLOR = "CHANCELLOR"  # Chancelier de la Curie
+    VICE_CHANCELLOR = "VICE_CHANCELLOR"  # Vice-chancelier
+    ECONOMO = "ECONOMO"  # Économe diocésain
+    DEAN = "DEAN"  # Curé de doyenné / Vicaire forain
+    PARISH_PRIEST = "PARISH_PRIEST"  # Curé de paroisse
+    PARISH_VICAR = "PARISH_VICAR"  # Vicaire paroissial
+    PARISH_SECRETARY = "PARISH_SECRETARY"  # Secrétaire paroissial
 
 
 class AppointmentStatus(str, Enum):
@@ -43,7 +45,9 @@ class Appointment(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     person_first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     person_last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    title: Mapped[str | None] = mapped_column(String(100), nullable=True)  # Monseigneur, Abbé, Padiri...
+    title: Mapped[str | None] = mapped_column(
+        String(100), nullable=True
+    )  # Monseigneur, Abbé, Padiri...
     photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     phone_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
     email: Mapped[str | None] = mapped_column(String(150), nullable=True)
@@ -73,6 +77,8 @@ class Appointment(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
 
     # Optional canonical register of the linked Priest profile
-    priest_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("priests.id"), nullable=True)
+    priest_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("priests.id"), nullable=True
+    )
 
-    priest: Mapped["Priest | None"] = relationship("Priest", back_populates="appointments")  # type: ignore[name-defined]
+    priest: Mapped["Priest | None"] = relationship("Priest", back_populates="appointments")  # type: ignore[name-defined]  # noqa: F821

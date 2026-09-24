@@ -2,26 +2,28 @@
 Commission Model — pastoral commissions & apostolate bodies:
 Family, Education, Youth, Liturgy, Caritas/Social, Vocations, Communications...
 """
+
 import uuid
 from enum import Enum
 
-from sqlalchemy import String, Text, Boolean, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Boolean, ForeignKey, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, SoftDeleteMixin
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class CommissionCategory(str, Enum):
-    FAMILY = "FAMILY"                # Commission de la Famille
-    EDUCATION = "EDUCATION"          # Commission de l'Éducation
-    YOUTH = "YOUTH"                  # Commission des Jeunes
-    LITURGY = "LITURGY"              # Commission de la Liturgie
+    FAMILY = "FAMILY"  # Commission de la Famille
+    EDUCATION = "EDUCATION"  # Commission de l'Éducation
+    YOUTH = "YOUTH"  # Commission des Jeunes
+    LITURGY = "LITURGY"  # Commission de la Liturgie
     CARITAS_SOCIAL = "CARITAS_SOCIAL"  # Caritas / Pastorale sociale
-    VOCATIONS = "VOCATIONS"          # Pastorale des vocations
+    VOCATIONS = "VOCATIONS"  # Pastorale des vocations
     COMMUNICATIONS = "COMMUNICATIONS"  # Communication sociale
     JUSTICE_PEACE = "JUSTICE_PEACE"  # Justice et Paix
-    HEALTH = "HEALTH"                # Pastorale de la santé
+    HEALTH = "HEALTH"  # Pastorale de la santé
     OTHER = "OTHER"
 
 
@@ -41,7 +43,9 @@ class Commission(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     archdiocese_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     deanery_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    parish_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True)
+    parish_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=True
+    )
 
     leader_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     leader_phone: Mapped[str | None] = mapped_column(String(50), nullable=True)

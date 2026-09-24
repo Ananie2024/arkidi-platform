@@ -12,6 +12,7 @@ Covers:
 These are pure unit tests: repository and storage interactions are faked, so no
 PostgreSQL, Redis or disk files are required.
 """
+
 import hashlib
 import types
 import uuid
@@ -198,9 +199,7 @@ async def test_upload_duplicate_content_rejected_before_save(monkeypatch):
     db = types.SimpleNamespace(rollback=AsyncMock())
     service = DocumentService(db)  # type: ignore[arg-type]
     service.repo = types.SimpleNamespace(
-        get_document_by_checksum=AsyncMock(
-            return_value=_fake_document(checksum_sha256="a" * 64)
-        ),
+        get_document_by_checksum=AsyncMock(return_value=_fake_document(checksum_sha256="a" * 64)),
         create_document=AsyncMock(return_value=None),
     )
     storage = _FakeStorage()
@@ -208,9 +207,7 @@ async def test_upload_duplicate_content_rejected_before_save(monkeypatch):
 
     metadata = DocumentBase(title="Decree", parish_id=uuid.uuid4())
     with pytest.raises(DuplicateDocumentException):
-        await service.upload_and_create(
-            _FakeUploadFile("duplicate.pdf", b"same bytes"), metadata
-        )
+        await service.upload_and_create(_FakeUploadFile("duplicate.pdf", b"same bytes"), metadata)
 
     assert storage.saved == [], "the file must not be written when the content is a duplicate"
 
@@ -243,9 +240,7 @@ async def test_create_document_rejects_duplicate_checksum():
     db = types.SimpleNamespace(rollback=AsyncMock())
     service = DocumentService(db)  # type: ignore[arg-type]
     service.repo = types.SimpleNamespace(
-        get_document_by_checksum=AsyncMock(
-            return_value=_fake_document(checksum_sha256="a" * 64)
-        ),
+        get_document_by_checksum=AsyncMock(return_value=_fake_document(checksum_sha256="a" * 64)),
         create_document=AsyncMock(return_value=None),
     )
 
@@ -269,7 +264,9 @@ async def test_create_document_raises_duplicate_on_integrity_race():
         raise IntegrityError(
             "INSERT INTO documents ...",
             {},
-            Exception('duplicate key value violates unique constraint "uq_documents_checksum_active"'),
+            Exception(
+                'duplicate key value violates unique constraint "uq_documents_checksum_active"'
+            ),
         )
 
     service.repo = types.SimpleNamespace(

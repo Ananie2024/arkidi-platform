@@ -2,30 +2,31 @@
 Governance Module Pydantic v2 Schemas
 Commissions, Councils, Meetings, and Meeting Minutes
 """
+
 import uuid
-from datetime import date, time, datetime
-from typing import Optional, List
+from datetime import date, datetime, time
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.commission import CommissionCategory
 from app.models.council import CouncilType
 
-
 # ---------------------------------------------------------------------------
 # Commission Schemas
 # ---------------------------------------------------------------------------
 
+
 class CommissionBase(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     category: CommissionCategory = CommissionCategory.OTHER
-    description: Optional[str] = None
-    patron_saint: Optional[str] = None
-    archdiocese_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
-    parish_id: Optional[uuid.UUID] = None
-    leader_name: Optional[str] = None
-    leader_phone: Optional[str] = None
-    meeting_schedule: Optional[str] = None
+    description: str | None = None
+    patron_saint: str | None = None
+    archdiocese_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
+    parish_id: uuid.UUID | None = None
+    leader_name: str | None = None
+    leader_phone: str | None = None
+    meeting_schedule: str | None = None
     is_active: bool = True
 
 
@@ -34,17 +35,17 @@ class CommissionCreate(CommissionBase):
 
 
 class CommissionUpdate(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=200)
-    category: Optional[CommissionCategory] = None
-    description: Optional[str] = None
-    patron_saint: Optional[str] = None
-    archdiocese_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
-    parish_id: Optional[uuid.UUID] = None
-    leader_name: Optional[str] = None
-    leader_phone: Optional[str] = None
-    meeting_schedule: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    category: CommissionCategory | None = None
+    description: str | None = None
+    patron_saint: str | None = None
+    archdiocese_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
+    parish_id: uuid.UUID | None = None
+    leader_name: str | None = None
+    leader_phone: str | None = None
+    meeting_schedule: str | None = None
+    is_active: bool | None = None
 
 
 class CommissionResponse(CommissionBase):
@@ -59,15 +60,16 @@ class CommissionResponse(CommissionBase):
 # Council Schemas
 # ---------------------------------------------------------------------------
 
+
 class CouncilBase(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     council_type: CouncilType = CouncilType.DIOCESAN_PASTORAL
-    description: Optional[str] = None
-    archdiocese_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
-    parish_id: Optional[uuid.UUID] = None
-    president_name: Optional[str] = None
-    convener_user_id: Optional[uuid.UUID] = None
+    description: str | None = None
+    archdiocese_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
+    parish_id: uuid.UUID | None = None
+    president_name: str | None = None
+    convener_user_id: uuid.UUID | None = None
     is_active: bool = True
 
 
@@ -76,15 +78,15 @@ class CouncilCreate(CouncilBase):
 
 
 class CouncilUpdate(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=200)
-    council_type: Optional[CouncilType] = None
-    description: Optional[str] = None
-    archdiocese_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
-    parish_id: Optional[uuid.UUID] = None
-    president_name: Optional[str] = None
-    convener_user_id: Optional[uuid.UUID] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    council_type: CouncilType | None = None
+    description: str | None = None
+    archdiocese_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
+    parish_id: uuid.UUID | None = None
+    president_name: str | None = None
+    convener_user_id: uuid.UUID | None = None
+    is_active: bool | None = None
 
 
 class CouncilResponse(CouncilBase):
@@ -99,20 +101,21 @@ class CouncilResponse(CouncilBase):
 # Meeting Schemas
 # ---------------------------------------------------------------------------
 
+
 class MeetingBase(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     meeting_date: date
-    start_time: Optional[time] = None
-    end_time: Optional[time] = None
-    venue: Optional[str] = None
-    agenda: Optional[str] = None
-    decisions: Optional[str] = None
+    start_time: time | None = None
+    end_time: time | None = None
+    venue: str | None = None
+    agenda: str | None = None
+    decisions: str | None = None
     status: str = Field(default="SCHEDULED", max_length=30)
-    council_id: Optional[uuid.UUID] = None
-    commission_id: Optional[uuid.UUID] = None
-    archdiocese_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
-    parish_id: Optional[uuid.UUID] = None
+    council_id: uuid.UUID | None = None
+    commission_id: uuid.UUID | None = None
+    archdiocese_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
+    parish_id: uuid.UUID | None = None
 
 
 class MeetingCreate(MeetingBase):
@@ -120,19 +123,19 @@ class MeetingCreate(MeetingBase):
 
 
 class MeetingUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
-    meeting_date: Optional[date] = None
-    start_time: Optional[time] = None
-    end_time: Optional[time] = None
-    venue: Optional[str] = None
-    agenda: Optional[str] = None
-    decisions: Optional[str] = None
-    status: Optional[str] = None
-    council_id: Optional[uuid.UUID] = None
-    commission_id: Optional[uuid.UUID] = None
-    archdiocese_id: Optional[uuid.UUID] = None
-    deanery_id: Optional[uuid.UUID] = None
-    parish_id: Optional[uuid.UUID] = None
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    meeting_date: date | None = None
+    start_time: time | None = None
+    end_time: time | None = None
+    venue: str | None = None
+    agenda: str | None = None
+    decisions: str | None = None
+    status: str | None = None
+    council_id: uuid.UUID | None = None
+    commission_id: uuid.UUID | None = None
+    archdiocese_id: uuid.UUID | None = None
+    deanery_id: uuid.UUID | None = None
+    parish_id: uuid.UUID | None = None
 
 
 class MeetingResponse(MeetingBase):
@@ -147,10 +150,11 @@ class MeetingResponse(MeetingBase):
 # Meeting Minute Schemas
 # ---------------------------------------------------------------------------
 
+
 class MeetingMinuteBase(BaseModel):
     title: str = Field(min_length=1, max_length=200)
-    content: Optional[str] = None
-    document_path: Optional[str] = None
+    content: str | None = None
+    document_path: str | None = None
 
 
 class MeetingMinuteCreate(MeetingMinuteBase):
@@ -158,9 +162,9 @@ class MeetingMinuteCreate(MeetingMinuteBase):
 
 
 class MeetingMinuteUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
-    content: Optional[str] = None
-    document_path: Optional[str] = None
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    content: str | None = None
+    document_path: str | None = None
 
 
 class MeetingMinuteResponse(MeetingMinuteBase):
@@ -168,6 +172,6 @@ class MeetingMinuteResponse(MeetingMinuteBase):
 
     id: uuid.UUID
     meeting_id: uuid.UUID
-    recorded_by_user_id: Optional[uuid.UUID] = None
+    recorded_by_user_id: uuid.UUID | None = None
     created_at: datetime
     updated_at: datetime
