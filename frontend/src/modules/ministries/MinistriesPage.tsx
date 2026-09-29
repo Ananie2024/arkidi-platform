@@ -12,7 +12,7 @@ export const MinistriesPage: React.FC = () => {
   const { t } = useTranslation();
   const ministriesQuery = useQuery({
     queryKey: ['ministries'],
-    queryFn: domainApi.listMinistries,
+    queryFn: () => domainApi.listMinistries(),
   });
 
   const columns: Column<Ministry>[] = [
@@ -38,7 +38,7 @@ export const MinistriesPage: React.FC = () => {
       <Card>
         <Table
           columns={columns}
-          data={ministriesQuery.data || []}
+          data={Array.isArray(ministriesQuery.data) ? ministriesQuery.data : []}
           isLoading={ministriesQuery.isLoading}
           emptyMessage={ministriesQuery.isError ? t('ministries.empty_error') : t('ministries.empty_none')}
         />

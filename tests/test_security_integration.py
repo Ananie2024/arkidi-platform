@@ -13,12 +13,14 @@ import uuid
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from app.core.database import AsyncSessionLocal
 from app.core.security import get_password_hash
+from app.models.audit_log import AuditLog
 from app.models.enums import UserRole
 from app.models.user import User
+
 
 
 async def _create_user() -> tuple[str, str, uuid.UUID | None]:
@@ -123,3 +125,59 @@ async def test_health_exposes_dependency_probes(client: AsyncClient):
     assert data["checks"]["database"] in {"up", "down"}
     assert data["checks"]["redis"] in {"up", "down"}
     assert data["status"] in {"healthy", "degraded"}
+
+
+@pytest.mark.asyncio
+async def test_security_headers_present(client: AsyncClient):
+    """Verify HSTS, X-Content-Type-Options, X-Frame-Options, CSP and referrer headers are set."""
+    resp = await client.get("/health")
+    assert resp.headers["Strict-Transport-Security"] == "max-age=63072000; includeSubDomains; preload"
+    assert resp.headers["X-Content-Type-Options"] == "nosniff"
+    assert resp.headers["X-Frame-Options"] == "DENY"
+    assert "default-src 'self'" in resp.headers["Content-Security-Policy"]
+    assert "frame-ancestors 'none'" in resp.headers["Content-Security-Policy"]
+    assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+
+
+@pytest.mark.asyncio
+async def test_anonymous_static_mount_is_removed(client: AsyncClient):
+    """Verify that anonymous /static endpoint is not mounted or serving files."""
+    resp = await client.get("/static/nonexistent-file.pdf")
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_login_and_logout_write_audit_logs(client: AsyncClient):
+    """Verify that successful authentication and logout append records to AuditLog."""
+    username, password, uid = await _create_user()
+    try:
+        tokens = await _login(client, username, password)
+        access = tokens["access_token"]
+        headers = {"Authorization": f"Bearer {access}"}
+
+        # Check AuditLog for login
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(AuditLog)
+                .where(AuditLog.user_id == uid, AuditLog.action == "USER_LOGIN_SUCCESS")
+            )
+            log = result.scalars().first()
+            assert log is not None
+            assert log.entity_name == "user"
+            assert log.entity_id == str(uid)
+
+        # Logout
+        await client.post("/api/v1/auth/logout", headers=headers)
+
+        # Check AuditLog for logout
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(AuditLog)
+                .where(AuditLog.user_id == uid, AuditLog.action == "USER_LOGOUT")
+            )
+            log = result.scalars().first()
+            assert log is not None
+            assert log.entity_name == "user"
+    finally:
+        await _cleanup(uid)
+

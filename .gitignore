@@ -22,6 +22,10 @@ logs/
 /backend.log
 /frontend/frontend.log
 *.log
+/_*
+!/**/__init__.py
+/package-lock.json
+
 
 # Testing & Coverage
 .coverage

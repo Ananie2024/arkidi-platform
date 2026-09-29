@@ -23,12 +23,13 @@ export const DashboardPage: React.FC = () => {
 
   const parcelsQuery = useQuery({
     queryKey: ['parcels'],
-    queryFn: domainApi.listParcels,
+    queryFn: () => domainApi.listParcels(),
   });
 
   const annuario = annuarioQuery.data;
   const parishes = parishesQuery.data || [];
-  const parcels = parcelsQuery.data || [];
+  const parcels = Array.isArray(parcelsQuery.data) ? parcelsQuery.data : [];
+
 
   const parishMarkers = parishes
     .filter((p) => p.latitude != null && p.longitude != null)

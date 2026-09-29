@@ -13,11 +13,13 @@ from app.config import settings
 
 logger = logging.getLogger("arkidi.core.limiter")
 
-_storage_uri = "memory://" if settings.ENVIRONMENT.lower() == "testing" else settings.REDIS_URL
+_is_testing = settings.ENVIRONMENT.lower() == "testing"
+_storage_uri = "memory://" if _is_testing else settings.REDIS_URL
 
 limiter = Limiter(
     key_func=get_remote_address,
     storage_uri=_storage_uri,
     default_limits=[],
     swallow_errors=True,
+    enabled=not _is_testing,
 )

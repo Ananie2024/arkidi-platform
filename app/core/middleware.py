@@ -58,3 +58,34 @@ class LanguageMiddleware(BaseHTTPMiddleware):
         response: Response = await call_next(request)
         response.headers["Content-Language"] = lang
         return response
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Applies defensive security headers to all HTTP responses.
+
+    Enforces:
+    - HTTP Strict Transport Security (HSTS)
+    - X-Content-Type-Options: nosniff
+    - X-Frame-Options: DENY (clickjacking mitigation)
+    - Content-Security-Policy (CSP)
+    - Referrer-Policy: strict-origin-when-cross-origin
+    - Permissions-Policy: camera=(), microphone=(), geolocation=()
+    """
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        response: Response = await call_next(request)
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "img-src 'self' data: https:; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "frame-ancestors 'none';"
+        )
+        return response
+

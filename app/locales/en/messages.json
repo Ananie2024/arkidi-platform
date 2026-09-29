@@ -37,6 +37,7 @@
     "minute_updated": "Meeting minute updated successfully",
     "minute_deleted": "Meeting minute deleted successfully",
     "parcel_registered": "Land parcel registered",
+    "parcel_updated": "Land parcel updated successfully",
     "building_registered": "Building asset registered",
     "mass_created": "Mass schedule created",
     "intention_registered": "Intention registered",

@@ -79,7 +79,7 @@ export const LandParcelDetailModal: React.FC<LandParcelDetailModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Parcel Dossier: ${parcel.parcel_name}`}
-      maxWidth="3xl"
+      maxWidth="2xl"
     >
       <div className="space-y-6">
         {/* Header summary strip */}

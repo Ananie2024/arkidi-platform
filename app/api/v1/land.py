@@ -47,11 +47,13 @@ async def update_parcel(
     parcel_id: uuid.UUID,
     data: LandParcelUpdate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
+    current_user: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     service = LandAssetsService(db)
+    user_id = uuid.UUID(current_user["sub"]) if current_user.get("sub") else None
     return ApiResponse.ok(
-        data=await service.update_parcel(parcel_id, data), message="success.parcel_updated"
+        data=await service.update_parcel(parcel_id, data, current_user_id=user_id),
+        message="success.parcel_updated",
     )
 
 
@@ -63,11 +65,13 @@ async def update_parcel(
 async def create_parcel(
     data: LandParcelCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
+    current_user: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     service = LandAssetsService(db)
+    user_id = uuid.UUID(current_user["sub"]) if current_user.get("sub") else None
     return ApiResponse.ok(
-        data=await service.create_parcel(data), message="success.parcel_registered"
+        data=await service.create_parcel(data, current_user_id=user_id),
+        message="success.parcel_registered",
     )
 
 
@@ -91,9 +95,12 @@ async def list_parcel_buildings(
 async def create_building_asset(
     data: BuildingAssetCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
+    current_user: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     service = LandAssetsService(db)
+    user_id = uuid.UUID(current_user["sub"]) if current_user.get("sub") else None
     return ApiResponse.ok(
-        data=await service.create_building_asset(data), message="success.building_registered"
+        data=await service.create_building_asset(data, current_user_id=user_id),
+        message="success.building_registered",
     )
+

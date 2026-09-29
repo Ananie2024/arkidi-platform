@@ -7,7 +7,11 @@ import asyncio
 import pytest
 from httpx import AsyncClient
 
+from app.core.limiter import limiter
 from app.main import app
+
+# Ensure slowapi rate limiter does not throttle integration test suites
+limiter.enabled = False
 
 
 @pytest.fixture(scope="session")

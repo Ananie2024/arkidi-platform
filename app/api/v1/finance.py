@@ -24,11 +24,13 @@ router = APIRouter(prefix="/finance", tags=["Finance & Offerings"])
 async def record_donation(
     data: DonationCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.PARISH_SECRETARY])),
+    current_user: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.PARISH_SECRETARY])),
 ):
     service = FinanceService(db)
+    user_id = uuid.UUID(current_user["sub"]) if current_user.get("sub") else None
     return ApiResponse.ok(
-        data=await service.record_donation(data), message="success.donation_recorded"
+        data=await service.record_donation(data, current_user_id=user_id),
+        message="success.donation_recorded",
     )
 
 

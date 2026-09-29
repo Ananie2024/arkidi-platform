@@ -54,11 +54,12 @@ async def get_faithful(
 async def create_faithful(
     data: FaithfulCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
+    current_user: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
 ):
     """Register a new faithful in the parish directory."""
     service = FaithfulService(db)
-    created = await service.create_faithful(data)
+    user_id = uuid.UUID(current_user["sub"]) if current_user.get("sub") else None
+    created = await service.create_faithful(data, current_user_id=user_id)
     return ApiResponse.ok(data=created, message="success.faithful_registered")
 
 
@@ -68,9 +69,11 @@ async def create_faithful(
 async def create_family(
     data: FamilyCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
+    current_user: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
 ):
     """Register a new household/family."""
     service = FaithfulService(db)
-    created = await service.create_family(data)
+    user_id = uuid.UUID(current_user["sub"]) if current_user.get("sub") else None
+    created = await service.create_family(data, current_user_id=user_id)
     return ApiResponse.ok(data=created, message="success.family_registered")
+

@@ -30,6 +30,7 @@ from app.core.security import (
     get_password_hash,
     verify_password,
 )
+from app.models.audit_log import AuditLog
 from app.models.enums import UserRole
 from app.repositories.user import AuthRepository
 from app.schemas.user import (
@@ -68,6 +69,15 @@ class AuthService:
         fid = str(uuid.uuid4())
         access_token = create_access_token(subject=str(user.id), claims=claims, family_id=fid)
         refresh_token = create_refresh_token(subject=str(user.id), family_id=fid)
+
+        audit = AuditLog(
+            user_id=user.id,
+            action="USER_LOGIN_SUCCESS",
+            entity_name="user",
+            entity_id=str(user.id),
+            details={"username": user.username, "email": user.email, "role": user.role.value},
+        )
+        self.repo.db.add(audit)
 
         return TokenResponse(
             access_token=access_token,
@@ -165,11 +175,21 @@ class AuthService:
         access_token = create_access_token(subject=str(user.id), claims=claims, family_id=fid)
         refresh_token = create_refresh_token(subject=str(user.id), family_id=fid)
 
+        audit = AuditLog(
+            user_id=user.id,
+            action="USER_GOOGLE_LOGIN_SUCCESS",
+            entity_name="user",
+            entity_id=str(user.id),
+            details={"email": user.email, "role": user.role.value},
+        )
+        self.repo.db.add(audit)
+
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
             expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
+
 
     async def refresh(self, refresh_token_str: str) -> TokenResponse:
         """Rotate refresh token and issue a fresh access/refresh token pair."""
@@ -241,7 +261,25 @@ class AuthService:
         if fid:
             await revoke_token(f"family:{fid}", expire_seconds)
 
-    async def register_user(self, data: UserCreate) -> UserResponse:
+        user_id_str = payload.get("sub")
+        uid = None
+        if user_id_str:
+            try:
+                uid = uuid.UUID(user_id_str)
+            except ValueError:
+                pass
+        audit = AuditLog(
+            user_id=uid,
+            action="USER_LOGOUT",
+            entity_name="user",
+            entity_id=user_id_str,
+            details={"jti": jti},
+        )
+        self.repo.db.add(audit)
+
+    async def register_user(
+        self, data: UserCreate, creator_user_id: uuid.UUID | None = None
+    ) -> UserResponse:
         existing_email = await self.repo.get_by_username_or_email(data.email)
         if existing_email:
             raise UserAlreadyExistsException()
@@ -250,6 +288,18 @@ class AuthService:
             raise UserAlreadyExistsException()
         try:
             user = await self.repo.create_user(data)
+            audit = AuditLog(
+                user_id=creator_user_id,
+                action="USER_REGISTERED",
+                entity_name="user",
+                entity_id=str(user.id),
+                details={
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role.value,
+                },
+            )
+            self.repo.db.add(audit)
             return UserResponse.model_validate(user)
         except IntegrityError:
             await self.repo.db.rollback()
@@ -300,3 +350,12 @@ class AuthService:
             raise InvalidResetTokenException()
 
         await self.repo.update_password(user_id, get_password_hash(new_password))
+        audit = AuditLog(
+            user_id=user.id,
+            action="PASSWORD_RESET_COMPLETED",
+            entity_name="user",
+            entity_id=str(user.id),
+            details={"email": user.email},
+        )
+        self.repo.db.add(audit)
+

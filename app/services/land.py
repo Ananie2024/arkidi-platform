@@ -7,6 +7,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import DuplicateUPIException, ParcelNotFoundException
+from app.models.audit_log import AuditLog
 from app.models.parcel import LandParcel
 from app.repositories.parcel import LandAssetsRepository
 from app.schemas.land import (
@@ -45,25 +46,67 @@ class LandAssetsService:
             raise ParcelNotFoundException(str(parcel_id))
         return _to_response(parcel)
 
-    async def create_parcel(self, data: LandParcelCreate) -> LandParcelResponse:
+    async def create_parcel(
+        self, data: LandParcelCreate, current_user_id: uuid.UUID | None = None
+    ) -> LandParcelResponse:
         existing = await self.repo.get_by_upi(data.upi)
         if existing:
             raise DuplicateUPIException(data.upi)
         parcel = await self.repo.create_parcel(data)
+        audit = AuditLog(
+            user_id=current_user_id,
+            action="LAND_PARCEL_CREATED",
+            entity_name="land_parcel",
+            entity_id=str(parcel.id),
+            details={
+                "upi": parcel.upi,
+                "parcel_name": parcel.parcel_name,
+                "parish_id": str(parcel.parish_id) if parcel.parish_id else None,
+            },
+        )
+        self.repo.db.add(audit)
         return _to_response(parcel)
 
     async def update_parcel(
-        self, parcel_id: uuid.UUID, data: LandParcelUpdate
+        self,
+        parcel_id: uuid.UUID,
+        data: LandParcelUpdate,
+        current_user_id: uuid.UUID | None = None,
     ) -> LandParcelResponse:
         parcel = await self.repo.update_parcel(parcel_id, data)
         if not parcel:
             raise ParcelNotFoundException(str(parcel_id))
+        audit = AuditLog(
+            user_id=current_user_id,
+            action="LAND_PARCEL_UPDATED",
+            entity_name="land_parcel",
+            entity_id=str(parcel_id),
+            details={
+                "upi": parcel.upi,
+                "updated_fields": list(data.model_dump(exclude_unset=True).keys()),
+            },
+        )
+        self.repo.db.add(audit)
         return _to_response(parcel)
 
     async def list_buildings(self, parcel_id: uuid.UUID) -> list[BuildingAssetResponse]:
         items = await self.repo.list_buildings(parcel_id)
         return [BuildingAssetResponse.model_validate(b) for b in items]
 
-    async def create_building_asset(self, data: BuildingAssetCreate) -> BuildingAssetResponse:
+    async def create_building_asset(
+        self, data: BuildingAssetCreate, current_user_id: uuid.UUID | None = None
+    ) -> BuildingAssetResponse:
         building = await self.repo.create_building(data)
+        audit = AuditLog(
+            user_id=current_user_id,
+            action="BUILDING_ASSET_CREATED",
+            entity_name="building_asset",
+            entity_id=str(building.id),
+            details={
+                "parcel_id": str(building.parcel_id),
+                "building_name": building.building_name,
+            },
+        )
+        self.repo.db.add(audit)
         return BuildingAssetResponse.model_validate(building)
+

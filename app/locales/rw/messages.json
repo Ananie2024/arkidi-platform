@@ -37,6 +37,7 @@
     "minute_updated": "Inyandiko y'inama yavuguruwe neza",
     "minute_deleted": "Inyandiko y'inama yasibwe neza",
     "parcel_registered": "Igitambaro cy'ubutaka cyanditswe",
+    "parcel_updated": "Igitambaro cy'ubutaka cyavuguruwe neza",
     "building_registered": "Inyubako yanditswe",
     "mass_created": "Gahunda ya Misa yaremwe",
     "intention_registered": "Ikifuzo yanditswe",
@@ -65,7 +66,7 @@
   "errors": {
     "entity_not_found": "{{entity}} ifashishije '{{identifier}}' ntiyabonetse.",
     "permission_denied": "Uburenganzira ntibuhagije kuri iki gikorwa.",
-    "canonical_rule_violation": "Kurengera amategeko ya kanoni: {{rule}}",
+    "canonical_rule_violation": "amategeko ntago yakurikijwe: {{rule}}",
     "canonical_impediment": "Inzitizi ya kanoni: {{reason}}",
     "invalid_credentials": "Izina cyangwa ijambobanga ntibikwiye.",
     "user_account_inactive": "Konti y'ukoresha ntirakoreshwa.",

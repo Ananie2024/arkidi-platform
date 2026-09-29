@@ -8,7 +8,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 
@@ -18,7 +17,11 @@ from app.core.database import AsyncSessionLocal
 from app.core.exceptions import setup_exception_handlers
 from app.core.limiter import limiter
 from app.core.logging import setup_logging
-from app.core.middleware import LanguageMiddleware, RequestLoggingMiddleware
+from app.core.middleware import (
+    LanguageMiddleware,
+    RequestLoggingMiddleware,
+    SecurityHeadersMiddleware,
+)
 from app.core.redis import health_probe as redis_health_probe
 
 # Initialize structured logging
@@ -78,6 +81,7 @@ def create_application() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(LanguageMiddleware)
     app.add_middleware(SlowAPIMiddleware)
@@ -86,12 +90,6 @@ def create_application() -> FastAPI:
     # Exception Handlers
     # --------------------------------------------------------------------------
     setup_exception_handlers(app)
-
-    # --------------------------------------------------------------------------
-    # Static Files & Storage Mount
-    # --------------------------------------------------------------------------
-    if os.path.exists(settings.FILE_STORAGE_PATH):
-        app.mount("/static", StaticFiles(directory=settings.FILE_STORAGE_PATH), name="static")
 
     # --------------------------------------------------------------------------
     # API Routers

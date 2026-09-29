@@ -60,12 +60,14 @@ async def refresh_token(
 async def register(
     data: UserCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
+    current_user: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
 ):
     """Register a new system user (admin only)."""
     service = AuthService(db)
-    created = await service.register_user(data)
+    creator_id = uuid.UUID(current_user["sub"]) if current_user.get("sub") else None
+    created = await service.register_user(data, creator_user_id=creator_id)
     return ApiResponse.ok(data=created, message="success.user_registered")
+
 
 
 @router.get(
