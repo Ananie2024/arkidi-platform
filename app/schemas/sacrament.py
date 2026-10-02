@@ -217,6 +217,7 @@ class CertificateRequest(BaseModel):
     sacrament_type: SacramentType
     faithful_id: uuid.UUID
     parish_id: uuid.UUID
+    source_record_id: uuid.UUID
 
 
 class CertificateResponse(BaseModel):
@@ -225,10 +226,20 @@ class CertificateResponse(BaseModel):
     id: uuid.UUID
     certificate_number: str
     sacrament_type: SacramentType
+    source_record_id: uuid.UUID | None = None
     faithful_id: uuid.UUID
     parish_id: uuid.UUID
     verification_token: str
     qr_code_base64: str
+    created_at: datetime
+
+
+class CertificateVerificationResponse(BaseModel):
+    """Public-safe verification result; omits person IDs and QR/token material."""
+
+    certificate_number: str
+    sacrament_type: SacramentType
+    valid: bool = True
     created_at: datetime
 
 

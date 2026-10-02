@@ -13,6 +13,8 @@ import {
   Map,
   Archive,
   BarChart3,
+  ClipboardList,
+  Vote,
 } from 'lucide-react';
 import { useUiStore } from '../../core/store/uiStore';
 
@@ -29,6 +31,8 @@ export const Sidebar: React.FC = () => {
     { to: '/liturgy', label: t('nav.liturgy'), icon: Calendar },
     { to: '/finance', label: t('nav.finance'), icon: DollarSign },
     { to: '/ministries', label: t('nav.ministries'), icon: HeartHandshake },
+    { to: '/governance', label: 'Governance', icon: ClipboardList },
+    { to: '/surveys', label: 'Surveys', icon: Vote },
     { to: '/land-assets', label: t('nav.land_assets'), icon: Map },
     { to: '/archive', label: t('nav.archive'), icon: Archive },
     { to: '/statistics', label: t('nav.statistics'), icon: BarChart3 },

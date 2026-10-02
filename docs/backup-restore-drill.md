@@ -43,13 +43,14 @@ DB_PASSWORD=secret ./scripts/restore_drill.sh
 ### Requirements
 
 - `psql`, `pg_dump`, `pg_restore`, `tar` on `PATH`
-- The configured DB role must have the `CREATEDB` privilege (to create the
-  scratch database). `arkidi_user` has it by default.
-- An **admin** (superuser/DBA) role able to provision the PostGIS extension. In
-  the default postgis/postgis Docker image `POSTGRES_USER` is a superuser, so
-  `DB_ADMIN_USER`/`DB_ADMIN_PASSWORD` default to the application credentials and
-  no extra configuration is needed. For a non-superuser application role, point
-  them at the DBA account (e.g. the container's `postgres`), e.g.:
+- An **admin** (superuser/DBA) role able to create and drop the scratch database,
+  provision the PostGIS extension, and grant the application role access to its
+  schema. The application role itself does not need `CREATEDB` for this shell
+  drill. In the default postgis/postgis Docker image `POSTGRES_USER` is a
+  superuser, so `DB_ADMIN_USER`/`DB_ADMIN_PASSWORD` default to the application
+  credentials and no extra configuration is needed. For a non-superuser
+  application role, point them at the DBA account (e.g. the container's
+  `postgres`), e.g.:
 
   ```bash
   DB_HOST=localhost DB_PORT=5432 DB_NAME=arkidi_db \

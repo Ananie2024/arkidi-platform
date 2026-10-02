@@ -41,6 +41,14 @@ class SacramentsRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def register_reference_exists(
+        self, model: type, reference: dict[str, Any]
+    ) -> bool:
+        """Check active canonical rows for an already-used register reference."""
+        conditions = [getattr(model, field) == value for field, value in reference.items()]
+        conditions.append(model.is_deleted.is_(False))
+        return (await self.db.scalar(select(model.id).where(*conditions).limit(1))) is not None
+
     async def get_baptism_by_id(self, record_id: uuid.UUID) -> BaptismRecord | None:
         stmt = select(BaptismRecord).where(
             BaptismRecord.id == record_id, BaptismRecord.is_deleted.is_(False)
@@ -163,6 +171,42 @@ class SacramentsRepository:
         stmt = select(Parish).where(Parish.id == parish_id, Parish.is_deleted.is_(False))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def has_sacramental_record(
+        self, sacrament_type: SacramentType, faithful_id: uuid.UUID, parish_id: uuid.UUID
+    ) -> bool:
+        faithful_fields = {
+            SacramentType.BAPTISM: (BaptismRecord, BaptismRecord.faithful_id),
+            SacramentType.FIRST_COMMUNION: (FirstCommunionRecord, FirstCommunionRecord.faithful_id),
+            SacramentType.CONFIRMATION: (ConfirmationRecord, ConfirmationRecord.faithful_id),
+            SacramentType.HOLY_ORDERS: (HolyOrdersRecord, HolyOrdersRecord.ordained_faithful_id),
+            SacramentType.RELIGIOUS_PROFESSION: (
+                ReligiousProfessionRecord,
+                ReligiousProfessionRecord.professed_faithful_id,
+            ),
+            SacramentType.ANOINTING_OF_THE_SICK: (
+                AnointingOfTheSickRecord,
+                AnointingOfTheSickRecord.faithful_id,
+            ),
+            SacramentType.CHRISTIAN_FUNERAL: (
+                ChristianFuneralRecord,
+                ChristianFuneralRecord.deceased_faithful_id,
+            ),
+        }
+        stmt = select(MatrimonyRecord.id).where(
+            MatrimonyRecord.parish_id == parish_id,
+            MatrimonyRecord.is_deleted.is_(False),
+            (MatrimonyRecord.groom_faithful_id == faithful_id)
+            | (MatrimonyRecord.bride_faithful_id == faithful_id),
+        )
+        if sacrament_type != SacramentType.MATRIMONY:
+            model, faithful_field = faithful_fields[sacrament_type]
+            stmt = select(model.id).where(
+                model.parish_id == parish_id,
+                model.is_deleted.is_(False),
+                faithful_field == faithful_id,
+            )
+        return (await self.db.scalar(stmt)) is not None
 
     # -----------------------------------------------------------------------
     # Sacramental Amendment Workflow Methods

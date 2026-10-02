@@ -7,7 +7,7 @@ import uuid
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, require_roles
+from app.dependencies import enforce_parish_scope, get_db, require_roles
 from app.models.enums import UserRole
 from app.schemas.commission import MinistryCreate, MinistryResponse
 from app.services.commission import MinistriesService
@@ -20,8 +20,9 @@ router = APIRouter(prefix="/ministries", tags=["Ministries & Commissions"])
 async def list_ministries(
     parish_id: uuid.UUID | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+    user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
+    parish_id = await enforce_parish_scope(user, db, parish_id)
     service = MinistriesService(db)
     return ApiResponse.ok(data=await service.list_ministries(parish_id=parish_id))
 
@@ -34,8 +35,16 @@ async def list_ministries(
 async def create_ministry(
     data: MinistryCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR])),
+    user: dict = Depends(
+        require_roles([UserRole.SUPER_ADMIN, UserRole.CHANCELLOR, UserRole.PARISH_PRIEST])
+    ),
 ):
+    if data.parish_id is not None:
+        await enforce_parish_scope(user, db, data.parish_id)
+    elif user.get("parish_id") or user.get("deanery_id"):
+        from app.core.exceptions import PermissionDeniedException
+
+        raise PermissionDeniedException("A parish-scoped ministry is required.")
     service = MinistriesService(db)
     return ApiResponse.ok(
         data=await service.create_ministry(data), message="success.ministry_created"

@@ -17,22 +17,35 @@ DB_USER="${DB_USER:-arkidi_user}"
 DB_PASSWORD="${DB_PASSWORD:?DB_PASSWORD environment variable is required}"
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 FILE_STORAGE_PATH="${FILE_STORAGE_PATH:-./file-storage}"
+BACKUP_KEEP_DAYS="${BACKUP_KEEP_DAYS:-14}"
+
+if ! [[ "${BACKUP_KEEP_DAYS}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "[backup] BACKUP_KEEP_DAYS must be a positive whole number." >&2
+    exit 2
+fi
+
+mkdir -p "${BACKUP_DIR}"
+BACKUP_DIR="$(cd "${BACKUP_DIR}" && pwd)"
 
 TS="$(date +%Y%m%d_%H%M%S)"
 OUT="${BACKUP_DIR}/arkidi_${TS}.dump"
 FILES_TARBALL="${BACKUP_DIR}/arkidi_file_storage_${TS}.tar.gz"
-mkdir -p "${BACKUP_DIR}"
+OUT_PARTIAL="${OUT}.partial"
+FILES_TARBALL_PARTIAL="${FILES_TARBALL}.partial"
+trap 'rm -f "${OUT_PARTIAL}" "${FILES_TARBALL_PARTIAL}"' EXIT
 
 echo "[backup] Dumping ${DB_NAME}@${DB_HOST}:${DB_PORT} -> ${OUT}"
 
 PGPASSWORD="${DB_PASSWORD}" pg_dump \
     --no-owner --no-acl \
     -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -Fc \
-    > "${OUT}"
+    > "${OUT_PARTIAL}"
+mv "${OUT_PARTIAL}" "${OUT}"
 
 if [ -d "${FILE_STORAGE_PATH}" ] && [ -n "$(ls -A "${FILE_STORAGE_PATH}" 2>/dev/null)" ]; then
     echo "[backup] Archiving file-storage ${FILE_STORAGE_PATH} -> ${FILES_TARBALL}"
-    (cd "$(dirname "${FILE_STORAGE_PATH}")" && tar -czf "${FILES_TARBALL}" "$(basename "${FILE_STORAGE_PATH}")")
+    (cd "$(dirname "${FILE_STORAGE_PATH}")" && tar -czf "${FILES_TARBALL_PARTIAL}" "$(basename "${FILE_STORAGE_PATH}")")
+    mv "${FILES_TARBALL_PARTIAL}" "${FILES_TARBALL}"
 else
     echo "[backup] file-storage '${FILE_STORAGE_PATH}' is empty/missing; skipping tarball."
 fi
@@ -54,16 +67,30 @@ fi
 # PYTHONPATH must include the app root so that ``import app.config`` resolves
 # inside cloud_upload.py.  In Docker the working directory is /app already.
 CLOUD_UPLOAD_PY="${CLOUD_UPLOAD_PY:-$(dirname "$0")/cloud_upload.py}"
-if [ -f "${CLOUD_UPLOAD_PY}" ] && command -v python3 >/dev/null 2>&1; then
+GCS_ENABLED_NORMALIZED="$(printf '%s' "${GCS_ENABLED:-false}" | tr '[:upper:]' '[:lower:]')"
+B2_ENABLED_NORMALIZED="$(printf '%s' "${B2_ENABLED:-false}" | tr '[:upper:]' '[:lower:]')"
+if [[ "${GCS_ENABLED_NORMALIZED}" =~ ^(true|1|yes|on)$ ]] || \
+   [[ "${B2_ENABLED_NORMALIZED}" =~ ^(true|1|yes|on)$ ]]; then
+    if [ ! -f "${CLOUD_UPLOAD_PY}" ] || ! command -v python3 >/dev/null 2>&1; then
+        echo "[backup] ERROR: cloud backup is enabled but cloud_upload.py or python3 is unavailable." >&2
+        exit 1
+    fi
     echo "[backup] Attempting cloud upload of local artefacts ..."
     # upload the DB dump (and file-storage tarball if it was created)
-    python3 "${CLOUD_UPLOAD_PY}" "${OUT}" || \
-        echo "[backup] WARNING: cloud upload of DB dump failed (continuing)." >&2
+    python3 "${CLOUD_UPLOAD_PY}" "${OUT}"
     if [ -f "${FILES_TARBALL}" ]; then
-        python3 "${CLOUD_UPLOAD_PY}" "${FILES_TARBALL}" || \
-            echo "[backup] WARNING: cloud upload of file-storage tarball failed (continuing)." >&2
+        python3 "${CLOUD_UPLOAD_PY}" "${FILES_TARBALL}"
     fi
     echo "[backup] Cloud upload step complete."
 else
-    echo "[backup] Skipping cloud upload (cloud_upload.py or python3 not available)."
+    echo "[backup] No offsite provider enabled; retaining local backup only."
 fi
+
+# Prune only this application's generated backup artefacts, and only after
+# uploads have succeeded when offsite storage is enabled. Cloud-side retention
+# is configured through the provider's bucket lifecycle policy.
+echo "[backup] Removing local Arkidi backup artefacts older than ${BACKUP_KEEP_DAYS} days ..."
+find "${BACKUP_DIR}" -maxdepth 1 -type f \
+    \( -name 'arkidi_[0-9]*.dump' -o -name 'arkidi_file_storage_[0-9]*.tar.gz' \) \
+    -mmin "+$((BACKUP_KEEP_DAYS * 1440))" -print -delete
+echo "[backup] Backup retention complete."

@@ -5,6 +5,7 @@ import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { domainApi } from '../../core/api/domain';
+import { FaithfulSelect } from './FaithfulSelect';
 
 interface BaptismRecordModalProps {
   isOpen: boolean;
@@ -39,8 +40,8 @@ export const BaptismRecordModal: React.FC<BaptismRecordModalProps> = ({
       queryClient.invalidateQueries({ queryKey: ['baptisms'] });
       onClose();
     },
-    onError: (err: any) => {
-      setErrorMsg(err?.response?.data?.message || err.message || 'Failed to record baptism');
+    onError: (err: unknown) => {
+      setErrorMsg(err instanceof Error ? err.message : t('sacraments.baptism_error', 'Failed to record baptism'));
     },
   });
 
@@ -71,13 +72,7 @@ export const BaptismRecordModal: React.FC<BaptismRecordModalProps> = ({
           </div>
         )}
 
-        <Input
-          label={t('sacraments.cert_faithful_label', 'Faithful ID / Parishioner ID')}
-          value={faithfulId}
-          onChange={(e) => setFaithfulId(e.target.value)}
-          placeholder="UUID or Faithful ID"
-          required
-        />
+        <FaithfulSelect parishId={parishId} value={faithfulId} onChange={setFaithfulId} label={t('sacraments.cert_faithful_label', 'Parishioner')} required />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Input

@@ -8,7 +8,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.faithful import Faithful, Family
-from app.schemas.faithful import FaithfulCreate, FamilyCreate
+from app.schemas.faithful import FaithfulCreate, FaithfulUpdate, FamilyCreate, FamilyUpdate
 
 
 class FaithfulRepository:
@@ -26,6 +26,29 @@ class FaithfulRepository:
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_family_by_id(self, family_id: uuid.UUID) -> Family | None:
+        return await self.db.scalar(
+            select(Family).where(Family.id == family_id, Family.is_deleted.is_(False))
+        )
+
+    async def list_families(
+        self, parish_id: uuid.UUID | None = None, search: str | None = None
+    ) -> list[Family]:
+        stmt = select(Family).where(Family.is_deleted.is_(False))
+        if parish_id:
+            stmt = stmt.where(Family.parish_id == parish_id)
+        if search:
+            stmt = stmt.where(
+                or_(Family.family_code.ilike(f"%{search}%"), Family.family_name.ilike(f"%{search}%"))
+            )
+        return list((await self.db.scalars(stmt.order_by(Family.family_name))).all())
+
+    async def list_family_members(self, family_id: uuid.UUID) -> list[Faithful]:
+        stmt = select(Faithful).where(
+            Faithful.family_id == family_id, Faithful.is_deleted.is_(False)
+        ).order_by(Faithful.last_name, Faithful.first_name)
+        return list((await self.db.scalars(stmt)).all())
 
     async def list_faithful(
         self,
@@ -47,7 +70,6 @@ class FaithfulRepository:
                 Faithful.last_name.ilike(f"%{search}%"),
                 Faithful.christian_name.ilike(f"%{search}%"),
                 Faithful.registration_number.ilike(f"%{search}%"),
-                Faithful.national_id.ilike(f"%{search}%"),
             )
             stmt = stmt.where(search_filter)
             count_stmt = count_stmt.where(search_filter)
@@ -65,8 +87,20 @@ class FaithfulRepository:
         await self.db.flush()
         return faithful
 
+    async def update_faithful(self, faithful: Faithful, data: FaithfulUpdate) -> Faithful:
+        for key, value in data.model_dump(exclude_unset=True).items():
+            setattr(faithful, key, value)
+        await self.db.flush()
+        return faithful
+
     async def create_family(self, data: FamilyCreate) -> Family:
         family = Family(**data.model_dump())
         self.db.add(family)
+        await self.db.flush()
+        return family
+
+    async def update_family(self, family: Family, data: FamilyUpdate) -> Family:
+        for key, value in data.model_dump(exclude_unset=True).items():
+            setattr(family, key, value)
         await self.db.flush()
         return family

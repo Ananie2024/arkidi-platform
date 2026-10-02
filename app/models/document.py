@@ -169,6 +169,10 @@ class ScannedPage(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __table_args__ = (
         # Each page of a given ledger book may be scanned exactly once.
         UniqueConstraint("ledger_book_id", "page_number", name="uq_scanned_page_book_page"),
+        CheckConstraint(
+            "review_status IN ('PENDING', 'REVIEWED', 'NEEDS_RESCAN')",
+            name="ck_archive_scanned_page_review_status",
+        ),
     )
 
     ledger_book_id: Mapped[uuid.UUID] = mapped_column(
@@ -178,3 +182,7 @@ class ScannedPage(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     image_file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     ocr_raw_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     ocr_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    review_status: Mapped[str] = mapped_column(String(30), nullable=False, default="PENDING")
+    reviewed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

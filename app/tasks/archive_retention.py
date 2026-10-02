@@ -21,6 +21,7 @@ from app.core.database import AsyncSessionLocal
 from app.models.document import Document
 from app.models.document_type import DocumentType
 from app.tasks.celery_app import celery_app
+from app.utils.audit import record_audit_event
 
 logger = logging.getLogger("arkidi.tasks.archive_retention")
 
@@ -89,8 +90,20 @@ def flag_documents_due_for_review() -> dict:
             due_docs = list(result.scalars().all())
 
             for doc in due_docs:
+                previous_status = doc.disposition_status or DISPOSITION_ACTIVE
                 doc.disposition_status = DISPOSITION_DUE_FOR_REVIEW
                 doc.retention_flagged_at = datetime.now(UTC)
+                record_audit_event(
+                    db,
+                    action="DOCUMENT_FLAGGED_FOR_RETENTION_REVIEW",
+                    entity_name="document",
+                    entity_id=doc.id,
+                    details={
+                        "previous_status": previous_status,
+                        "new_status": DISPOSITION_DUE_FOR_REVIEW,
+                        "reason": "retention_period_elapsed",
+                    },
+                )
 
             await db.commit()
             flagged_ids = [str(doc.id) for doc in due_docs]

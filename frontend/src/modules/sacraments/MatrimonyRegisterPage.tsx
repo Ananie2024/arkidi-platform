@@ -14,7 +14,7 @@ export const MatrimonyRegisterPage: React.FC = () => {
   const { t } = useTranslation();
   const { activeParishId } = useActiveParish();
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
-  const [certModalProps, setCertModalProps] = useState<{ isOpen: boolean; faithfulId?: string }>({
+  const [certModalProps, setCertModalProps] = useState<{ isOpen: boolean; faithfulId?: string; sourceRecordId?: string }>({
     isOpen: false,
   });
 
@@ -36,7 +36,7 @@ export const MatrimonyRegisterPage: React.FC = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setCertModalProps({ isOpen: true, faithfulId: row.groom_faithful_id })}
+          onClick={() => setCertModalProps({ isOpen: true, faithfulId: row.groom_faithful_id, sourceRecordId: row.id })}
           title={t('sacraments.cert_generate', 'Generate Certificate')}
           className="text-xs py-1 px-2 h-7"
         >
@@ -79,6 +79,10 @@ export const MatrimonyRegisterPage: React.FC = () => {
       <CertificateGeneratorModal
         isOpen={certModalProps.isOpen}
         onClose={() => setCertModalProps({ isOpen: false })}
+        parishId={activeParishId}
+        faithfulId={certModalProps.faithfulId}
+        sourceRecordId={certModalProps.sourceRecordId}
+        sacramentType="MATRIMONY"
       />
     </div>
   );

@@ -20,6 +20,7 @@ from app.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.document import ScannedPage
 from app.tasks.celery_app import celery_app
+from app.utils.audit import record_audit_event
 from app.utils.file_storage import storage_service
 
 logger = logging.getLogger("arkidi.tasks.archive_ocr")
@@ -97,8 +98,8 @@ def extract_ocr_text(image_path: str) -> tuple[str, dict]:
     }
 
 
-@celery_app.task(name="archive.process_ocr_page")
-def process_ocr_page(scanned_page_id: str) -> dict:
+@celery_app.task(name="archive.process_ocr_page", bind=True, max_retries=5)
+def process_ocr_page(task, scanned_page_id: str) -> dict:
     """Extract real OCR text from a scanned canonical ledger page and index it.
 
     Task statuses (returned to the Celery result backend):
@@ -133,6 +134,13 @@ def process_ocr_page(scanned_page_id: str) -> dict:
                     "text_length": len(text),
                     "word_count": len(text.split()),
                 }
+                record_audit_event(
+                    db,
+                    action="ARCHIVE_PAGE_OCR_INDEXED",
+                    entity_name="scanned_page",
+                    entity_id=page.id,
+                    details={"status": "indexed_without_ocr", "text_length": len(text)},
+                )
                 await db.commit()
                 return {
                     "scanned_page_id": scanned_page_id,
@@ -155,13 +163,17 @@ def process_ocr_page(scanned_page_id: str) -> dict:
                     **(page.ocr_metadata or {}),
                     "indexed": False,
                     "status": "ocr_unavailable",
-                    "error": str(exc),
+                    "error": "OCR_ENGINE_UNAVAILABLE",
                 }
+                record_audit_event(
+                    db, action="ARCHIVE_PAGE_OCR_FAILED", entity_name="scanned_page",
+                    entity_id=page.id, details={"status": "ocr_unavailable"},
+                )
                 await db.commit()
                 return {
                     "scanned_page_id": scanned_page_id,
                     "status": "ocr_unavailable",
-                    "error": str(exc),
+                    "error": "OCR_ENGINE_UNAVAILABLE",
                 }
             except FileNotFoundError as exc:
                 logger.error("OCR image missing for page %s: %s", scanned_page_id, exc)
@@ -169,27 +181,35 @@ def process_ocr_page(scanned_page_id: str) -> dict:
                     **(page.ocr_metadata or {}),
                     "indexed": False,
                     "status": "image_not_found",
-                    "error": str(exc),
+                    "error": "IMAGE_NOT_FOUND",
                 }
+                record_audit_event(
+                    db, action="ARCHIVE_PAGE_OCR_FAILED", entity_name="scanned_page",
+                    entity_id=page.id, details={"status": "image_not_found"},
+                )
                 await db.commit()
                 return {
                     "scanned_page_id": scanned_page_id,
                     "status": "image_not_found",
-                    "error": str(exc),
+                    "error": "IMAGE_NOT_FOUND",
                 }
-            except Exception as exc:  # noqa: BLE001 - pytesseract.TesseractError etc.
+            except Exception:  # noqa: BLE001 - pytesseract.TesseractError etc.
                 logger.exception("OCR extraction failed for page %s", scanned_page_id)
                 page.ocr_metadata = {
                     **(page.ocr_metadata or {}),
                     "indexed": False,
                     "status": "ocr_failed",
-                    "error": str(exc),
+                    "error": "OCR_PROCESSING_FAILED",
                 }
+                record_audit_event(
+                    db, action="ARCHIVE_PAGE_OCR_FAILED", entity_name="scanned_page",
+                    entity_id=page.id, details={"status": "ocr_failed"},
+                )
                 await db.commit()
                 return {
                     "scanned_page_id": scanned_page_id,
                     "status": "ocr_failed",
-                    "error": str(exc),
+                    "error": "OCR_PROCESSING_FAILED",
                 }
 
             # ----------------------------------------------------------------
@@ -205,6 +225,18 @@ def process_ocr_page(scanned_page_id: str) -> dict:
                 "word_count": len(text.split()),
                 **engine_meta,
             }
+            record_audit_event(
+                db,
+                action="ARCHIVE_PAGE_OCR_INDEXED",
+                entity_name="scanned_page",
+                entity_id=page.id,
+                details={
+                    "status": "indexed",
+                    "text_length": len(text),
+                    "word_count": len(text.split()),
+                    "mean_confidence": engine_meta.get("mean_confidence"),
+                },
+            )
             await db.commit()
             return {
                 "scanned_page_id": scanned_page_id,
@@ -214,4 +246,10 @@ def process_ocr_page(scanned_page_id: str) -> dict:
                 "mean_confidence": engine_meta.get("mean_confidence"),
             }
 
-    return asyncio.run(_run())
+    result = asyncio.run(_run())
+    # Upload transactions enqueue before the HTTP dependency commits. A worker
+    # can win that race, so retry a short-lived missing row instead of dropping
+    # the indexing job permanently.
+    if result.get("status") == "not_found":
+        raise task.retry(countdown=2)
+    return result

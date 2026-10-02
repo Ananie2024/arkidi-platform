@@ -7,7 +7,7 @@ import uuid
 from datetime import date, datetime
 from enum import Enum
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text
+from sqlalchemy import Date, DateTime, ForeignKey, Index, String, Text, text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -45,6 +45,9 @@ class BaptismRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     """Canonical Baptism Register (Registre des Baptêmes)."""
 
     __tablename__ = "baptism_records"
+    __table_args__ = (
+        Index("uq_baptism_register_reference_active", "parish_id", "registry_year", "volume_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+    )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
@@ -73,6 +76,9 @@ class ConfirmationRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMi
     """Canonical Confirmation Register (Registre des Confirmations)."""
 
     __tablename__ = "confirmation_records"
+    __table_args__ = (
+        Index("uq_confirmation_register_reference_active", "parish_id", "registry_year", "volume_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+    )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
@@ -95,6 +101,9 @@ class MatrimonyRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin
     """Canonical Marriage Register (Registre des Mariages)."""
 
     __tablename__ = "matrimony_records"
+    __table_args__ = (
+        Index("uq_matrimony_register_reference_active", "parish_id", "registry_year", "volume_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+    )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
@@ -124,6 +133,9 @@ class FirstCommunionRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDelete
     """Canonical First Communion Register (Registre des Premières Communions)."""
 
     __tablename__ = "first_communion_records"
+    __table_args__ = (
+        Index("uq_first_communion_register_reference_active", "parish_id", "registry_year", "volume_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+    )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
@@ -154,6 +166,9 @@ class HolyOrdersRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     """Canonical Holy Orders Register (Registre des Ordinations)."""
 
     __tablename__ = "holy_orders_records"
+    __table_args__ = (
+        Index("uq_holy_orders_register_reference_active", "parish_id", "register_book", "page_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+    )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
@@ -186,6 +201,9 @@ class ReligiousProfessionRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftD
     """Canonical Religious Profession Register (Registre des Professions Religieuses)."""
 
     __tablename__ = "religious_profession_records"
+    __table_args__ = (
+        Index("uq_religious_profession_register_reference_active", "parish_id", "register_book", "page_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+    )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("parishes.id"), nullable=False
@@ -259,6 +277,11 @@ class CertificateIssue(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     sacrament_type: Mapped[SacramentType] = mapped_column(
         SQLEnum(SacramentType, name="sacrament_type_enum"),
         nullable=False,
+    )
+    # Polymorphic pointer: the source table is selected by sacrament_type.
+    # Kept nullable for certificates issued before this provenance link existed.
+    source_record_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
     )
     faithful_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("faithful.id"), nullable=False

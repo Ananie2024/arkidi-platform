@@ -38,6 +38,10 @@ class FaithfulUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     christian_name: str | None = None
+    date_of_birth: date | None = None
+    place_of_birth: str | None = None
+    father_name: str | None = None
+    mother_name: str | None = None
     phone_number: str | None = None
     email: str | None = None
     occupation: str | None = None
@@ -45,6 +49,7 @@ class FaithfulUpdate(BaseModel):
     family_id: uuid.UUID | None = None
     family_role: FamilyRole | None = None
     scc_id: uuid.UUID | None = None
+    occupation: str | None = None
 
 
 class FaithfulResponse(FaithfulBase):
@@ -71,6 +76,14 @@ class FamilyCreate(FamilyBase):
     scc_id: uuid.UUID | None = None
 
 
+class FamilyUpdate(BaseModel):
+    family_name: str | None = None
+    residence_address: str | None = None
+    phone: str | None = None
+    centrale_id: uuid.UUID | None = None
+    scc_id: uuid.UUID | None = None
+
+
 class FamilyResponse(FamilyBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -79,3 +92,4 @@ class FamilyResponse(FamilyBase):
     centrale_id: uuid.UUID | None = None
     scc_id: uuid.UUID | None = None
     created_at: datetime
+    updated_at: datetime

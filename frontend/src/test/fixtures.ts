@@ -125,11 +125,19 @@ export const annualReportFixture: AnnualReport = {
   parish_id: 'parish-1',
   report_year: 2026,
   total_catholic_population: 5200,
+  total_catechumens: 0,
+  total_families: 0,
   infant_baptisms: 61,
   adult_baptisms: 9,
+  first_communions: 0,
   confirmations: 44,
   marriages_both_catholic: 17,
   marriages_mixed_religion: 5,
+  christian_funerals: 0,
+  catholic_schools_count: 0,
+  students_count: 0,
+  health_centers_count: 0,
+  created_at: '2026-01-01T00:00:00Z',
 };
 
 export const annuarioFixture: AnnuarioPontificioReport = {

@@ -5,7 +5,7 @@ Finance Module Pydantic v2 Schemas
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.donation import DonationType, PaymentMethod
 
@@ -13,8 +13,8 @@ from app.models.donation import DonationType, PaymentMethod
 class DonationBase(BaseModel):
     donation_type: DonationType = DonationType.TITHE
     payment_method: PaymentMethod = PaymentMethod.CASH
-    amount: float
-    currency: str = "RWF"
+    amount: float = Field(gt=0)
+    currency: str = Field(default="RWF", min_length=3, max_length=10)
     donation_date: date
     donor_name_override: str | None = None
     reference_transaction_id: str | None = None

@@ -15,10 +15,11 @@ from collections.abc import Iterable, Sequence
 from datetime import date
 from typing import Any
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import Base
+from app.models.survey import AnnualParishStatistic
 
 PARISH_ID_ATTRIBUTE = "parish_id"
 _NAME_ATTRIBUTE = "name"
@@ -88,6 +89,18 @@ class IndicatorRepository:
             if not parish_ids:
                 return []
             stmt = select(model).where(getattr(model, PARISH_ID_ATTRIBUTE).in_(parish_ids))
+
+        if model is AnnualParishStatistic:
+            latest_returns = select(
+                AnnualParishStatistic.id.label("id"),
+                func.row_number().over(
+                    partition_by=(AnnualParishStatistic.parish_id, AnnualParishStatistic.report_year),
+                    order_by=(AnnualParishStatistic.created_at.desc(), AnnualParishStatistic.id.desc()),
+                ).label("row_number"),
+            ).subquery()
+            stmt = stmt.join(latest_returns, latest_returns.c.id == model.id).where(
+                latest_returns.c.row_number == 1
+            )
 
         if hasattr(model, "is_deleted"):
             stmt = stmt.where(model.is_deleted.is_(False))  # type: ignore[attr-defined]

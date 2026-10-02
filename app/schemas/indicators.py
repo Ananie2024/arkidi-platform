@@ -97,6 +97,8 @@ class StatisticIndicator(BaseModel):
     group_by: HierarchyGroup = HierarchyGroup.PARISH
     trend_bucket: TrendBucket | None = None
     date_field: str | None = None
+    period_field: str | None = None
+    inclusion_rules: str = "Non-deleted source rows within the selected organizational scope."
     filters: list[dict] = Field(default_factory=list)
     unit: str | None = None
 
@@ -143,6 +145,8 @@ class IndicatorConfigView(BaseModel):
     group_by: HierarchyGroup
     trend_bucket: TrendBucket | None = None
     date_field: str | None = None
+    period_field: str | None = None
+    inclusion_rules: str = "Non-deleted source rows within the selected organizational scope."
     filters: list[dict] = Field(default_factory=list)
     unit: str | None = None
     scope_mode: ScopeMode = ScopeMode.PARISH
@@ -170,6 +174,7 @@ class IndicatorScope(BaseModel):
     deanery_id: uuid.UUID | None = None
     start_date: date | None = None
     end_date: date | None = None
+    report_year: int | None = None
 
 
 class IndicatorResult(BaseModel):
@@ -181,6 +186,8 @@ class IndicatorResult(BaseModel):
     aggregation: Aggregation
     group_by: HierarchyGroup
     trend_bucket: TrendBucket | None = None
+    period_field: str | None = None
+    inclusion_rules: str = "Non-deleted source rows within the selected organizational scope."
     unit: str | None = None
     scope: IndicatorScope
     rows: list[IndicatorRow] = Field(default_factory=list)

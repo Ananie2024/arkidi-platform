@@ -70,11 +70,6 @@ class DocumentBase(BaseModel):
     document_type_id: uuid.UUID | None = None
     classification: str = Field(default="OFFICIAL", max_length=50)
     notes: str | None = None
-    disposition_status: str | None = Field(
-        default=None,
-        max_length=50,
-        description="ACTIVE|DUE_FOR_REVIEW|DISPOSED|PRESERVE_INDEFINITELY",
-    )
 
     # Organisational hierarchy scoping
     archdiocese_id: uuid.UUID | None = None
@@ -118,7 +113,6 @@ class DocumentUpdate(BaseModel):
     document_type_id: uuid.UUID | None = None
     classification: str | None = None
     notes: str | None = None
-    disposition_status: str | None = Field(default=None, max_length=50)
     archdiocese_id: uuid.UUID | None = None
     deanery_id: uuid.UUID | None = None
     parish_id: uuid.UUID | None = None
@@ -133,10 +127,11 @@ class DocumentResponse(DocumentBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    file_path: str
+    file_path: str = Field(exclude=True)
     file_size_bytes: int | None = None
     mime_type: str | None = None
     checksum_sha256: str | None = None
+    disposition_status: str | None = None
     uploaded_by_user_id: uuid.UUID | None = None
     retention_flagged_at: datetime | None = None
     created_at: datetime
@@ -150,11 +145,17 @@ class DocumentResponse(DocumentBase):
 
 class ArchiveLedgerBookBase(BaseModel):
     sacrament_type: SacramentType
-    book_title: str
-    start_year: int
-    end_year: int
-    volume_number: str
+    book_title: str = Field(min_length=1, max_length=200)
+    start_year: int = Field(ge=1, le=2200)
+    end_year: int = Field(ge=1, le=2200)
+    volume_number: str = Field(min_length=1, max_length=20)
     shelf_location: str | None = None
+
+    @model_validator(mode="after")
+    def check_year_range(self) -> "ArchiveLedgerBookBase":
+        if self.end_year < self.start_year:
+            raise ValueError("end_year must be greater than or equal to start_year")
+        return self
 
 
 class ArchiveLedgerBookCreate(ArchiveLedgerBookBase):
@@ -172,14 +173,28 @@ class ArchiveLedgerBookResponse(ArchiveLedgerBookBase):
 
 class ScannedPageCreate(BaseModel):
     ledger_book_id: uuid.UUID
-    page_number: int
-    image_file_path: str
-    ocr_raw_text: str | None = None
+    page_number: int = Field(gt=0)
 
 
 class ScannedPageResponse(ScannedPageCreate):
     model_config = ConfigDict(from_attributes=True)
 
+    image_file_path: str = Field(exclude=True)
+    ocr_raw_text: str | None = None
     id: uuid.UUID
     ocr_metadata: dict | None = None
     created_at: datetime
+    review_status: str
+    reviewed_by_user_id: uuid.UUID | None = None
+    reviewed_at: datetime | None = None
+    review_notes: str | None = None
+
+
+class ArchivePageReview(BaseModel):
+    status: str = Field(pattern="^(REVIEWED|NEEDS_RESCAN)$")
+    notes: str = Field(min_length=3, max_length=2000)
+
+
+class DocumentDispositionReview(BaseModel):
+    action: str = Field(pattern="^(DISPOSE|PRESERVE|REOPEN)$")
+    reason: str = Field(min_length=5, max_length=2000)

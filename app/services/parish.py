@@ -16,6 +16,7 @@ from app.schemas.parish import (
     SCCCreate,
     SCCResponse,
 )
+from app.utils.audit import record_audit_event
 
 
 class ParishService:
@@ -34,6 +35,10 @@ class ParishService:
 
     async def create_parish(self, data: ParishCreate) -> ParishResponse:
         parish = await self.repo.create_parish(data)
+        record_audit_event(
+            self.repo.db, action="PARISH_CREATED", entity_name="parish", entity_id=parish.id,
+            details={"deanery_id": str(parish.deanery_id), "code": parish.code},
+        )
         return ParishResponse.model_validate(parish)
 
     async def get_centrales(self, parish_id: uuid.UUID) -> list[CentraleResponse]:
@@ -42,6 +47,10 @@ class ParishService:
 
     async def create_centrale(self, data: CentraleCreate) -> CentraleResponse:
         centrale = await self.repo.create_centrale(data)
+        record_audit_event(
+            self.repo.db, action="CENTRALE_CREATED", entity_name="centrale", entity_id=centrale.id,
+            details={"parish_id": str(centrale.parish_id)},
+        )
         return CentraleResponse.model_validate(centrale)
 
     async def get_scc_list(self, centrale_id: uuid.UUID) -> list[SCCResponse]:
@@ -50,4 +59,8 @@ class ParishService:
 
     async def create_scc(self, data: SCCCreate) -> SCCResponse:
         scc = await self.repo.create_scc(data)
+        record_audit_event(
+            self.repo.db, action="SCC_CREATED", entity_name="small_christian_community",
+            entity_id=scc.id, details={"centrale_id": str(scc.centrale_id)},
+        )
         return SCCResponse.model_validate(scc)

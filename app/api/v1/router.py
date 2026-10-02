@@ -6,6 +6,7 @@ Combines all domain module routers into a unified endpoint registry
 from fastapi import APIRouter
 
 from app.api.v1.archive import router as archive_router
+from app.api.v1.audit import router as audit_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.clergy import router as clergy_router
 from app.api.v1.deaneries import router as deanery_router
@@ -24,6 +25,7 @@ from app.api.v1.surveys import router as surveys_router
 api_v1_router = APIRouter()
 
 # Register domain routers
+api_v1_router.include_router(audit_router)
 api_v1_router.include_router(auth_router)
 api_v1_router.include_router(deanery_router)
 api_v1_router.include_router(parish_router)

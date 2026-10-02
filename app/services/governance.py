@@ -24,10 +24,12 @@ from app.schemas.governance import (
     MeetingResponse,
     MeetingUpdate,
 )
+from app.utils.audit import record_audit_event
 
 
 class GovernanceService:
     def __init__(self, db: AsyncSession):
+        self.db = db
         self.repo = GovernanceRepository(db)
 
     # -----------------------------------------------------------------------
@@ -36,6 +38,10 @@ class GovernanceService:
 
     async def create_commission(self, data: CommissionCreate) -> CommissionResponse:
         comm = await self.repo.create_commission(data)
+        record_audit_event(
+            self.db, action="COMMISSION_CREATED", entity_name="commission", entity_id=comm.id,
+            details={"parish_id": str(comm.parish_id) if comm.parish_id else None},
+        )
         return CommissionResponse.model_validate(comm)
 
     async def get_commission(self, commission_id: uuid.UUID) -> CommissionResponse:
@@ -68,6 +74,10 @@ class GovernanceService:
         if not comm:
             raise EntityNotFoundException("errors.commission_not_found")
         updated = await self.repo.update_commission(comm, data)
+        record_audit_event(
+            self.db, action="COMMISSION_UPDATED", entity_name="commission", entity_id=comm.id,
+            details={"changed_fields": sorted(data.model_fields_set)},
+        )
         return CommissionResponse.model_validate(updated)
 
     async def delete_commission(self, commission_id: uuid.UUID) -> None:
@@ -75,6 +85,10 @@ class GovernanceService:
         if not comm:
             raise EntityNotFoundException("errors.commission_not_found")
         await self.repo.delete_commission(comm)
+        record_audit_event(
+            self.db, action="COMMISSION_DELETED", entity_name="commission", entity_id=comm.id,
+            details={"parish_id": str(comm.parish_id) if comm.parish_id else None},
+        )
 
     # -----------------------------------------------------------------------
     # Council Operations
@@ -82,6 +96,10 @@ class GovernanceService:
 
     async def create_council(self, data: CouncilCreate) -> CouncilResponse:
         council = await self.repo.create_council(data)
+        record_audit_event(
+            self.db, action="COUNCIL_CREATED", entity_name="council", entity_id=council.id,
+            details={"parish_id": str(council.parish_id) if council.parish_id else None},
+        )
         return CouncilResponse.model_validate(council)
 
     async def get_council(self, council_id: uuid.UUID) -> CouncilResponse:
@@ -112,6 +130,10 @@ class GovernanceService:
         if not council:
             raise EntityNotFoundException("errors.council_not_found")
         updated = await self.repo.update_council(council, data)
+        record_audit_event(
+            self.db, action="COUNCIL_UPDATED", entity_name="council", entity_id=council.id,
+            details={"changed_fields": sorted(data.model_fields_set)},
+        )
         return CouncilResponse.model_validate(updated)
 
     async def delete_council(self, council_id: uuid.UUID) -> None:
@@ -119,6 +141,10 @@ class GovernanceService:
         if not council:
             raise EntityNotFoundException("errors.council_not_found")
         await self.repo.delete_council(council)
+        record_audit_event(
+            self.db, action="COUNCIL_DELETED", entity_name="council", entity_id=council.id,
+            details={"parish_id": str(council.parish_id) if council.parish_id else None},
+        )
 
     # -----------------------------------------------------------------------
     # Meeting Operations
@@ -135,6 +161,12 @@ class GovernanceService:
                 raise ValidationException("errors.referenced_commission_not_found")
 
         meeting = await self.repo.create_meeting(data)
+        record_audit_event(
+            self.db, action="MEETING_CREATED", entity_name="meeting", entity_id=meeting.id,
+            details={"parish_id": str(meeting.parish_id) if meeting.parish_id else None,
+                     "council_id": str(meeting.council_id) if meeting.council_id else None,
+                     "commission_id": str(meeting.commission_id) if meeting.commission_id else None},
+        )
         return MeetingResponse.model_validate(meeting)
 
     async def get_meeting(self, meeting_id: uuid.UUID) -> MeetingResponse:
@@ -171,6 +203,10 @@ class GovernanceService:
         if not meeting:
             raise EntityNotFoundException("errors.meeting_not_found")
         updated = await self.repo.update_meeting(meeting, data)
+        record_audit_event(
+            self.db, action="MEETING_UPDATED", entity_name="meeting", entity_id=meeting.id,
+            details={"changed_fields": sorted(data.model_fields_set)},
+        )
         return MeetingResponse.model_validate(updated)
 
     async def delete_meeting(self, meeting_id: uuid.UUID) -> None:
@@ -178,6 +214,10 @@ class GovernanceService:
         if not meeting:
             raise EntityNotFoundException("errors.meeting_not_found")
         await self.repo.delete_meeting(meeting)
+        record_audit_event(
+            self.db, action="MEETING_DELETED", entity_name="meeting", entity_id=meeting.id,
+            details={"parish_id": str(meeting.parish_id) if meeting.parish_id else None},
+        )
 
     # -----------------------------------------------------------------------
     # Meeting Minute Operations
@@ -192,6 +232,11 @@ class GovernanceService:
         if not meeting:
             raise EntityNotFoundException("errors.meeting_not_found")
         minute = await self.repo.create_minute(data, recorded_by_user_id=recorded_by_user_id)
+        record_audit_event(
+            self.db, action="MEETING_MINUTE_CREATED", entity_name="meeting_minute",
+            entity_id=minute.id, user_id=recorded_by_user_id,
+            details={"meeting_id": str(minute.meeting_id)},
+        )
         return MeetingMinuteResponse.model_validate(minute)
 
     async def get_minute(self, minute_id: uuid.UUID) -> MeetingMinuteResponse:
@@ -214,6 +259,10 @@ class GovernanceService:
         if not minute:
             raise EntityNotFoundException("errors.meeting_minute_not_found")
         updated = await self.repo.update_minute(minute, data)
+        record_audit_event(
+            self.db, action="MEETING_MINUTE_UPDATED", entity_name="meeting_minute",
+            entity_id=minute.id, details={"changed_fields": sorted(data.model_fields_set)},
+        )
         return MeetingMinuteResponse.model_validate(updated)
 
     async def delete_minute(self, minute_id: uuid.UUID) -> None:
@@ -221,3 +270,7 @@ class GovernanceService:
         if not minute:
             raise EntityNotFoundException("errors.meeting_minute_not_found")
         await self.repo.delete_minute(minute)
+        record_audit_event(
+            self.db, action="MEETING_MINUTE_DELETED", entity_name="meeting_minute",
+            entity_id=minute.id, details={"meeting_id": str(minute.meeting_id)},
+        )

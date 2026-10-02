@@ -21,6 +21,7 @@ from app.schemas.survey import (
 from app.schemas.survey import (
     SurveyResponse as SurveyResponseSchema,
 )
+from app.utils.audit import record_audit_event
 
 
 class SurveyService:
@@ -46,6 +47,12 @@ class SurveyService:
 
     async def create_survey(self, data: SurveyCreate) -> SurveyResponseSchema:
         survey = await self.repo.create_survey(data)
+        record_audit_event(
+            self.repo.db, action="SURVEY_CREATED", entity_name="survey", entity_id=survey.id,
+            details={"parish_id": str(survey.parish_id) if survey.parish_id else None,
+                     "deanery_id": str(survey.deanery_id) if survey.deanery_id else None,
+                     "archdiocese_id": str(survey.archdiocese_id) if survey.archdiocese_id else None},
+        )
         return self._to_survey_response(survey, response_count=0)
 
     async def get_survey(self, survey_id: uuid.UUID) -> SurveyResponseSchema:
@@ -74,11 +81,30 @@ class SurveyService:
             results.append(self._to_survey_response(s, response_count=count))
         return results
 
+    async def list_surveys_in_jurisdiction(
+        self,
+        parish_ids: list[uuid.UUID],
+        deanery_ids: list[uuid.UUID],
+        archdiocese_id: uuid.UUID,
+        survey_status: str | None = None,
+    ) -> list[SurveyResponseSchema]:
+        surveys = await self.repo.list_surveys_in_jurisdiction(
+            parish_ids, deanery_ids, archdiocese_id, status=survey_status
+        )
+        return [
+            self._to_survey_response(survey, response_count=await self.repo.count_responses(survey.id))
+            for survey in surveys
+        ]
+
     async def update_survey(self, survey_id: uuid.UUID, data: SurveyUpdate) -> SurveyResponseSchema:
         survey = await self.repo.get_survey_by_id(survey_id)
         if not survey:
             raise EntityNotFoundException("errors.survey_not_found")
         updated = await self.repo.update_survey(survey, data)
+        record_audit_event(
+            self.repo.db, action="SURVEY_UPDATED", entity_name="survey", entity_id=survey.id,
+            details={"changed_fields": sorted(data.model_fields_set)},
+        )
         count = await self.repo.count_responses(survey_id)
         return self._to_survey_response(updated, response_count=count)
 
@@ -87,6 +113,10 @@ class SurveyService:
         if not survey:
             raise EntityNotFoundException("errors.survey_not_found")
         await self.repo.delete_survey(survey)
+        record_audit_event(
+            self.repo.db, action="SURVEY_DELETED", entity_name="survey", entity_id=survey.id,
+            details={"parish_id": str(survey.parish_id) if survey.parish_id else None},
+        )
 
     async def submit_response(
         self,
@@ -121,6 +151,13 @@ class SurveyService:
             survey_id=survey_id,
             data=data,
             submitted_by_user_id=submitted_by_user_id,
+        )
+        record_audit_event(
+            self.repo.db, action="SURVEY_RESPONSE_SUBMITTED", entity_name="survey_response",
+            entity_id=resp.id, user_id=submitted_by_user_id,
+            details={"survey_id": str(survey_id),
+                     "respondent_parish_id": str(resp.respondent_parish_id)
+                     if resp.respondent_parish_id else None},
         )
         return SurveyResponseRecord.model_validate(resp)
 

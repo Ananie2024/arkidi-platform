@@ -5,6 +5,7 @@ File Storage Provider Interface & Local/Cloud Storage Adapter
 import hashlib
 import os
 import re
+from pathlib import Path
 
 import aiofiles
 from fastapi import UploadFile
@@ -120,8 +121,17 @@ class StorageService:
         return None
 
     def get_full_path(self, relative_path: str) -> str:
-        """Resolve full filesystem path from relative storage path."""
-        return os.path.join(self.base_path, relative_path)
+        """Resolve a stored relative path and reject escapes from the storage root."""
+        candidate_path = Path(relative_path)
+        if candidate_path.is_absolute():
+            raise ValueError("Stored file paths must be relative to the storage root")
+        root = Path(self.base_path).resolve()
+        candidate = (root / candidate_path).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError as exc:
+            raise ValueError("Stored file path escapes the storage root") from exc
+        return str(candidate)
 
 
 storage_service = StorageService()

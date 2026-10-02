@@ -8,7 +8,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, require_roles
+from app.dependencies import enforce_parish_scope, get_db, require_roles
 from app.models.enums import UserRole
 from app.schemas.intention import MassIntentionCreate, MassIntentionResponse
 from app.schemas.mass import MassScheduleCreate, MassScheduleResponse
@@ -24,8 +24,9 @@ async def list_mass_schedules(
     parish_id: uuid.UUID,
     for_date: date | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+    current_user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
+    await enforce_parish_scope(current_user, db, parish_id)
     service = MassService(db)
     return ApiResponse.ok(data=await service.get_mass_schedules(parish_id, for_date))
 
@@ -38,8 +39,9 @@ async def list_mass_schedules(
 async def schedule_mass(
     data: MassScheduleCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.PARISH_PRIEST, UserRole.PARISH_VICAR])),
+    current_user: dict = Depends(require_roles([UserRole.PARISH_PRIEST, UserRole.PARISH_VICAR])),
 ):
+    await enforce_parish_scope(current_user, db, data.parish_id)
     service = MassService(db)
     return ApiResponse.ok(data=await service.schedule_mass(data), message="success.mass_created")
 
@@ -49,8 +51,9 @@ async def list_intentions(
     parish_id: uuid.UUID,
     target_date: date | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+    current_user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
+    await enforce_parish_scope(current_user, db, parish_id)
     service = IntentionService(db)
     return ApiResponse.ok(data=await service.get_intentions(parish_id, target_date))
 
@@ -59,10 +62,12 @@ async def list_intentions(
 async def get_intention(
     intention_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
+    current_user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     service = IntentionService(db)
-    return ApiResponse.ok(data=await service.get_intention(intention_id))
+    item = await service.get_intention(intention_id)
+    await enforce_parish_scope(current_user, db, item.parish_id)
+    return ApiResponse.ok(data=item)
 
 
 @router.post(
@@ -73,8 +78,9 @@ async def get_intention(
 async def register_intention(
     data: MassIntentionCreate,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
+    current_user: dict = Depends(require_roles([UserRole.PARISH_SECRETARY])),
 ):
+    await enforce_parish_scope(current_user, db, data.parish_id)
     service = IntentionService(db)
     return ApiResponse.ok(
         data=await service.register_intention(data), message="success.intention_registered"

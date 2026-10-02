@@ -73,8 +73,10 @@ class ArchiveRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def add_scanned_page(self, data: ScannedPageCreate) -> ScannedPage:
-        page = ScannedPage(**data.model_dump())
+    async def add_scanned_page(
+        self, data: ScannedPageCreate, image_file_path: str
+    ) -> ScannedPage:
+        page = ScannedPage(**data.model_dump(), image_file_path=image_file_path)
         self.db.add(page)
         # Keep the canonical book's scan counter in sync so the archive summary
         # never goes stale. The page row is added in the same transaction.
@@ -222,6 +224,7 @@ class DocumentRepository:
         document_type_id: uuid.UUID | None = None,
         classification: str | None = None,
         search: str | None = None,
+        disposition_status: str | None = None,
     ) -> list[Document]:
         stmt = select(Document).where(Document.is_deleted.is_(False))
 
@@ -245,6 +248,8 @@ class DocumentRepository:
             stmt = stmt.where(Document.document_type_id == document_type_id)
         if classification is not None:
             stmt = stmt.where(Document.classification == classification)
+        if disposition_status is not None:
+            stmt = stmt.where(Document.disposition_status == disposition_status)
         if search:
             search_pattern = f"%{search}%"
             stmt = stmt.where(

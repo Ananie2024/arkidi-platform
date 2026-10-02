@@ -75,7 +75,7 @@ class AuthService:
             action="USER_LOGIN_SUCCESS",
             entity_name="user",
             entity_id=str(user.id),
-            details={"username": user.username, "email": user.email, "role": user.role.value},
+            details={"role": user.role.value},
         )
         self.repo.db.add(audit)
 
@@ -180,7 +180,7 @@ class AuthService:
             action="USER_GOOGLE_LOGIN_SUCCESS",
             entity_name="user",
             entity_id=str(user.id),
-            details={"email": user.email, "role": user.role.value},
+            details={"role": user.role.value},
         )
         self.repo.db.add(audit)
 
@@ -273,7 +273,7 @@ class AuthService:
             action="USER_LOGOUT",
             entity_name="user",
             entity_id=user_id_str,
-            details={"jti": jti},
+            details={},
         )
         self.repo.db.add(audit)
 
@@ -294,9 +294,9 @@ class AuthService:
                 entity_name="user",
                 entity_id=str(user.id),
                 details={
-                    "username": user.username,
-                    "email": user.email,
                     "role": user.role.value,
+                    "parish_id": str(user.parish_id) if user.parish_id else None,
+                    "deanery_id": str(user.deanery_id) if user.deanery_id else None,
                 },
             )
             self.repo.db.add(audit)
@@ -355,7 +355,7 @@ class AuthService:
             action="PASSWORD_RESET_COMPLETED",
             entity_name="user",
             entity_id=str(user.id),
-            details={"email": user.email},
+            details={},
         )
         self.repo.db.add(audit)
 

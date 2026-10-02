@@ -3,6 +3,7 @@ Finance Module Business Logic Service
 """
 
 import uuid
+from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,12 +51,16 @@ class FinanceService:
         return DonationResponse.model_validate(donation)
 
 
-    async def list_donations(self, parish_id: uuid.UUID) -> list[DonationResponse]:
-        items = await self.repo.list_donations(parish_id)
+    async def list_donations(
+        self, parish_id: uuid.UUID, start_date: date | None = None, end_date: date | None = None
+    ) -> list[DonationResponse]:
+        items = await self.repo.list_donations(parish_id, start_date=start_date, end_date=end_date)
         return [DonationResponse.model_validate(d) for d in items]
 
-    async def get_financial_summary(self, parish_id: uuid.UUID) -> FinancialSummaryResponse:
-        summary = await self.repo.get_summary(parish_id)
+    async def get_financial_summary(
+        self, parish_id: uuid.UUID, start_date: date | None = None, end_date: date | None = None
+    ) -> FinancialSummaryResponse:
+        summary = await self.repo.get_summary(parish_id, start_date, end_date)
         tithes = summary.get(DonationType.TITHE, 0.0)
         offertory = summary.get(DonationType.OFFERTORY, 0.0)
         construction = summary.get(DonationType.CONSTRUCTION_FUND, 0.0)
@@ -67,3 +72,8 @@ class FinanceService:
             total_construction=construction,
             grand_total=grand,
         )
+
+    async def get_reconciliation(
+        self, parish_id: uuid.UUID, start_date: date, end_date: date
+    ) -> list[dict]:
+        return await self.repo.get_reconciliation(parish_id, start_date, end_date)

@@ -30,7 +30,7 @@ Arkidi Platform is a unified, enterprise-grade modular monolith software system 
 | **Async Tasks** | Celery 5.3 + Redis |
 | **Security & Auth** | JWT (PyJWT) + Argon2-cffi, Role-Based Access Control (RBAC) |
 | **GIS & Docs** | Shapely, Pyproj, ReportLab (PDF Certificates), Qrcode (PIL) |
-| **Frontend** | React 19 / Vite, TypeScript, Tailwind CSS, TanStack Query, React Hook Form + Zod, Zustand, React Leaflet (GIS Maps), i18next |
+| **Frontend** | React 18 / Vite, TypeScript, Tailwind CSS, TanStack Query, React Hook Form + Zod, Zustand, React Leaflet (GIS Maps), i18next |
 | **DevOps** | Docker, Docker Compose, Nginx |
 
 ---
@@ -78,17 +78,17 @@ Edit `.env.production` and replace all `<<PLACEHOLDER>>` values with real produc
 
 ### 2. Deploy with Docker Compose (Production)
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 ```
 
 ---
 
 ## 📁 Repository Architecture
 
-Arkidi Platform is structured as a clean **Modular Monolith**:
-- `backend/app/modules/`: High-cohesion domain modules (`auth`, `geography`, `faithful`, `sacraments`, `clergy`, `liturgy`, `finance`, `ministries`, `land_assets`, `archive`, `statistics`).
-- `backend/app/core/`: Core infrastructure (database, security, redis, celery, middleware, permissions).
-- `backend/app/common/`: Shared utilities (i18n, pagination, PDF generator, QR generator, storage).
+Arkidi Platform is structured as a **Modular Monolith**. In this checkout:
+- `app/api/v1/`: Domain HTTP routers.
+- `app/models/`, `app/schemas/`, `app/repositories/`, `app/services/`: Persistence, validation, data access, and domain logic. These are shared directories rather than per-domain module packages.
+- `app/core/` and `app/utils/`: Infrastructure and shared utilities.
 - `frontend/src/modules/`: Frontend feature modules matching backend domain boundaries.
 - `frontend/src/i18n/`: Tri-lingual translation keys (EN, FR, RW).
 
@@ -98,6 +98,11 @@ See `ARCHITECTURE.md` for full architectural documentation.
 
 ## Production Deployment (TLS, API proxy, backup, health)
 
+The production overlay provisions a separate non-superuser role from
+`DATABASE_USER` / `DATABASE_PASSWORD` before the API applies migrations. Keep
+`POSTGRES_USER` / `POSTGRES_PASSWORD` as bootstrap DBA credentials and use
+distinct application credentials from the production template.
+
 ### 1. Prepare environment
 
 ```bash
@@ -105,8 +110,9 @@ cp .env.production.example .env.production    # fill in real secrets/domains
 cp frontend/.env.production.example frontend/.env.production
 ```
 
-Set at minimum: `SECRET_KEY`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`,
-`CORS_ORIGINS`, `SERVER_NAME`, `SSL_CERT_PATH`, `SSL_KEY_PATH`.
+Set at minimum: `SECRET_KEY`, `POSTGRES_USER`, `POSTGRES_PASSWORD`,
+`DATABASE_USER`, `DATABASE_PASSWORD`, `REDIS_PASSWORD`,
+`CORS_ORIGINS`, `PUBLIC_FRONTEND_URL`, `SERVER_NAME`, `SSL_CERT_PATH`, `SSL_KEY_PATH`.
 
 ### 2. TLS certificates
 
@@ -133,22 +139,25 @@ openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
 ### 3. Deploy
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 - `https://app.arkidi.org` -> SPA (HTTP redirects to HTTPS)
 - `https://app.arkidi.org/api/v1/...` -> reverse-proxied to the FastAPI backend
 - `https://app.arkidi.org/health` -> backend liveness/readiness probe
 
-Every service ships a Docker healthcheck; the frontend waits for the backend to
-be `service_healthy` before starting, and the backend waits for Postgres and
-Redis.
+The production overlay removes the base file's published database, Redis, and
+backend ports; only Nginx publishes ports 80 and 443. Every service ships a
+Docker healthcheck; the frontend waits for the backend to be `service_healthy`
+before starting, and the backend waits for Postgres and Redis. Use Docker
+Compose v2.24 or newer for the `!reset` port overrides.
 
 ### 4. Backup / restore
 
-Scheduled backups are provided by the `backup` service in
-`docker-compose.prod.yml` (custom-format `pg_dump`, kept in the
-`postgres_prod_backups` volume, pruned after `BACKUP_KEEP_DAYS`). One-off dumps:
+Scheduled backups and weekly restore drills are run by Celery Beat in the
+`celery-worker` service (custom-format `pg_dump` plus file-storage archive,
+kept in the `backend_prod_backups` volume). Configure offsite storage for
+disaster recovery outside the host. One-off dumps:
 
 ```bash
 # backup
@@ -177,11 +186,11 @@ DB_USER=arkidi_user DB_PASSWORD=secret \
 ./scripts/restore_drill.sh
 ```
 
-The restore drill provisions PostGIS in its scratch database through an admin
-role (`DB_ADMIN_USER`/`DB_ADMIN_PASSWORD`, which default to the application
-credentials). When running under a least-privilege **non-superuser** application
-role (recommended for production), provision that role once and point the admin
-vars at the DBA account:
+The restore drill creates and drops its scratch database and provisions PostGIS
+through an admin role (`DB_ADMIN_USER`/`DB_ADMIN_PASSWORD`, which default to the
+application credentials). When running under a least-privilege
+**non-superuser** application role (recommended for production), provision that
+role once and point the admin vars at the DBA account:
 
 ```bash
 DB_ADMIN_USER=postgres DB_ADMIN_PASSWORD=secret \
@@ -196,7 +205,10 @@ DB_ADMIN_USER=postgres DB_ADMIN_PASSWORD=secret \
 
 The CI pipeline runs migrations, the full test suite, and the restore drill under
 a genuine non-superuser role so PostGIS/privilege regressions cannot hide behind
-the Docker image's default superuser.
+the Docker image's default superuser. The operational shell restore drill uses
+DBA credentials for its scratch database; the separate pytest integration drill
+still requires `CREATEDB` on its test connection because it provisions the
+scratch database directly.
 
 ### 5. Operations health checks
 
@@ -208,3 +220,9 @@ the Docker image's default superuser.
   `SECURITY_CRITICAL_MODE=true` (production default) a Redis outage causes
   revocation to **fail closed** and alert via logs rather than silently
   leaving tokens valid.
+
+See [docs/production-operations.md](docs/production-operations.md) for named
+operational ownership, production setup, alert routing, migration and release
+checks, backup retention, and the authorized restore procedure. Production
+hosting, cloud account, on-call contacts, and approved recovery objectives must
+be supplied by the deployment owners.

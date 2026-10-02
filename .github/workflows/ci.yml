@@ -212,6 +212,9 @@ jobs:
           pip install pyyaml
           python - <<'PY'
           import yaml, sys
+          # Compose's !reset tag clears values inherited from the base file.
+          # Treat it as its underlying YAML value for syntax validation.
+          yaml.SafeLoader.add_constructor("!reset", lambda loader, node: loader.construct_sequence(node))
           files = ["docker-compose.yml", "docker-compose.prod.yml"]
           for f in files:
               try:

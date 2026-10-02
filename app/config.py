@@ -164,6 +164,7 @@ class Settings(BaseSettings):
         default=[".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx", ".xls", ".xlsx"]
     )
     BACKUP_BASE_PATH: str = Field(default="./backups")
+    BACKUP_KEEP_DAYS: int = Field(default=14, ge=1, le=3650)
     GCS_ENABLED: bool = Field(default=False)
     GCS_PROJECT_ID: str | None = Field(default=None)
     GCS_BUCKET_NAME: str | None = Field(default=None)

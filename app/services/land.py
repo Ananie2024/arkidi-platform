@@ -104,9 +104,8 @@ class LandAssetsService:
             entity_id=str(building.id),
             details={
                 "parcel_id": str(building.parcel_id),
-                "building_name": building.building_name,
+                "building_name": building.name,
             },
         )
         self.repo.db.add(audit)
         return BuildingAssetResponse.model_validate(building)
-

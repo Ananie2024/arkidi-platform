@@ -79,6 +79,7 @@ INDICATORS: list[StatisticIndicator] = [
         key="faithful_by_deanery",
         title="Faithful by Deanery",
         description="Registered faithful population counted per deanery.",
+        inclusion_rules="Count one non-deleted Faithful profile per person; all canonical statuses, including deceased, are included.",
         source_model=Faithful,
         aggregation=Aggregation.COUNT,
         group_by=HierarchyGroup.DEANERY,
@@ -88,6 +89,7 @@ INDICATORS: list[StatisticIndicator] = [
         key="land_value_by_vicariate",
         title="Land Value by Vicariate",
         description="Sum of estimated land value (RWF) grouped by vicariate (deanery).",
+        inclusion_rules="Sum non-null estimated_value_rwf for non-deleted parcels; unvalued parcels contribute no amount.",
         source_model=LandParcel,
         aggregation=Aggregation.SUM,
         metric_field="estimated_value_rwf",
@@ -98,6 +100,7 @@ INDICATORS: list[StatisticIndicator] = [
         key="donations_trend_by_parish",
         title="Donations Trend by Parish",
         description="Monthly donations per parish, one time series per parish.",
+        inclusion_rules="Sum all non-deleted donation rows by recorded donation date; all donation/payment categories are included and currencies are not converted.",
         source_model=Donation,
         aggregation=Aggregation.SUM,
         metric_field="amount",
@@ -117,6 +120,7 @@ INDICATORS: list[StatisticIndicator] = [
             "only to a deanery or the archdiocese land in the unassigned "
             "(null-group) bucket."
         ),
+        inclusion_rules="Count non-deleted documents linked to a parish; deanery-only and archdiocese-only documents are returned without a parish bucket.",
         source_model=Document,
         aggregation=Aggregation.COUNT,
         group_by=HierarchyGroup.PARISH,
@@ -127,6 +131,7 @@ INDICATORS: list[StatisticIndicator] = [
         key="documents_by_type",
         title="Documents by Type",
         description="Archived document counts grouped by document type.",
+        inclusion_rules="Count non-deleted documents in scope by document_type_id; untyped documents have an unassigned type bucket.",
         source_model=Document,
         aggregation=Aggregation.COUNT,
         group_by=HierarchyGroup.PARISH,  # ignored: group_by_field drives the bucket
@@ -143,6 +148,7 @@ INDICATORS: list[StatisticIndicator] = [
             "Documents flagged DUE_FOR_REVIEW by the archivist retention "
             "scheduler (app.tasks.archive_retention), grouped by parish."
         ),
+        inclusion_rules="Count non-deleted documents whose disposition_status is DUE_FOR_REVIEW.",
         source_model=Document,
         aggregation=Aggregation.COUNT,
         group_by=HierarchyGroup.PARISH,
@@ -157,6 +163,7 @@ INDICATORS: list[StatisticIndicator] = [
             "Share of scanned ledger pages whose OCR text has been extracted, "
             "grouped by the parish owning the ledger book."
         ),
+        inclusion_rules="Rate is pages with non-null OCR text divided by all non-deleted scanned pages in scope; pages without OCR text count as incomplete.",
         source_model=ScannedPage,
         aggregation=Aggregation.RATE,
         metric_field="ocr_raw_text",
@@ -177,6 +184,8 @@ INDICATORS: list[StatisticIndicator] = [
         key="annual_catholic_population_by_parish",
         title="Annual Catholic Population by Parish",
         description="Sum of reported catholic population per parish for a reporting year.",
+        period_field="report_year",
+        inclusion_rules="Use the latest annual return for each parish and report year; include the parish-submitted population value.",
         source_model=AnnualParishStatistic,
         aggregation=Aggregation.SUM,
         metric_field="total_catholic_population",
@@ -187,6 +196,8 @@ INDICATORS: list[StatisticIndicator] = [
         key="annual_infant_baptisms_by_parish",
         title="Annual Infant Baptisms by Parish",
         description="Sum of reported infant baptisms per parish for a reporting year.",
+        period_field="report_year",
+        inclusion_rules="Use the latest annual return for each parish and report year; count only the parish-reported infant baptism total.",
         source_model=AnnualParishStatistic,
         aggregation=Aggregation.SUM,
         metric_field="infant_baptisms",
@@ -197,6 +208,8 @@ INDICATORS: list[StatisticIndicator] = [
         key="annual_adult_baptisms_by_parish",
         title="Annual Adult Baptisms by Parish",
         description="Sum of reported adult baptisms per parish for a reporting year.",
+        period_field="report_year",
+        inclusion_rules="Use the latest annual return for each parish and report year; count only the parish-reported adult baptism total.",
         source_model=AnnualParishStatistic,
         aggregation=Aggregation.SUM,
         metric_field="adult_baptisms",
@@ -207,6 +220,8 @@ INDICATORS: list[StatisticIndicator] = [
         key="annual_confirmations_by_parish",
         title="Annual Confirmations by Parish",
         description="Sum of reported confirmations per parish for a reporting year.",
+        period_field="report_year",
+        inclusion_rules="Use the latest annual return for each parish and report year; count only parish-reported confirmations.",
         source_model=AnnualParishStatistic,
         aggregation=Aggregation.SUM,
         metric_field="confirmations",
@@ -217,6 +232,8 @@ INDICATORS: list[StatisticIndicator] = [
         key="annual_marriages_both_catholic_by_parish",
         title="Annual Marriages (Both Catholic) by Parish",
         description="Sum of reported marriages between two catholics per parish for a reporting year.",
+        period_field="report_year",
+        inclusion_rules="Use the latest annual return for each parish and report year; count marriages reported with both spouses Catholic.",
         source_model=AnnualParishStatistic,
         aggregation=Aggregation.SUM,
         metric_field="marriages_both_catholic",
@@ -227,6 +244,8 @@ INDICATORS: list[StatisticIndicator] = [
         key="annual_marriages_mixed_religion_by_parish",
         title="Annual Mixed-Religion Marriages by Parish",
         description="Sum of reported mixed-religion marriages per parish for a reporting year.",
+        period_field="report_year",
+        inclusion_rules="Use the latest annual return for each parish and report year; count marriages reported as mixed religion.",
         source_model=AnnualParishStatistic,
         aggregation=Aggregation.SUM,
         metric_field="marriages_mixed_religion",
@@ -271,6 +290,8 @@ class AggregationService:
                 group_by=indicator.group_by,
                 trend_bucket=indicator.trend_bucket,
                 date_field=indicator.date_field,
+                period_field=indicator.period_field or indicator.date_field,
+                inclusion_rules=indicator.inclusion_rules,
                 filters=indicator.filters,
                 unit=indicator.unit,
                 scope_mode=indicator.scope_mode,
@@ -317,6 +338,9 @@ class AggregationService:
         """
         indicator = self.get_indicator(key)
         self._validate_source(indicator)
+
+        if (start_date is not None or end_date is not None) and indicator.date_field is None:
+            raise ValidationException(f"Indicator '{key}' has no date-based reporting field")
 
         if deanery_id is None and archdiocese_id is None:
             raise IndicatorScopeRequiredException()
@@ -422,12 +446,15 @@ class AggregationService:
             aggregation=indicator.aggregation,
             group_by=indicator.group_by,
             trend_bucket=indicator.trend_bucket,
+            period_field=indicator.period_field or indicator.date_field,
+            inclusion_rules=indicator.inclusion_rules,
             unit=indicator.unit,
             scope=IndicatorScope(
                 archdiocese_id=archdiocese_id,
                 deanery_id=deanery_id,
                 start_date=start_date,
                 end_date=end_date,
+                report_year=(param_filters or {}).get("report_year"),
             ),
             rows=out_rows,
             generated_at=datetime.now(UTC),
@@ -484,7 +511,10 @@ class AggregationService:
         ancestry: dict,
     ) -> tuple[str | None, uuid.UUID | None]:
         period = None
-        if indicator.date_field:
+        if indicator.period_field:
+            period_value = getattr(row, indicator.period_field)
+            period = str(period_value) if period_value is not None else None
+        elif indicator.date_field:
             period = self._bucket_label(indicator.trend_bucket, getattr(row, indicator.date_field))
 
         # Non-hierarchical grouping dimension (e.g. documents by type).

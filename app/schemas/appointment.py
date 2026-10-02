@@ -5,7 +5,7 @@ Clergy Module Pydantic v2 Schemas
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.priest import ClergyStatus, ClergyType
 
@@ -50,11 +50,17 @@ class PriestResponse(PriestBase):
 
 
 class AssignmentBase(BaseModel):
-    role_title: str
+    role_title: str = Field(min_length=1, max_length=100)
     start_date: date
     end_date: date | None = None
     decree_reference_number: str | None = None
     is_current: bool = True
+
+    @model_validator(mode="after")
+    def valid_assignment_period(self):
+        if self.end_date is not None and self.end_date < self.start_date:
+            raise ValueError("Assignment end date must be on or after its start date")
+        return self
 
 
 class AssignmentCreate(AssignmentBase):

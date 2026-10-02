@@ -10,12 +10,14 @@ import { domainApi } from '../../core/api/domain';
 import { useActiveParish } from '../../core/hooks/useActiveParish';
 import { BaptismRecordModal } from './BaptismRecordModal';
 import { CertificateGeneratorModal } from './CertificateGeneratorModal';
+import { AmendmentRequestModal } from './AmendmentRequestModal';
 
 export const BaptismRegisterPage: React.FC = () => {
   const { t } = useTranslation();
   const { activeParishId } = useActiveParish();
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
-  const [certModalProps, setCertModalProps] = useState<{ isOpen: boolean; faithfulId?: string }>({
+  const [amendmentRecord, setAmendmentRecord] = useState<BaptismRecord | null>(null);
+  const [certModalProps, setCertModalProps] = useState<{ isOpen: boolean; faithfulId?: string; sourceRecordId?: string }>({
     isOpen: false,
   });
 
@@ -34,16 +36,14 @@ export const BaptismRegisterPage: React.FC = () => {
     {
       header: t('common.actions', 'Actions'),
       accessor: (row) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCertModalProps({ isOpen: true, faithfulId: row.faithful_id })}
-          title={t('sacraments.cert_generate', 'Generate Certificate')}
-          className="text-xs py-1 px-2 h-7"
-        >
-          <Award className="w-3.5 h-3.5 mr-1 text-brand-600" />
-          {t('sacraments.tab_certificates', 'Certificate')}
+      <div className="flex gap-1">
+        <Button variant="outline" size="sm" onClick={() => setCertModalProps({ isOpen: true, faithfulId: row.faithful_id, sourceRecordId: row.id })} title={t('sacraments.cert_generate', 'Generate Certificate')} className="text-xs px-2 py-1 h-7">
+          <Award className="w-3.5 h-3.5 mr-1 text-brand-600" />{t('sacraments.tab_certificates', 'Certificate')}
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setAmendmentRecord(row)} title={t('sacraments.amendment_request_title', 'Request correction')} className="text-xs px-2 py-1 h-7">
+          {t('sacraments.amendment_request_short', 'Correct')}
+        </Button>
+      </div>
       ),
     },
   ];
@@ -80,7 +80,12 @@ export const BaptismRegisterPage: React.FC = () => {
       <CertificateGeneratorModal
         isOpen={certModalProps.isOpen}
         onClose={() => setCertModalProps({ isOpen: false })}
+        parishId={activeParishId}
+        faithfulId={certModalProps.faithfulId}
+        sourceRecordId={certModalProps.sourceRecordId}
+        sacramentType="BAPTISM"
       />
+      <AmendmentRequestModal isOpen={Boolean(amendmentRecord)} onClose={() => setAmendmentRecord(null)} record={amendmentRecord} />
     </div>
   );
 };

@@ -25,6 +25,9 @@ const ForgotPasswordPage = lazy(() =>
 const ResetPasswordPage = lazy(() =>
   import('./modules/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage }))
 );
+const VerifyCertificatePage = lazy(() =>
+  import('./pages/VerifyCertificatePage').then((m) => ({ default: m.VerifyCertificatePage }))
+);
 const DashboardPage = lazy(() =>
   import('./modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage }))
 );
@@ -70,6 +73,12 @@ const FinancePage = lazy(() =>
 const MinistriesPage = lazy(() =>
   import('./modules/ministries/MinistriesPage').then((m) => ({ default: m.MinistriesPage }))
 );
+const GovernancePage = lazy(() =>
+  import('./modules/governance/GovernancePage').then((m) => ({ default: m.GovernancePage }))
+);
+const SurveysPage = lazy(() =>
+  import('./modules/surveys/SurveysPage').then((m) => ({ default: m.SurveysPage }))
+);
 const LandAssetsPage = lazy(() =>
   import('./modules/land_assets/LandAssetsPage').then((m) => ({ default: m.LandAssetsPage }))
 );
@@ -100,6 +109,7 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/verify/:token" element={<VerifyCertificatePage />} />
 
               {/* Protected routes */}
               <Route element={<ProtectedRoute />}>
@@ -119,6 +129,8 @@ export default function App() {
                   <Route path="/liturgy" element={<LiturgyPage />} />
                   <Route path="/finance" element={<FinancePage />} />
                   <Route path="/ministries" element={<MinistriesPage />} />
+                  <Route path="/governance" element={<GovernancePage />} />
+                  <Route path="/surveys" element={<SurveysPage />} />
                   <Route path="/land-assets" element={<LandAssetsPage />} />
                   <Route path="/archive" element={<ArchivePage />} />
                   <Route path="/statistics" element={<StatisticsPage />} />

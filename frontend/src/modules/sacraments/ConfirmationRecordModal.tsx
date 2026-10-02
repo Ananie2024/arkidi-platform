@@ -5,6 +5,7 @@ import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { domainApi } from '../../core/api/domain';
+import { FaithfulSelect } from './FaithfulSelect';
 
 interface ConfirmationRecordModalProps {
   isOpen: boolean;
@@ -37,8 +38,8 @@ export const ConfirmationRecordModal: React.FC<ConfirmationRecordModalProps> = (
       queryClient.invalidateQueries({ queryKey: ['confirmations'] });
       onClose();
     },
-    onError: (err: any) => {
-      setErrorMsg(err?.response?.data?.message || err.message || 'Failed to record confirmation');
+    onError: (err: unknown) => {
+      setErrorMsg(err instanceof Error ? err.message : t('sacraments.confirmation_error', 'Failed to record confirmation'));
     },
   });
 
@@ -67,13 +68,7 @@ export const ConfirmationRecordModal: React.FC<ConfirmationRecordModalProps> = (
           </div>
         )}
 
-        <Input
-          label={t('sacraments.cert_faithful_label', 'Faithful ID / Parishioner ID')}
-          value={faithfulId}
-          onChange={(e) => setFaithfulId(e.target.value)}
-          placeholder="UUID or Faithful ID"
-          required
-        />
+        <FaithfulSelect parishId={parishId} value={faithfulId} onChange={setFaithfulId} label={t('sacraments.cert_faithful_label', 'Parishioner')} required />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Input

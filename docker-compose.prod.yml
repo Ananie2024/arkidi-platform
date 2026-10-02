@@ -1,17 +1,20 @@
 # Arkidi Platform — Production Compose Overlay
 # Use with the base file:
-#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#   docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
 # Requires .env.production (template: .env.production.example):
 #   POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD,
+#   DATABASE_USER, DATABASE_PASSWORD,
 #   REDIS_PASSWORD, SECRET_KEY, CORS_ORIGINS,
 #   SERVER_NAME, SSL_CERT_PATH, SSL_KEY_PATH,
-#   BACKUP_KEEP_DAYS, BACKUP_INTERVAL_HOURS
+#   BACKUP_KEEP_DAYS
 services:
   postgres:
     image: postgis/postgis:16-3.4
     container_name: arkidi-postgres-prod
     restart: always
+    # Compose inherits ports from docker-compose.yml unless explicitly reset.
+    ports: !reset []
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -26,10 +29,39 @@ services:
     networks:
       - arkidi-prod-network
 
+  database-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arkidi-database-init-prod
+    restart: "no"
+    command: ["bash", "scripts/provision_app_role.sh"]
+    environment:
+      ENVIRONMENT: production
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB}
+      DATABASE_USER: ${DATABASE_USER:?Set DATABASE_USER to the non-superuser application role}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set the application database password}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_ADMIN_USER: ${POSTGRES_USER}
+      DB_ADMIN_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_ROLE: ${DATABASE_USER:?Set DATABASE_USER to the non-superuser application role}
+      APP_ROLE_PASSWORD: ${DATABASE_PASSWORD:?Set the application database password}
+      RUN_MIGRATIONS: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - arkidi-prod-network
+
   redis:
     image: redis:7-alpine
     container_name: arkidi-redis-prod
     restart: always
+    ports: !reset []
     # Fail closed: REDIS_PASSWORD is required in production.
     command: >
       sh -c 'if [ -z "$REDIS_PASSWORD" ]; then echo "REDIS_PASSWORD required" >&2; exit 1; fi;
@@ -52,6 +84,7 @@ services:
       dockerfile: Dockerfile
     container_name: arkidi-backend-prod
     restart: always
+    ports: !reset []
     # Default container command is uvicorn (see docker-entrypoint.sh); it also waits
     # for Postgres then runs `alembic upgrade head` automatically.
     environment:
@@ -59,11 +92,12 @@ services:
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: ${POSTGRES_DB}
-      DATABASE_USER: ${POSTGRES_USER}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_USER: ${DATABASE_USER:?Set DATABASE_USER to the non-superuser application role}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set the application database password}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       CORS_ORIGINS: ${CORS_ORIGINS}
+      PUBLIC_FRONTEND_URL: ${PUBLIC_FRONTEND_URL:-https://app.arkidi.org}
       # Used by the default uvicorn target in docker-entrypoint.sh
       BACKEND_WORKERS: ${BACKEND_WORKERS:-4}
     volumes:
@@ -71,6 +105,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      database-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     healthcheck:
@@ -94,18 +130,22 @@ services:
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: ${POSTGRES_DB}
-      DATABASE_USER: ${POSTGRES_USER}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_ADMIN_USER: ${DATABASE_ADMIN_USER:-postgres}
+      DATABASE_USER: ${DATABASE_USER:?Set DATABASE_USER to the non-superuser application role}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set the application database password}
+      DATABASE_ADMIN_USER: ${DATABASE_ADMIN_USER:-${POSTGRES_USER}}
       DATABASE_ADMIN_PASSWORD: ${DATABASE_ADMIN_PASSWORD:-${POSTGRES_PASSWORD}}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
       # Backup & cloud config (consumed by app/tasks/backups.py + backup.sh)
       BACKUP_BASE_PATH: ${BACKUP_BASE_PATH:-/app/backups}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
       GCS_ENABLED: ${GCS_ENABLED:-false}
+      GCS_PROJECT_ID: ${GCS_PROJECT_ID:-}
       GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
       GCS_CREDENTIALS_PATH: ${GCS_CREDENTIALS_PATH:-}
       B2_ENABLED: ${B2_ENABLED:-false}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:-}
+      B2_APPLICATION_KEY: ${B2_APPLICATION_KEY:-}
       B2_BUCKET_NAME: ${B2_BUCKET_NAME:-}
       # Alerting (consumed by app/utils/alerts.py)
       SMTP_SERVER: ${SMTP_SERVER:-}
@@ -119,10 +159,15 @@ services:
     volumes:
       - backend_prod_uploads:/app/file-storage
       - backend_prod_backups:/app/backups
+      - ./secrets:/app/secrets:ro
     depends_on:
       postgres:
         condition: service_healthy
+      database-init:
+        condition: service_completed_successfully
       redis:
+        condition: service_healthy
+      backend:
         condition: service_healthy
     networks:
       - arkidi-prod-network
@@ -139,35 +184,19 @@ services:
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: ${POSTGRES_DB}
-      DATABASE_USER: ${POSTGRES_USER}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_ADMIN_USER: ${DATABASE_ADMIN_USER:-postgres}
-      DATABASE_ADMIN_PASSWORD: ${DATABASE_ADMIN_PASSWORD:-${POSTGRES_PASSWORD}}
+      DATABASE_USER: ${DATABASE_USER:?Set DATABASE_USER to the non-superuser application role}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set the application database password}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       SECRET_KEY: ${SECRET_KEY}
-      # Backup & cloud config (consumed by app/tasks/backups.py + backup.sh)
-      BACKUP_BASE_PATH: ${BACKUP_BASE_PATH:-/app/backups}
-      GCS_ENABLED: ${GCS_ENABLED:-false}
-      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-}
-      GCS_CREDENTIALS_PATH: ${GCS_CREDENTIALS_PATH:-}
-      B2_ENABLED: ${B2_ENABLED:-false}
-      B2_BUCKET_NAME: ${B2_BUCKET_NAME:-}
-      # Alerting (consumed by app/utils/alerts.py)
-      SMTP_SERVER: ${SMTP_SERVER:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
-      EMAIL_SENDER: ${EMAIL_SENDER:-}
-      ALERT_RECIPIENTS: ${ALERT_RECIPIENTS:-}
       RUN_MIGRATIONS: "false"
-    volumes:
-      - backend_prod_uploads:/app/file-storage
-      - backend_prod_backups:/app/backups
     depends_on:
       postgres:
         condition: service_healthy
+      database-init:
+        condition: service_completed_successfully
       redis:
+        condition: service_healthy
+      backend:
         condition: service_healthy
     networks:
       - arkidi-prod-network

@@ -5,6 +5,7 @@ import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { domainApi } from '../../core/api/domain';
+import { FaithfulSelect } from './FaithfulSelect';
 
 interface MatrimonyRecordModalProps {
   isOpen: boolean;
@@ -40,8 +41,8 @@ export const MatrimonyRecordModal: React.FC<MatrimonyRecordModalProps> = ({
       queryClient.invalidateQueries({ queryKey: ['matrimonies'] });
       onClose();
     },
-    onError: (err: any) => {
-      setErrorMsg(err?.response?.data?.message || err.message || 'Failed to record marriage');
+    onError: (err: unknown) => {
+      setErrorMsg(err instanceof Error ? err.message : t('sacraments.matrimony_error', 'Failed to record marriage'));
     },
   });
 
@@ -74,20 +75,8 @@ export const MatrimonyRecordModal: React.FC<MatrimonyRecordModalProps> = ({
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label={t('sacraments.col_groom_id', 'Groom Faithful ID (Umugabo)')}
-            value={groomFaithfulId}
-            onChange={(e) => setGroomFaithfulId(e.target.value)}
-            placeholder="UUID of Groom"
-            required
-          />
-          <Input
-            label={t('sacraments.col_bride_id', 'Bride Faithful ID (Umugore)')}
-            value={brideFaithfulId}
-            onChange={(e) => setBrideFaithfulId(e.target.value)}
-            placeholder="UUID of Bride"
-            required
-          />
+          <FaithfulSelect parishId={parishId} value={groomFaithfulId} onChange={setGroomFaithfulId} label={t('sacraments.col_groom_id', 'Groom (Umugabo)')} required />
+          <FaithfulSelect parishId={parishId} value={brideFaithfulId} onChange={setBrideFaithfulId} label={t('sacraments.col_bride_id', 'Bride (Umugore)')} required />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

@@ -9,6 +9,8 @@ export type CanonicalStatus =
   | 'CLERGY_OR_RELIGIOUS'
   | 'DECEASED';
 
+export type FamilyRole = 'HEAD' | 'SPOUSE' | 'CHILD' | 'DEPENDENT' | 'OTHER';
+
 export interface Faithful {
   id: string;
   registration_number: string;
@@ -23,6 +25,7 @@ export interface Faithful {
   canonical_status: CanonicalStatus;
   parish_id: string;
   family_id?: string | null;
+  family_role?: FamilyRole;
   scc_id?: string | null;
   created_at: string;
 }

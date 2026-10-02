@@ -71,6 +71,8 @@ docker-compose.override.yml
 
 # TLS certificates (bind-mounted at deploy time; never commit real certs)
 tls/certs/
+# Local cloud credentials and deployment secrets; inject them at deploy time.
+/secrets/
 # Local database dumps / backups
 backups/
 *.dump

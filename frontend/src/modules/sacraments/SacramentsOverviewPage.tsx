@@ -3,10 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/common/Button';
 import { Scroll, Heart, Award, Shield, FileCheck } from 'lucide-react';
 import { CertificateGeneratorModal } from './CertificateGeneratorModal';
+import { useActiveParish } from '../../core/hooks/useActiveParish';
+import { AmendmentReviewQueue } from './AmendmentReviewQueue';
 
 export const SacramentsOverviewPage: React.FC = () => {
   const { t } = useTranslation();
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+  const { activeParishId } = useActiveParish();
 
   const sacramentCards = [
     { title: t('sacraments.card_baptism'), desc: t('sacraments.card_baptism_desc'), link: '/sacraments/baptism', icon: Scroll, color: 'text-blue-600 bg-blue-50' },
@@ -22,7 +25,7 @@ export const SacramentsOverviewPage: React.FC = () => {
           <h1 className="text-xl font-bold text-gray-900">{t('sacraments.overview_title')}</h1>
           <p className="text-xs text-gray-500 mt-0.5">{t('sacraments.overview_subtitle')}</p>
         </div>
-        <Button size="sm" onClick={() => setIsCertModalOpen(true)}>
+        <Button size="sm" onClick={() => setIsCertModalOpen(true)} disabled={!activeParishId}>
           <FileCheck className="w-4 h-4 mr-1.5" /> {t('sacraments.issue_qr')}
         </Button>
       </div>
@@ -42,7 +45,9 @@ export const SacramentsOverviewPage: React.FC = () => {
         })}
       </div>
 
-      <CertificateGeneratorModal isOpen={isCertModalOpen} onClose={() => setIsCertModalOpen(false)} />
+      <AmendmentReviewQueue />
+
+      <CertificateGeneratorModal isOpen={isCertModalOpen} onClose={() => setIsCertModalOpen(false)} parishId={activeParishId} />
     </div>
   );
 };

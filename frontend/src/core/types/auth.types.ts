@@ -1,6 +1,7 @@
 export type UserRole =
   | 'SUPER_ADMIN'
   | 'CHANCELLOR'
+  | 'ARCHBISHOP'
   | 'ECONOMO'
   | 'DEAN'
   | 'PARISH_PRIEST'

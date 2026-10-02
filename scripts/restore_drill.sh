@@ -15,7 +15,7 @@
 #      counts match the source) and the file-storage round-tripped.
 #   5. Drops the scratch database and removes the drill artifacts.
 #
-# Requires: psql, pg_dump, pg_restore, tar, and a DB role with CREATEDB.
+# Requires: psql, pg_dump, pg_restore, tar, and a DBA role with CREATEDB.
 #
 # PostGIS provisioning: a freshly created scratch database has NO PostGIS, and a
 # non-superuser application role cannot `CREATE EXTENSION postgis` (PostGIS is a
@@ -47,14 +47,13 @@ TS="$(date +%Y%m%d_%H%M%S)"
 SCRATCH_DB="arkidi_restore_drill_${TS}"
 
 export PGCLIENTENCODING=UTF8
-PSQL=(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}")
 ADMIN_PSQL=(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_ADMIN_USER}")
 
 cleanup() {
     set +e
-    PGPASSWORD="${DB_PASSWORD}" "${PSQL[@]}" -d ${DB_NAME} -v ON_ERROR_STOP=0 \
+    PGPASSWORD="${DB_ADMIN_PASSWORD}" "${ADMIN_PSQL[@]}" -d "${DB_NAME}" -v ON_ERROR_STOP=0 \
         -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${SCRATCH_DB}' AND pid<>pg_backend_pid()" >/dev/null 2>&1
-    PGPASSWORD="${DB_PASSWORD}" "${PSQL[@]}" -d ${DB_NAME} -v ON_ERROR_STOP=0 -c "DROP DATABASE IF EXISTS ${SCRATCH_DB}" >/dev/null 2>&1
+    PGPASSWORD="${DB_ADMIN_PASSWORD}" "${ADMIN_PSQL[@]}" -d "${DB_NAME}" -v ON_ERROR_STOP=0 -c "DROP DATABASE IF EXISTS ${SCRATCH_DB}" >/dev/null 2>&1
     rm -rf "${WORKDIR}"
     echo "[drill] Cleaned up scratch DB '${SCRATCH_DB}' and ${WORKDIR}."
 }
@@ -69,7 +68,7 @@ DUMP="$(ls -1t "${BACKUP_DIR}"/arkidi_[0-9]*.dump | head -n1)"
 TARBALL="$(ls -1t "${BACKUP_DIR}"/arkidi_file_storage_[0-9]*.tar.gz 2>/dev/null | head -n1 || true)"
 
 echo "[drill] STEP 2/4  create scratch DB '${SCRATCH_DB}'"
-PGPASSWORD="${DB_PASSWORD}" "${PSQL[@]}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 -c "CREATE DATABASE ${SCRATCH_DB}"
+PGPASSWORD="${DB_ADMIN_PASSWORD}" "${ADMIN_PSQL[@]}" -d "${DB_NAME}" -v ON_ERROR_STOP=1 -c "CREATE DATABASE ${SCRATCH_DB}"
 
 echo "[drill] STEP 2b/4  enable PostGIS in scratch DB '${SCRATCH_DB}' (via admin role)"
 # A fresh database has no PostGIS, and a non-superuser role cannot create the
