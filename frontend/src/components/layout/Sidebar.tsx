@@ -17,6 +17,7 @@ import {
   Vote,
 } from 'lucide-react';
 import { useUiStore } from '../../core/store/uiStore';
+import archdioceseLogo from '../../../archidiocese-logo.png';
 
 export const Sidebar: React.FC = () => {
   const { t } = useTranslation();
@@ -41,15 +42,13 @@ export const Sidebar: React.FC = () => {
   if (!sidebarOpen) return null;
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 min-h-[calc(100vh-4rem)]">
+    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 min-h-[calc(100vh-4rem)] shadow-[4px_0_18px_rgba(16,43,69,0.05)]">
       {/* Brand Header */}
-      <div className="p-4 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-          {'\u2629'}
-        </div>
+      <div className="p-4 border-b border-gold-300/70 bg-gradient-to-br from-white to-brand-50 flex items-center gap-3">
+        <img src={archdioceseLogo} alt="" className="h-12 w-12 shrink-0 object-contain" />
         <div>
           <div className="font-bold text-gray-900 text-sm tracking-wide">{t('layout.brand')}</div>
-          <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">
+          <div className="text-[10px] text-brand-600 font-semibold uppercase tracking-wider">
             {t('layout.archdiocese')}
           </div>
         </div>
@@ -66,8 +65,8 @@ export const Sidebar: React.FC = () => {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-brand-50 text-brand-600 font-semibold border-r-4 border-brand-500'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-brand-50 text-brand-800 font-semibold border-l-4 border-gold-500 shadow-sm'
+                    : 'text-gray-600 hover:bg-brand-50/70 hover:text-brand-800'
                 }`
               }
             >

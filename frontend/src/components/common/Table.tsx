@@ -28,14 +28,14 @@ export function Table<T extends { id?: string | number }>({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200">
+    <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
       <table className="min-w-full divide-y divide-gray-200 bg-white text-sm">
-        <thead className="bg-gray-50">
+        <thead className="bg-gradient-to-r from-brand-50 to-[#fffbed]">
           <tr>
             {columns.map((col, idx) => (
               <th
                 key={idx}
-                className={`px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs ${col.className || ''}`}
+                className={`px-4 py-3 text-left font-semibold text-brand-800 uppercase tracking-wider text-[11px] ${col.className || ''}`}
               >
                 {col.header}
               </th>
@@ -51,7 +51,7 @@ export function Table<T extends { id?: string | number }>({
             </tr>
           ) : (
             data.map((row, rowIdx) => (
-              <tr key={row.id || rowIdx} className="hover:bg-gray-50 transition-colors">
+              <tr key={row.id || rowIdx} className="hover:bg-brand-50/60 transition-colors">
                 {columns.map((col, colIdx) => (
                   <td key={colIdx} className="px-4 py-3 text-gray-700 whitespace-nowrap">
                     {typeof col.accessor === 'function'

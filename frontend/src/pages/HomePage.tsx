@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../core/hooks/useAuth';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
+import archdioceseLogo from '../../archidiocese-logo.png';
 
 // ---------------------------------------------------------------------------
 // Public, read-only landing page for ordinary (unauthenticated) viewers.
@@ -63,14 +64,12 @@ export const HomePage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f5f8fc]">
       {/* Top navigation bar */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <header className="bg-white/95 border-b border-[#dce6f0] sticky top-0 z-10 shadow-sm backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-brand-500 text-white text-lg font-bold shadow-sm">
-              {'\u2629'}
-            </div>
+            <img src={archdioceseLogo} alt="" className="h-12 w-12 object-contain" />
             <div>
               <h1 className="text-sm font-bold text-gray-900 leading-tight">{t('home.title')}</h1>
               <p className="text-[11px] text-gray-500 leading-tight">
@@ -105,10 +104,15 @@ export const HomePage: React.FC = () => {
 
       {/* Hero */}
       <main>
-        <section className="bg-gradient-to-b from-brand-50 to-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-brand-500 text-white text-4xl font-bold mb-6 shadow-lg">
-              {'\u2629'}
+        <section className="relative overflow-hidden border-b border-brand-100 bg-gradient-to-br from-[#eaf3fc] via-white to-[#fff9e8]">
+          <div className="pointer-events-none absolute -right-20 -top-28 h-96 w-96 rounded-full border-[48px] border-gold-100/60" />
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
+            <div className="mx-auto mb-6 flex h-36 w-36 items-center justify-center rounded-full border border-gold-300/70 bg-white/80 p-4 shadow-[0_18px_50px_rgba(16,43,69,0.12)] ring-8 ring-white/60">
+              <img
+                src={archdioceseLogo}
+                alt="Coat of arms of the Archdiocese of Kigali"
+                className="h-full w-full object-contain"
+              />
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-4">
               {t('home.welcome_title')}
@@ -165,7 +169,8 @@ export const HomePage: React.FC = () => {
 
         {/* Staff / admin call to action */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-          <div className="rounded-2xl bg-gray-900 text-white p-8 sm:p-10 text-center">
+          <div className="relative overflow-hidden rounded-2xl border border-brand-700 bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-8 sm:p-10 text-center shadow-xl shadow-brand-900/15">
+            <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full border-[32px] border-gold-500/15" />
             <h3 className="text-xl font-bold mb-2">{t('home.cta_title')}</h3>
             <p className="text-sm text-gray-300 max-w-xl mx-auto mb-6">
               {t('home.cta_body')}

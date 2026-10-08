@@ -10,6 +10,7 @@ import { useAuth } from '../../core/hooks/useAuth';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { LanguageSwitcher } from '../../components/common/LanguageSwitcher';
+import archdioceseLogo from '../../../archidiocese-logo.png';
 
 type LoginFormData = {
   username_or_email: string;
@@ -63,16 +64,18 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eaf3fc] via-[#f7f9fc] to-[#fff9e8] px-4 py-10">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl shadow-brand-900/10 border border-white p-8 ring-1 ring-brand-100">
         <div className="flex justify-end mb-4">
           <LanguageSwitcher />
         </div>
 
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-500 text-white text-3xl font-bold mb-4 shadow-md">
-            {'\u2629'}
-          </div>
+          <img
+            src={archdioceseLogo}
+            alt="Coat of arms of the Archdiocese of Kigali"
+            className="mx-auto mb-4 h-24 w-24 object-contain"
+          />
           <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{t('auth.login.title')}</h2>
           <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider font-medium">
             {t('auth.login.subtitle')}

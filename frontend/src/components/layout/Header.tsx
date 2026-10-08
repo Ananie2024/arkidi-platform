@@ -12,17 +12,17 @@ export const Header: React.FC = () => {
   const { toggleSidebar } = useUiStore();
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+    <header className="relative h-16 bg-gradient-to-r from-brand-900 via-brand-800 to-brand-700 border-b-[3px] border-gold-500 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-md shadow-brand-900/10">
       <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 focus:outline-none"
+          className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 focus:outline-none"
         >
           <Menu className="w-5 h-5" />
         </button>
         <div className="hidden sm:block">
-          <h1 className="text-sm font-semibold text-gray-800">{t('layout.archdiocese')}</h1>
-          <p className="text-xs text-gray-500">{t('layout.header_subtitle')}</p>
+          <h1 className="text-sm font-semibold text-white">{t('layout.archdiocese')}</h1>
+          <p className="text-xs text-blue-100">{t('layout.header_subtitle')}</p>
         </div>
       </div>
 
@@ -30,23 +30,23 @@ export const Header: React.FC = () => {
         <ParishSelector />
         <LanguageSwitcher />
 
-        <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 relative">
+        <button className="p-2 text-blue-100 hover:text-white rounded-lg hover:bg-white/10 relative transition-colors">
           <Bell className="w-5 h-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full"></span>
         </button>
 
-        <div className="flex items-center gap-3 pl-2 border-l border-gray-200">
-          <div className="w-8 h-8 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-500 font-semibold text-xs">
+        <div className="flex items-center gap-3 pl-2 border-l border-white/20">
+          <div className="w-8 h-8 rounded-full bg-white/10 border border-gold-300/70 flex items-center justify-center text-gold-100 font-semibold text-xs">
             {user?.full_name?.charAt(0) || user?.username?.charAt(0) || <UserIcon className="w-4 h-4" />}
           </div>
           <div className="hidden md:block text-left">
-            <div className="text-xs font-semibold text-gray-900">{user?.full_name || user?.username || t('layout.user')}</div>
-            <div className="text-[10px] text-brand-500 font-medium">{user?.role || t('layout.guest')}</div>
+            <div className="text-xs font-semibold text-white">{user?.full_name || user?.username || t('layout.user')}</div>
+            <div className="text-[10px] text-gold-200 font-medium">{user?.role || t('layout.guest')}</div>
           </div>
           <button
             onClick={logout}
             title={t('layout.sign_out')}
-            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors ml-1"
+            className="p-1.5 text-blue-100 hover:text-white rounded-lg hover:bg-white/10 transition-colors ml-1"
           >
             <LogOut className="w-4 h-4" />
           </button>
