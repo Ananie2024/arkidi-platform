@@ -1,4 +1,7 @@
 export const API_ENDPOINTS = {
+  public: {
+    overview: '/public/overview',
+  },
   auth: {
     login: '/auth/login',
     me: '/auth/me',

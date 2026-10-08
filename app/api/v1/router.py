@@ -18,6 +18,7 @@ from app.api.v1.land import router as land_router
 from app.api.v1.liturgy import router as liturgy_router
 from app.api.v1.ministries import router as ministries_router
 from app.api.v1.parishes import router as parish_router
+from app.api.v1.public import router as public_router
 from app.api.v1.sacraments import router as sacraments_router
 from app.api.v1.statistics import router as statistics_router
 from app.api.v1.surveys import router as surveys_router
@@ -29,6 +30,7 @@ api_v1_router.include_router(audit_router)
 api_v1_router.include_router(auth_router)
 api_v1_router.include_router(deanery_router)
 api_v1_router.include_router(parish_router)
+api_v1_router.include_router(public_router)
 api_v1_router.include_router(faithful_router)
 api_v1_router.include_router(sacraments_router)
 api_v1_router.include_router(clergy_router)

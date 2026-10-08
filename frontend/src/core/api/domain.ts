@@ -229,6 +229,22 @@ export interface IndicatorConfigView {
   scope_mode: string;
 }
 
+export interface PublicOverview {
+  statistics: {
+    deaneries: number;
+    parishes: number;
+    active_priests: number;
+    registered_faithful: number;
+  };
+  organigram: {
+    name: string;
+    deaneries: Array<{
+      name: string;
+      parishes: string[];
+    }>;
+  };
+}
+
 export interface IndicatorResult {
   key: string;
   title: string;
@@ -324,6 +340,9 @@ async function getData<T>(url: string, params?: Record<string, unknown>): Promis
 }
 
 export const domainApi = {
+  // Public diocesan overview
+  getPublicOverview: () => getData<PublicOverview>(API_ENDPOINTS.public.overview),
+
   // Geography
   listDeaneries: () => getData<Deanery[]>(API_ENDPOINTS.geography.deaneries),
   listParishes: (deaneryId?: string | null) => getData<Parish[]>(API_ENDPOINTS.geography.parishes, deaneryId ? { deanery_id: deaneryId } : undefined),
