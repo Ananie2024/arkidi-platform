@@ -32,10 +32,14 @@ class IntentionService:
     async def register_intention(self, data: MassIntentionCreate) -> MassIntentionResponse:
         intention = await self.repo.create_intention(data)
         record_audit_event(
-            self.repo.db, action="MASS_INTENTION_REGISTERED", entity_name="mass_intention",
+            self.repo.db,
+            action="MASS_INTENTION_REGISTERED",
+            entity_name="mass_intention",
             entity_id=intention.id,
-            details={"parish_id": str(intention.parish_id),
-                     "scheduled_date": intention.scheduled_date.isoformat(),
-                     "intention_type": intention.intention_type.value},
+            details={
+                "parish_id": str(intention.parish_id),
+                "scheduled_date": intention.scheduled_date.isoformat(),
+                "intention_type": intention.intention_type.value,
+            },
         )
         return MassIntentionResponse.model_validate(intention)

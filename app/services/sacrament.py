@@ -69,36 +69,75 @@ SACRAMENT_DISPLAY_NAMES = {
 
 AMENDABLE_FIELDS = {
     SacramentType.BAPTISM: {
-        "registry_year", "volume_number", "page_number", "act_number", "celebration_date",
-        "minister_name", "godfather_name", "godmother_name",
+        "registry_year",
+        "volume_number",
+        "page_number",
+        "act_number",
+        "celebration_date",
+        "minister_name",
+        "godfather_name",
+        "godmother_name",
     },
     SacramentType.CONFIRMATION: {
-        "registry_year", "volume_number", "page_number", "act_number", "celebration_date",
-        "administering_bishop_or_vicar", "sponsor_name",
+        "registry_year",
+        "volume_number",
+        "page_number",
+        "act_number",
+        "celebration_date",
+        "administering_bishop_or_vicar",
+        "sponsor_name",
     },
     SacramentType.MATRIMONY: {
-        "registry_year", "volume_number", "page_number", "act_number", "celebration_date",
-        "priest_celebrant", "witness_1_name", "witness_2_name",
+        "registry_year",
+        "volume_number",
+        "page_number",
+        "act_number",
+        "celebration_date",
+        "priest_celebrant",
+        "witness_1_name",
+        "witness_2_name",
         "dispensations_or_canonical_notes",
     },
     SacramentType.FIRST_COMMUNION: {
-        "registry_year", "volume_number", "page_number", "act_number", "celebration_date",
-        "celebrant_name", "catechetical_program_name", "sponsor_name",
+        "registry_year",
+        "volume_number",
+        "page_number",
+        "act_number",
+        "celebration_date",
+        "celebrant_name",
+        "catechetical_program_name",
+        "sponsor_name",
     },
     SacramentType.HOLY_ORDERS: {
-        "page_number", "act_number", "ordination_date", "order_type", "ordaining_prelate",
-        "diocese_of_incardination", "permanent",
+        "page_number",
+        "act_number",
+        "ordination_date",
+        "order_type",
+        "ordaining_prelate",
+        "diocese_of_incardination",
+        "permanent",
     },
     SacramentType.RELIGIOUS_PROFESSION: {
-        "page_number", "act_number", "profession_date", "profession_type",
-        "congregation_or_institute", "superior_name",
+        "page_number",
+        "act_number",
+        "profession_date",
+        "profession_type",
+        "congregation_or_institute",
+        "superior_name",
     },
     SacramentType.ANOINTING_OF_THE_SICK: {
-        "anointing_date", "minister_name", "place_of_anointing", "notes",
+        "anointing_date",
+        "minister_name",
+        "place_of_anointing",
+        "notes",
     },
     SacramentType.CHRISTIAN_FUNERAL: {
-        "date_of_death", "funeral_date", "burial_site", "officiating_priest",
-        "last_sacraments_received", "notes",
+        "date_of_death",
+        "funeral_date",
+        "burial_site",
+        "officiating_priest",
+        "last_sacraments_received",
+        "notes",
     },
 }
 
@@ -109,7 +148,7 @@ def _canonical_value(value: Any) -> str:
     if hasattr(value, "value"):
         return str(value.value)
     if hasattr(value, "isoformat"):
-        return value.isoformat()
+        return str(value.isoformat())
     return str(value)
 
 
@@ -143,7 +182,11 @@ class SacramentsService:
         reference_fields = (
             ("registry_year", "volume_number", "page_number", "act_number")
             if hasattr(record, "registry_year")
-            else (("register_book", "page_number", "act_number") if hasattr(record, "register_book") else ())
+            else (
+                ("register_book", "page_number", "act_number")
+                if hasattr(record, "register_book")
+                else ()
+            )
         )
         self.db.add(
             AuditLog(
@@ -221,7 +264,9 @@ class SacramentsService:
         self, data: FirstCommunionCreate, created_by_user_id: uuid.UUID | None = None
     ) -> FirstCommunionResponse:
         await self._ensure_register_reference_available(
-            FirstCommunionRecord, data, ("parish_id", "registry_year", "volume_number", "act_number")
+            FirstCommunionRecord,
+            data,
+            ("parish_id", "registry_year", "volume_number", "act_number"),
         )
         record = await self.repo.create_first_communion(data)
         self._audit_record_created(record, SacramentType.FIRST_COMMUNION, created_by_user_id)
@@ -266,9 +311,7 @@ class SacramentsService:
     async def issue_certificate(
         self, req: CertificateRequest, issued_by_user_id: uuid.UUID
     ) -> CertificateResponse:
-        source = await self.repo.get_record_by_type_and_id(
-            req.sacrament_type, req.source_record_id
-        )
+        source = await self.repo.get_record_by_type_and_id(req.sacrament_type, req.source_record_id)
         person_fields = {
             SacramentType.BAPTISM: ("faithful_id",),
             SacramentType.FIRST_COMMUNION: ("faithful_id",),
@@ -280,23 +323,16 @@ class SacramentsService:
             SacramentType.CHRISTIAN_FUNERAL: ("deceased_faithful_id",),
         }
         linked_person = source and any(
-            getattr(source, field) == req.faithful_id
-            for field in person_fields[req.sacrament_type]
+            getattr(source, field) == req.faithful_id for field in person_fields[req.sacrament_type]
         )
-        if (
-            not source
-            or source.parish_id != req.parish_id
-            or not linked_person
-        ):
+        if not source or source.parish_id != req.parish_id or not linked_person:
             raise ValidationException(
                 "A certificate must refer to a matching sacramental register entry.",
                 message_key="errors.sacramental_record_required_for_certificate",
             )
         verification_token = secrets.token_urlsafe(32)
         cert_num = f"CERT-{req.sacrament_type.value[:3]}-{uuid.uuid4().hex[:8].upper()}"
-        verification_url = (
-            f"{settings.PUBLIC_FRONTEND_URL.rstrip('/')}/verify/{verification_token}"
-        )
+        verification_url = f"{settings.PUBLIC_FRONTEND_URL.rstrip('/')}/verify/{verification_token}"
 
         issue = CertificateIssue(
             certificate_number=cert_num,
@@ -369,8 +405,11 @@ class SacramentsService:
                         f"{source.register_book} / {source.page_number} / {source.act_number}"
                     )
                 for date_field in (
-                    "celebration_date", "ordination_date", "profession_date",
-                    "anointing_date", "funeral_date",
+                    "celebration_date",
+                    "ordination_date",
+                    "profession_date",
+                    "anointing_date",
+                    "funeral_date",
                 ):
                     if hasattr(source, date_field):
                         details["Celebration date"] = getattr(source, date_field).isoformat()
@@ -515,9 +554,16 @@ class SacramentsService:
                 if field_name not in AMENDABLE_FIELDS[amendment.sacrament_type]:
                     raise ValidationException(
                         "errors.field_not_valid",
-                        message_params={"field": field_name, "type": amendment.sacrament_type.value},
+                        message_params={
+                            "field": field_name,
+                            "type": amendment.sacrament_type.value,
+                        },
                     )
-                if not isinstance(change_val, dict) or "old" not in change_val or "new" not in change_val:
+                if (
+                    not isinstance(change_val, dict)
+                    or "old" not in change_val
+                    or "new" not in change_val
+                ):
                     raise ValidationException(
                         "errors.amendment_change_requires_old_and_new",
                         message_params={"field": field_name},

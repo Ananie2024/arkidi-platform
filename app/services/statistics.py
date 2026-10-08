@@ -43,7 +43,11 @@ class StatisticsService:
         await self.repo.lock_parish_reporting_scope(data.parish_id)
         existing = await self.repo.get_by_parish_and_year(data.parish_id, data.report_year)
         previous = (
-            {field: getattr(existing, field) for field in data.model_dump() if field not in {"parish_id", "report_year"}}
+            {
+                field: getattr(existing, field)
+                for field in data.model_dump()
+                if field not in {"parish_id", "report_year"}
+            }
             if existing is not None
             else None
         )
@@ -57,7 +61,11 @@ class StatisticsService:
         record_audit_event(
             self.db,
             user_id=current_user_id,
-            action="PARISH_STATISTIC_CORRECTED" if previous is not None else "PARISH_STATISTIC_SUBMITTED",
+            action=(
+                "PARISH_STATISTIC_CORRECTED"
+                if previous is not None
+                else "PARISH_STATISTIC_SUBMITTED"
+            ),
             entity_name="annual_parish_statistic",
             entity_id=stat.id,
             details={
@@ -84,21 +92,34 @@ class StatisticsService:
             "baptisms": (report.infant_baptisms + report.adult_baptisms) if report else None,
             "confirmations": report.confirmations if report else None,
             "first_communions": report.first_communions if report else None,
-            "marriages": (report.marriages_both_catholic + report.marriages_mixed_religion) if report else None,
+            "marriages": (
+                (report.marriages_both_catholic + report.marriages_mixed_religion)
+                if report
+                else None
+            ),
             "christian_funerals": report.christian_funerals if report else None,
         }
-        return [
-            ParishReportReconciliation(
-                parish_id=parish_id,
-                report_year=year,
-                field=field,
-                submitted_count=submitted[field],
-                register_count=register_total,
-                difference=(submitted[field] - register_total) if submitted[field] is not None else None,
-                status=("NO_RETURN" if report is None else "MATCH" if submitted[field] == register_total else "MISMATCH"),
+        reconciliations = []
+        for field, register_total in register_totals.items():
+            submitted_count = submitted[field]
+            difference = (submitted_count - register_total) if submitted_count is not None else None
+            status = (
+                "NO_RETURN"
+                if report is None
+                else "MATCH" if submitted_count == register_total else "MISMATCH"
             )
-            for field, register_total in register_totals.items()
-        ]
+            reconciliations.append(
+                ParishReportReconciliation(
+                    parish_id=parish_id,
+                    report_year=year,
+                    field=field,
+                    submitted_count=submitted_count,
+                    register_count=register_total,
+                    difference=difference,
+                    status=status,
+                )
+            )
+        return reconciliations
 
     async def generate_annuario_pontificio(self, year: int) -> AnnuarioPontificioReport:
         """Compose the annual report from configuration-driven indicators.

@@ -30,7 +30,10 @@ class DeaneryService:
         """Create a deanery and record the administrative action."""
         deanery = await self.repo.create_deanery(data)
         record_audit_event(
-            self.repo.db, action="DEANERY_CREATED", entity_name="deanery", entity_id=deanery.id,
+            self.repo.db,
+            action="DEANERY_CREATED",
+            entity_name="deanery",
+            entity_id=deanery.id,
             details={"archdiocese_id": str(deanery.archdiocese_id), "code": deanery.code},
         )
         return DeaneryResponse.model_validate(deanery)

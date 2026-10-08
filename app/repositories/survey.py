@@ -3,6 +3,7 @@ Statistics Module Database Repository
 """
 
 import uuid
+from typing import Any
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,7 +45,9 @@ class StatisticsRepository:
             AnnualParishStatistic.parish_id == parish_id,
             AnnualParishStatistic.report_year == year,
         )
-        stmt = stmt.order_by(AnnualParishStatistic.created_at.desc(), AnnualParishStatistic.id.desc()).limit(1)
+        stmt = stmt.order_by(
+            AnnualParishStatistic.created_at.desc(), AnnualParishStatistic.id.desc()
+        ).limit(1)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -66,16 +69,21 @@ class StatisticsRepository:
     ) -> list[AnnualParishStatistic]:
         latest = select(
             AnnualParishStatistic.id.label("id"),
-            func.row_number().over(
+            func.row_number()
+            .over(
                 partition_by=(AnnualParishStatistic.parish_id, AnnualParishStatistic.report_year),
                 order_by=(AnnualParishStatistic.created_at.desc(), AnnualParishStatistic.id.desc()),
-            ).label("row_number"),
+            )
+            .label("row_number"),
         ).subquery()
-        stmt = select(AnnualParishStatistic).join(
-            latest, latest.c.id == AnnualParishStatistic.id
-        ).where(latest.c.row_number == 1).order_by(
-            AnnualParishStatistic.report_year.desc(),
-            AnnualParishStatistic.created_at.desc(),
+        stmt = (
+            select(AnnualParishStatistic)
+            .join(latest, latest.c.id == AnnualParishStatistic.id)
+            .where(latest.c.row_number == 1)
+            .order_by(
+                AnnualParishStatistic.report_year.desc(),
+                AnnualParishStatistic.created_at.desc(),
+            )
         )
         if year is not None:
             stmt = stmt.where(AnnualParishStatistic.report_year == year)
@@ -92,10 +100,14 @@ class StatisticsRepository:
     async def count_active_priests(self) -> int:
         from app.models.priest import ClergyStatus, ClergyType
 
-        stmt = select(func.count()).select_from(Priest).where(
-            Priest.is_deleted.is_(False),
-            Priest.status == ClergyStatus.ACTIVE_DUTY,
-            Priest.clergy_type.in_([ClergyType.DIOCESAN_PRIEST, ClergyType.RELIGIOUS_PRIEST]),
+        stmt = (
+            select(func.count())
+            .select_from(Priest)
+            .where(
+                Priest.is_deleted.is_(False),
+                Priest.status == ClergyStatus.ACTIVE_DUTY,
+                Priest.clergy_type.in_([ClergyType.DIOCESAN_PRIEST, ClergyType.RELIGIOUS_PRIEST]),
+            )
         )
         result = await self.db.execute(stmt)
         return int(result.scalar_one() or 0)
@@ -104,11 +116,13 @@ class StatisticsRepository:
         from datetime import date
 
         result = await self.db.execute(
-            select(func.count()).select_from(model).where(
-                model.parish_id == parish_id,
-                model.is_deleted.is_(False),
-                model.celebration_date >= date(year, 1, 1),
-                model.celebration_date < date(year + 1, 1, 1),
+            select(func.count())
+            .select_from(model)
+            .where(
+                getattr(model, "parish_id") == parish_id,
+                getattr(model, "is_deleted").is_(False),
+                getattr(model, "celebration_date") >= date(year, 1, 1),
+                getattr(model, "celebration_date") < date(year + 1, 1, 1),
             )
         )
         return int(result.scalar_one() or 0)
@@ -117,9 +131,13 @@ class StatisticsRepository:
         return {
             "baptisms": await self.count_register_records(BaptismRecord, parish_id, year),
             "confirmations": await self.count_register_records(ConfirmationRecord, parish_id, year),
-            "first_communions": await self.count_register_records(FirstCommunionRecord, parish_id, year),
+            "first_communions": await self.count_register_records(
+                FirstCommunionRecord, parish_id, year
+            ),
             "marriages": await self.count_register_records(MatrimonyRecord, parish_id, year),
-            "christian_funerals": await self.count_register_records(ChristianFuneralRecord, parish_id, year),
+            "christian_funerals": await self.count_register_records(
+                ChristianFuneralRecord, parish_id, year
+            ),
         }
 
     async def list_archdioceses(self) -> list[Archdiocese]:
@@ -185,22 +203,25 @@ class SurveyRepository:
         self,
         parish_ids: list[uuid.UUID],
         deanery_ids: list[uuid.UUID],
-        archdiocese_id: uuid.UUID,
+        archdiocese_id: uuid.UUID | None = None,
         status: str | None = None,
     ) -> list[Survey]:
-        scope_conditions = []
+        scope_conditions: list[Any] = []
         if parish_ids:
             scope_conditions.append(Survey.parish_id.in_(parish_ids))
         if deanery_ids:
             scope_conditions.append(
                 and_(Survey.parish_id.is_(None), Survey.deanery_id.in_(deanery_ids))
             )
-        scope_conditions.append(
-            and_(Survey.parish_id.is_(None), Survey.deanery_id.is_(None), Survey.archdiocese_id == archdiocese_id)
-        )
-        stmt = select(Survey).where(
-            Survey.is_deleted.is_(False), or_(*scope_conditions)
-        )
+        if archdiocese_id is not None:
+            scope_conditions.append(
+                and_(
+                    Survey.parish_id.is_(None),
+                    Survey.deanery_id.is_(None),
+                    Survey.archdiocese_id == archdiocese_id,
+                )
+            )
+        stmt = select(Survey).where(Survey.is_deleted.is_(False), or_(*scope_conditions))
         if status is not None:
             stmt = stmt.where(Survey.status == status)
         result = await self.db.execute(stmt.order_by(Survey.created_at.desc()))

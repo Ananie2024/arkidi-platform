@@ -22,7 +22,6 @@ from app.models.enums import UserRole
 from app.models.user import User
 
 
-
 async def _create_user() -> tuple[str, str, uuid.UUID | None]:
     """Create a throwaway active user and return (username, password, id)."""
     password = f"test-sec-{uuid.uuid4().hex[:10]}"
@@ -131,7 +130,9 @@ async def test_health_exposes_dependency_probes(client: AsyncClient):
 async def test_security_headers_present(client: AsyncClient):
     """Verify HSTS, X-Content-Type-Options, X-Frame-Options, CSP and referrer headers are set."""
     resp = await client.get("/health")
-    assert resp.headers["Strict-Transport-Security"] == "max-age=63072000; includeSubDomains; preload"
+    assert (
+        resp.headers["Strict-Transport-Security"] == "max-age=63072000; includeSubDomains; preload"
+    )
     assert resp.headers["X-Content-Type-Options"] == "nosniff"
     assert resp.headers["X-Frame-Options"] == "DENY"
     assert "default-src 'self'" in resp.headers["Content-Security-Policy"]
@@ -158,8 +159,9 @@ async def test_login_and_logout_write_audit_logs(client: AsyncClient):
         # Check AuditLog for login
         async with AsyncSessionLocal() as db:
             result = await db.execute(
-                select(AuditLog)
-                .where(AuditLog.user_id == uid, AuditLog.action == "USER_LOGIN_SUCCESS")
+                select(AuditLog).where(
+                    AuditLog.user_id == uid, AuditLog.action == "USER_LOGIN_SUCCESS"
+                )
             )
             log = result.scalars().first()
             assert log is not None
@@ -172,12 +174,10 @@ async def test_login_and_logout_write_audit_logs(client: AsyncClient):
         # Check AuditLog for logout
         async with AsyncSessionLocal() as db:
             result = await db.execute(
-                select(AuditLog)
-                .where(AuditLog.user_id == uid, AuditLog.action == "USER_LOGOUT")
+                select(AuditLog).where(AuditLog.user_id == uid, AuditLog.action == "USER_LOGOUT")
             )
             log = result.scalars().first()
             assert log is not None
             assert log.entity_name == "user"
     finally:
         await _cleanup(uid)
-

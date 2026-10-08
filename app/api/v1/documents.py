@@ -33,9 +33,11 @@ router = APIRouter(prefix="/documents", tags=["Documents & Archival Repository"]
 
 async def _enforce_document_scope(db: AsyncSession, user: dict, item: DocumentResponse) -> None:
     if item.parcel_id is not None:
-        parcel = await db.scalar(select(LandParcel).where(
-            LandParcel.id == item.parcel_id, LandParcel.is_deleted.is_(False)
-        ))
+        parcel = await db.scalar(
+            select(LandParcel).where(
+                LandParcel.id == item.parcel_id, LandParcel.is_deleted.is_(False)
+            )
+        )
         if parcel is None:
             from app.core.exceptions import EntityNotFoundException
 
@@ -175,9 +177,9 @@ async def upload_document(
 
     uploader_id = uuid.UUID(user_payload["sub"]) if user_payload and "sub" in user_payload else None
     if parcel_id is not None:
-        parcel = await db.scalar(select(LandParcel).where(
-            LandParcel.id == parcel_id, LandParcel.is_deleted.is_(False)
-        ))
+        parcel = await db.scalar(
+            select(LandParcel).where(LandParcel.id == parcel_id, LandParcel.is_deleted.is_(False))
+        )
         if parcel is None:
             from app.core.exceptions import EntityNotFoundException
 
@@ -237,9 +239,9 @@ async def list_documents(
     user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     if parcel_id is not None:
-        parcel = await db.scalar(select(LandParcel).where(
-            LandParcel.id == parcel_id, LandParcel.is_deleted.is_(False)
-        ))
+        parcel = await db.scalar(
+            select(LandParcel).where(LandParcel.id == parcel_id, LandParcel.is_deleted.is_(False))
+        )
         if parcel is None:
             from app.core.exceptions import EntityNotFoundException
 
@@ -301,7 +303,10 @@ async def download_document_file(
             status_code=status.HTTP_404_NOT_FOUND, detail="errors.physical_file_not_found"
         )
     record_audit_event(
-        db, action="DOCUMENT_DOWNLOADED", entity_name="document", entity_id=doc.id,
+        db,
+        action="DOCUMENT_DOWNLOADED",
+        entity_name="document",
+        entity_id=doc.id,
         details={"classification": doc.classification},
     )
 
@@ -319,18 +324,20 @@ async def review_document_disposition(
     review: DocumentDispositionReview,
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(
-        require_roles([
-            UserRole.SUPER_ADMIN, UserRole.ARCHBISHOP, UserRole.CHANCELLOR,
-            UserRole.PARISH_PRIEST,
-        ])
+        require_roles(
+            [
+                UserRole.SUPER_ADMIN,
+                UserRole.ARCHBISHOP,
+                UserRole.CHANCELLOR,
+                UserRole.PARISH_PRIEST,
+            ]
+        )
     ),
 ):
     service = DocumentService(db)
     existing = await service.get_document(document_id)
     await _enforce_document_scope(db, user, existing)
-    reviewed = await service.review_disposition(
-        document_id, review, uuid.UUID(user["sub"])
-    )
+    reviewed = await service.review_disposition(document_id, review, uuid.UUID(user["sub"]))
     return ApiResponse.ok(data=reviewed, message="success.document_disposition_reviewed")
 
 
@@ -350,7 +357,9 @@ async def update_document(
     elif "parish_id" in data.model_fields_set and (user.get("parish_id") or user.get("deanery_id")):
         from app.core.exceptions import PermissionDeniedException
 
-        raise PermissionDeniedException("Parish users must keep documents attached to their parish.")
+        raise PermissionDeniedException(
+            "Parish users must keep documents attached to their parish."
+        )
     updated = await service.update_document(document_id, data)
     return ApiResponse.ok(data=updated, message="success.document_updated")
 

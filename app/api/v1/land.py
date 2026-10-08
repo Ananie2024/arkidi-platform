@@ -46,7 +46,9 @@ def _user_id(user: dict) -> uuid.UUID | None:
     return uuid.UUID(user["sub"]) if user.get("sub") else None
 
 
-async def _scoped_parcel(db: AsyncSession, service: LandAssetsService, user: dict, parcel_id: uuid.UUID):
+async def _scoped_parcel(
+    db: AsyncSession, service: LandAssetsService, user: dict, parcel_id: uuid.UUID
+):
     parcel = await service.get_parcel(parcel_id)
     await enforce_parish_scope(user, db, parcel.parish_id)
     return parcel
@@ -160,85 +162,133 @@ async def list_leases(
     user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     await _scoped_parcel(db, LandAssetsService(db), user, parcel_id)
-    rows = await db.scalars(select(LeaseAgreement).where(
-        LeaseAgreement.parcel_id == parcel_id, LeaseAgreement.is_deleted.is_(False)
-    ).order_by(LeaseAgreement.start_date.desc()))
+    rows = await db.scalars(
+        select(LeaseAgreement)
+        .where(LeaseAgreement.parcel_id == parcel_id, LeaseAgreement.is_deleted.is_(False))
+        .order_by(LeaseAgreement.start_date.desc())
+    )
     return ApiResponse.ok(data=[LeaseResponse.model_validate(row) for row in rows])
 
 
-@router.post("/leases", response_model=ApiResponse[LeaseResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/leases", response_model=ApiResponse[LeaseResponse], status_code=status.HTTP_201_CREATED
+)
 async def create_lease(
     data: LeaseCreate,
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_roles(ASSET_MANAGERS)),
 ):
     await _scoped_parcel(db, LandAssetsService(db), user, data.parcel_id)
-    existing = await db.scalar(select(LeaseAgreement.id).where(
-        LeaseAgreement.lease_number == data.lease_number
-    ))
+    existing = await db.scalar(
+        select(LeaseAgreement.id).where(LeaseAgreement.lease_number == data.lease_number)
+    )
     if existing:
         raise HTTPException(status_code=409, detail="Lease number is already in use")
     lease = LeaseAgreement(**data.model_dump())
     db.add(lease)
     await db.flush()
-    db.add(AuditLog(user_id=_user_id(user), action="LAND_LEASE_CREATED", entity_name="lease_agreement",
-                    entity_id=str(lease.id), details={"parcel_id": str(lease.parcel_id), "lease_number": lease.lease_number}))
+    db.add(
+        AuditLog(
+            user_id=_user_id(user),
+            action="LAND_LEASE_CREATED",
+            entity_name="lease_agreement",
+            entity_id=str(lease.id),
+            details={"parcel_id": str(lease.parcel_id), "lease_number": lease.lease_number},
+        )
+    )
     return ApiResponse.ok(data=LeaseResponse.model_validate(lease), message="success.lease_created")
 
 
-@router.get("/leases/{lease_id}/installments", response_model=ApiResponse[list[LeaseInstallmentResponse]])
+@router.get(
+    "/leases/{lease_id}/installments", response_model=ApiResponse[list[LeaseInstallmentResponse]]
+)
 async def list_lease_installments(
     lease_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
-    lease = await db.scalar(select(LeaseAgreement).where(
-        LeaseAgreement.id == lease_id, LeaseAgreement.is_deleted.is_(False)
-    ))
+    lease = await db.scalar(
+        select(LeaseAgreement).where(
+            LeaseAgreement.id == lease_id, LeaseAgreement.is_deleted.is_(False)
+        )
+    )
     if lease is None:
         raise HTTPException(status_code=404, detail="Lease not found")
     await _scoped_parcel(db, LandAssetsService(db), user, lease.parcel_id)
-    rows = await db.scalars(select(LeasePaymentSchedule).where(
-        LeasePaymentSchedule.lease_agreement_id == lease_id,
-        LeasePaymentSchedule.is_deleted.is_(False),
-    ).order_by(LeasePaymentSchedule.due_date))
+    rows = await db.scalars(
+        select(LeasePaymentSchedule)
+        .where(
+            LeasePaymentSchedule.lease_agreement_id == lease_id,
+            LeasePaymentSchedule.is_deleted.is_(False),
+        )
+        .order_by(LeasePaymentSchedule.due_date)
+    )
     return ApiResponse.ok(data=[LeaseInstallmentResponse.model_validate(row) for row in rows])
 
 
-@router.post("/leases/{lease_id}/installments", response_model=ApiResponse[LeaseInstallmentResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/leases/{lease_id}/installments",
+    response_model=ApiResponse[LeaseInstallmentResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_lease_installment(
     lease_id: uuid.UUID,
     data: LeaseInstallmentCreate,
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_roles(ASSET_MANAGERS)),
 ):
-    lease = await db.scalar(select(LeaseAgreement).where(
-        LeaseAgreement.id == lease_id, LeaseAgreement.is_deleted.is_(False)
-    ))
+    lease = await db.scalar(
+        select(LeaseAgreement).where(
+            LeaseAgreement.id == lease_id, LeaseAgreement.is_deleted.is_(False)
+        )
+    )
     if lease is None:
         raise HTTPException(status_code=404, detail="Lease not found")
     await _scoped_parcel(db, LandAssetsService(db), user, lease.parcel_id)
     item = LeasePaymentSchedule(lease_agreement_id=lease_id, **data.model_dump())
     db.add(item)
     await db.flush()
-    db.add(AuditLog(user_id=_user_id(user), action="LEASE_INSTALLMENT_SCHEDULED", entity_name="lease_payment_schedule",
-                    entity_id=str(item.id), details={"lease_id": str(lease_id), "due_date": data.due_date.isoformat(), "amount_rwf": data.amount_rwf}))
-    return ApiResponse.ok(data=LeaseInstallmentResponse.model_validate(item), message="success.lease_installment_scheduled")
+    db.add(
+        AuditLog(
+            user_id=_user_id(user),
+            action="LEASE_INSTALLMENT_SCHEDULED",
+            entity_name="lease_payment_schedule",
+            entity_id=str(item.id),
+            details={
+                "lease_id": str(lease_id),
+                "due_date": data.due_date.isoformat(),
+                "amount_rwf": data.amount_rwf,
+            },
+        )
+    )
+    return ApiResponse.ok(
+        data=LeaseInstallmentResponse.model_validate(item),
+        message="success.lease_installment_scheduled",
+    )
 
 
-@router.post("/leases/installments/{installment_id}/payment", response_model=ApiResponse[LeaseInstallmentResponse])
+@router.post(
+    "/leases/installments/{installment_id}/payment",
+    response_model=ApiResponse[LeaseInstallmentResponse],
+)
 async def mark_lease_installment_paid(
     installment_id: uuid.UUID,
     data: LeaseInstallmentPayment,
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_roles(ASSET_MANAGERS)),
 ):
-    item = await db.scalar(select(LeasePaymentSchedule).where(
-        LeasePaymentSchedule.id == installment_id, LeasePaymentSchedule.is_deleted.is_(False)
-    ))
+    item = await db.scalar(
+        select(LeasePaymentSchedule).where(
+            LeasePaymentSchedule.id == installment_id, LeasePaymentSchedule.is_deleted.is_(False)
+        )
+    )
     if item is None:
         raise HTTPException(status_code=404, detail="Lease installment not found")
-    lease = await db.scalar(select(LeaseAgreement).where(LeaseAgreement.id == item.lease_agreement_id))
+    lease = await db.scalar(
+        select(LeaseAgreement).where(LeaseAgreement.id == item.lease_agreement_id)
+    )
+    if lease is None:
+        raise HTTPException(status_code=404, detail="Lease agreement not found")
     await _scoped_parcel(db, LandAssetsService(db), user, lease.parcel_id)
     if item.is_paid:
         raise HTTPException(status_code=409, detail="Lease installment is already marked paid")
@@ -248,25 +298,45 @@ async def mark_lease_installment_paid(
     item.paid_date = data.paid_date
     item.receipt_number = data.receipt_number
     await db.flush()
-    db.add(AuditLog(user_id=_user_id(user), action="LEASE_INSTALLMENT_PAID", entity_name="lease_payment_schedule",
-                    entity_id=str(item.id), details={"receipt_number": item.receipt_number, "paid_date": item.paid_date.isoformat()}))
-    return ApiResponse.ok(data=LeaseInstallmentResponse.model_validate(item), message="success.lease_payment_recorded")
+    db.add(
+        AuditLog(
+            user_id=_user_id(user),
+            action="LEASE_INSTALLMENT_PAID",
+            entity_name="lease_payment_schedule",
+            entity_id=str(item.id),
+            details={
+                "receipt_number": item.receipt_number,
+                "paid_date": item.paid_date.isoformat(),
+            },
+        )
+    )
+    return ApiResponse.ok(
+        data=LeaseInstallmentResponse.model_validate(item), message="success.lease_payment_recorded"
+    )
 
 
-@router.get("/parcels/{parcel_id}/tax-assessments", response_model=ApiResponse[list[TaxAssessmentResponse]])
+@router.get(
+    "/parcels/{parcel_id}/tax-assessments", response_model=ApiResponse[list[TaxAssessmentResponse]]
+)
 async def list_tax_assessments(
     parcel_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
     await _scoped_parcel(db, LandAssetsService(db), user, parcel_id)
-    rows = await db.scalars(select(TaxRecord).where(
-        TaxRecord.parcel_id == parcel_id, TaxRecord.is_deleted.is_(False)
-    ).order_by(TaxRecord.tax_year.desc()))
+    rows = await db.scalars(
+        select(TaxRecord)
+        .where(TaxRecord.parcel_id == parcel_id, TaxRecord.is_deleted.is_(False))
+        .order_by(TaxRecord.tax_year.desc())
+    )
     return ApiResponse.ok(data=[TaxAssessmentResponse.model_validate(row) for row in rows])
 
 
-@router.post("/parcels/{parcel_id}/tax-assessments", response_model=ApiResponse[TaxAssessmentResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/parcels/{parcel_id}/tax-assessments",
+    response_model=ApiResponse[TaxAssessmentResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_tax_assessment(
     parcel_id: uuid.UUID,
     data: TaxAssessmentCreate,
@@ -274,60 +344,109 @@ async def create_tax_assessment(
     user: dict = Depends(require_roles(ASSET_MANAGERS)),
 ):
     await _scoped_parcel(db, LandAssetsService(db), user, parcel_id)
-    duplicate = await db.scalar(select(TaxRecord.id).where(
-        TaxRecord.parcel_id == parcel_id, TaxRecord.tax_year == data.tax_year, TaxRecord.is_deleted.is_(False)
-    ))
+    duplicate = await db.scalar(
+        select(TaxRecord.id).where(
+            TaxRecord.parcel_id == parcel_id,
+            TaxRecord.tax_year == data.tax_year,
+            TaxRecord.is_deleted.is_(False),
+        )
+    )
     if duplicate:
-        raise HTTPException(status_code=409, detail="A tax assessment already exists for this parcel and year")
+        raise HTTPException(
+            status_code=409, detail="A tax assessment already exists for this parcel and year"
+        )
     record = TaxRecord(parcel_id=parcel_id, **data.model_dump())
     db.add(record)
     await db.flush()
-    db.add(AuditLog(user_id=_user_id(user), action="LAND_TAX_ASSESSED", entity_name="tax_record",
-                    entity_id=str(record.id), details={"parcel_id": str(parcel_id), "tax_year": record.tax_year, "tax_amount_rwf": record.tax_amount_rwf}))
-    return ApiResponse.ok(data=TaxAssessmentResponse.model_validate(record), message="success.tax_assessment_created")
+    db.add(
+        AuditLog(
+            user_id=_user_id(user),
+            action="LAND_TAX_ASSESSED",
+            entity_name="tax_record",
+            entity_id=str(record.id),
+            details={
+                "parcel_id": str(parcel_id),
+                "tax_year": record.tax_year,
+                "tax_amount_rwf": record.tax_amount_rwf,
+            },
+        )
+    )
+    return ApiResponse.ok(
+        data=TaxAssessmentResponse.model_validate(record), message="success.tax_assessment_created"
+    )
 
 
-@router.get("/tax-assessments/{tax_record_id}/payments", response_model=ApiResponse[list[TaxPaymentResponse]])
+@router.get(
+    "/tax-assessments/{tax_record_id}/payments",
+    response_model=ApiResponse[list[TaxPaymentResponse]],
+)
 async def list_tax_payments(
     tax_record_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
-    record = await db.scalar(select(TaxRecord).where(TaxRecord.id == tax_record_id, TaxRecord.is_deleted.is_(False)))
+    record = await db.scalar(
+        select(TaxRecord).where(TaxRecord.id == tax_record_id, TaxRecord.is_deleted.is_(False))
+    )
     if record is None:
         raise HTTPException(status_code=404, detail="Tax assessment not found")
     await _scoped_parcel(db, LandAssetsService(db), user, record.parcel_id)
-    rows = await db.scalars(select(TaxPayment).where(
-        TaxPayment.tax_record_id == tax_record_id, TaxPayment.is_deleted.is_(False)
-    ).order_by(TaxPayment.payment_date))
+    rows = await db.scalars(
+        select(TaxPayment)
+        .where(TaxPayment.tax_record_id == tax_record_id, TaxPayment.is_deleted.is_(False))
+        .order_by(TaxPayment.payment_date)
+    )
     return ApiResponse.ok(data=[TaxPaymentResponse.model_validate(row) for row in rows])
 
 
-@router.post("/tax-assessments/{tax_record_id}/payments", response_model=ApiResponse[TaxPaymentResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/tax-assessments/{tax_record_id}/payments",
+    response_model=ApiResponse[TaxPaymentResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_tax_payment(
     tax_record_id: uuid.UUID,
     data: TaxPaymentCreate,
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_roles(ASSET_MANAGERS)),
 ):
-    record = await db.scalar(select(TaxRecord).where(TaxRecord.id == tax_record_id, TaxRecord.is_deleted.is_(False)))
+    record = await db.scalar(
+        select(TaxRecord).where(TaxRecord.id == tax_record_id, TaxRecord.is_deleted.is_(False))
+    )
     if record is None:
         raise HTTPException(status_code=404, detail="Tax assessment not found")
     await _scoped_parcel(db, LandAssetsService(db), user, record.parcel_id)
-    total_paid = await db.scalar(select(func.coalesce(func.sum(TaxPayment.amount_paid_rwf), 0)).where(
-        TaxPayment.tax_record_id == tax_record_id, TaxPayment.is_deleted.is_(False)
-    ))
+    total_paid = await db.scalar(
+        select(func.coalesce(func.sum(TaxPayment.amount_paid_rwf), 0)).where(
+            TaxPayment.tax_record_id == tax_record_id, TaxPayment.is_deleted.is_(False)
+        )
+    )
     paid_amount = Decimal(str(total_paid or 0))
     payment_amount = Decimal(str(data.amount_paid_rwf))
     assessed_amount = Decimal(str(record.tax_amount_rwf))
     if paid_amount + payment_amount > assessed_amount:
-        raise HTTPException(status_code=400, detail="Payment exceeds the remaining assessed tax balance")
+        raise HTTPException(
+            status_code=400, detail="Payment exceeds the remaining assessed tax balance"
+        )
     payment = TaxPayment(tax_record_id=tax_record_id, **data.model_dump())
     db.add(payment)
     await db.flush()
     new_total = paid_amount + payment_amount
     record.status = "PAID" if new_total >= assessed_amount else "PARTIALLY_PAID"
-    db.add(AuditLog(user_id=_user_id(user), action="LAND_TAX_PAYMENT_RECORDED", entity_name="tax_payment",
-                    entity_id=str(payment.id), details={"tax_record_id": str(record.id), "amount_paid_rwf": data.amount_paid_rwf,
-                    "receipt_number": payment.receipt_number, "remaining_rwf": float(assessed_amount - new_total)}))
-    return ApiResponse.ok(data=TaxPaymentResponse.model_validate(payment), message="success.tax_payment_recorded")
+    db.add(
+        AuditLog(
+            user_id=_user_id(user),
+            action="LAND_TAX_PAYMENT_RECORDED",
+            entity_name="tax_payment",
+            entity_id=str(payment.id),
+            details={
+                "tax_record_id": str(record.id),
+                "amount_paid_rwf": data.amount_paid_rwf,
+                "receipt_number": payment.receipt_number,
+                "remaining_rwf": float(assessed_amount - new_total),
+            },
+        )
+    )
+    return ApiResponse.ok(
+        data=TaxPaymentResponse.model_validate(payment), message="success.tax_payment_recorded"
+    )

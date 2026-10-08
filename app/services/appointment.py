@@ -35,10 +35,16 @@ class ClergyService:
     async def create_priest(self, data: PriestCreate) -> PriestResponse:
         priest = await self.repo.create_priest(data)
         record_audit_event(
-            self.repo.db, action="CLERGY_PROFILE_CREATED", entity_name="priest", entity_id=priest.id,
-            details={"current_parish_id": str(priest.current_parish_id)
-                     if priest.current_parish_id else None,
-                     "clergy_type": priest.clergy_type.value},
+            self.repo.db,
+            action="CLERGY_PROFILE_CREATED",
+            entity_name="priest",
+            entity_id=priest.id,
+            details={
+                "current_parish_id": (
+                    str(priest.current_parish_id) if priest.current_parish_id else None
+                ),
+                "clergy_type": priest.clergy_type.value,
+            },
         )
         return PriestResponse.model_validate(priest)
 
@@ -57,11 +63,15 @@ class ClergyService:
             await self.repo.db.flush()
         assignment = await self.repo.add_assignment(data)
         record_audit_event(
-            self.repo.db, action="CLERGY_ASSIGNMENT_RECORDED", entity_name="clergy_assignment",
+            self.repo.db,
+            action="CLERGY_ASSIGNMENT_RECORDED",
+            entity_name="clergy_assignment",
             entity_id=assignment.id,
-            details={"priest_id": str(assignment.priest_id),
-                     "parish_id": str(assignment.parish_id) if assignment.parish_id else None,
-                     "start_date": assignment.start_date.isoformat()},
+            details={
+                "priest_id": str(assignment.priest_id),
+                "parish_id": str(assignment.parish_id) if assignment.parish_id else None,
+                "start_date": assignment.start_date.isoformat(),
+            },
         )
         return AssignmentResponse.model_validate(assignment)
 

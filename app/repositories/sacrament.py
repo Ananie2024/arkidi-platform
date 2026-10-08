@@ -41,13 +41,13 @@ class SacramentsRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def register_reference_exists(
-        self, model: type, reference: dict[str, Any]
-    ) -> bool:
+    async def register_reference_exists(self, model: type, reference: dict[str, Any]) -> bool:
         """Check active canonical rows for an already-used register reference."""
         conditions = [getattr(model, field) == value for field, value in reference.items()]
-        conditions.append(model.is_deleted.is_(False))
-        return (await self.db.scalar(select(model.id).where(*conditions).limit(1))) is not None
+        conditions.append(getattr(model, "is_deleted").is_(False))
+        return (
+            await self.db.scalar(select(getattr(model, "id")).where(*conditions).limit(1))
+        ) is not None
 
     async def get_baptism_by_id(self, record_id: uuid.UUID) -> BaptismRecord | None:
         stmt = select(BaptismRecord).where(
@@ -201,9 +201,9 @@ class SacramentsRepository:
         )
         if sacrament_type != SacramentType.MATRIMONY:
             model, faithful_field = faithful_fields[sacrament_type]
-            stmt = select(model.id).where(
-                model.parish_id == parish_id,
-                model.is_deleted.is_(False),
+            stmt = select(getattr(model, "id")).where(
+                getattr(model, "parish_id") == parish_id,
+                getattr(model, "is_deleted").is_(False),
                 faithful_field == faithful_id,
             )
         return (await self.db.scalar(stmt)) is not None

@@ -49,7 +49,6 @@ class FaithfulUpdate(BaseModel):
     family_id: uuid.UUID | None = None
     family_role: FamilyRole | None = None
     scc_id: uuid.UUID | None = None
-    occupation: str | None = None
 
 
 class FaithfulResponse(FaithfulBase):

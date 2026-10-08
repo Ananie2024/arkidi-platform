@@ -25,9 +25,13 @@ class MassService:
     async def schedule_mass(self, data: MassScheduleCreate) -> MassScheduleResponse:
         schedule = await self.repo.create_mass_schedule(data)
         record_audit_event(
-            self.repo.db, action="MASS_SCHEDULE_CREATED", entity_name="mass_schedule",
+            self.repo.db,
+            action="MASS_SCHEDULE_CREATED",
+            entity_name="mass_schedule",
             entity_id=schedule.id,
-            details={"parish_id": str(schedule.parish_id),
-                     "mass_date": schedule.mass_date.isoformat()},
+            details={
+                "parish_id": str(schedule.parish_id),
+                "mass_date": schedule.mass_date.isoformat(),
+            },
         )
         return MassScheduleResponse.model_validate(schedule)

@@ -190,7 +190,6 @@ class AuthService:
             expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
 
-
     async def refresh(self, refresh_token_str: str) -> TokenResponse:
         """Rotate refresh token and issue a fresh access/refresh token pair."""
         try:
@@ -358,4 +357,3 @@ class AuthService:
             details={},
         )
         self.repo.db.add(audit)
-

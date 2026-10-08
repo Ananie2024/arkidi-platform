@@ -73,9 +73,7 @@ class ArchiveRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def add_scanned_page(
-        self, data: ScannedPageCreate, image_file_path: str
-    ) -> ScannedPage:
+    async def add_scanned_page(self, data: ScannedPageCreate, image_file_path: str) -> ScannedPage:
         page = ScannedPage(**data.model_dump(), image_file_path=image_file_path)
         self.db.add(page)
         # Keep the canonical book's scan counter in sync so the archive summary

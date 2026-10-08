@@ -37,9 +37,7 @@ async def list_faithful(
     service = FaithfulService(db)
     pagination = PaginationParams(page=page, page_size=page_size)
     scoped_parish_id = await enforce_parish_scope(current_user, db, parish_id)
-    data = await service.list_faithful(
-        parish_id=scoped_parish_id, search=search, params=pagination
-    )
+    data = await service.list_faithful(parish_id=scoped_parish_id, search=search, params=pagination)
     return ApiResponse.ok(data=data)
 
 

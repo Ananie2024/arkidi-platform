@@ -47,10 +47,14 @@ async def create_book(
     data: ArchiveLedgerBookCreate,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(
-        require_roles([
-            UserRole.SUPER_ADMIN, UserRole.ARCHBISHOP, UserRole.CHANCELLOR,
-            UserRole.PARISH_SECRETARY,
-        ])
+        require_roles(
+            [
+                UserRole.SUPER_ADMIN,
+                UserRole.ARCHBISHOP,
+                UserRole.CHANCELLOR,
+                UserRole.PARISH_SECRETARY,
+            ]
+        )
     ),
 ):
     await enforce_parish_scope(current_user, db, data.parish_id)
@@ -96,14 +100,16 @@ async def get_page(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
-    book_id = await db.scalar(
-        select(ScannedPage.ledger_book_id).where(ScannedPage.id == page_id)
-    )
-    parish_id = await db.scalar(
-        select(ArchiveLedgerBook.parish_id).where(
-            ArchiveLedgerBook.id == book_id, ArchiveLedgerBook.is_deleted.is_(False)
+    book_id = await db.scalar(select(ScannedPage.ledger_book_id).where(ScannedPage.id == page_id))
+    parish_id = (
+        await db.scalar(
+            select(ArchiveLedgerBook.parish_id).where(
+                ArchiveLedgerBook.id == book_id, ArchiveLedgerBook.is_deleted.is_(False)
+            )
         )
-    ) if book_id else None
+        if book_id
+        else None
+    )
     if parish_id is None:
         raise EntityNotFoundException("errors.scanned_page_not_found")
     await enforce_parish_scope(current_user, db, parish_id)
@@ -131,7 +137,9 @@ async def download_page_image(
     await enforce_parish_scope(current_user, db, parish_id)
     service = ArchiveService(db)
     path = await service.get_page_file_path(page_id)
-    return FileResponse(path, media_type="application/octet-stream", filename=os.path.basename(path))
+    return FileResponse(
+        path, media_type="application/octet-stream", filename=os.path.basename(path)
+    )
 
 
 @router.post("/pages/{page_id}/review", response_model=ApiResponse[ScannedPageResponse])
@@ -140,10 +148,14 @@ async def review_page(
     review: ArchivePageReview,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(
-        require_roles([
-            UserRole.SUPER_ADMIN, UserRole.ARCHBISHOP, UserRole.CHANCELLOR,
-            UserRole.PARISH_SECRETARY,
-        ])
+        require_roles(
+            [
+                UserRole.SUPER_ADMIN,
+                UserRole.ARCHBISHOP,
+                UserRole.CHANCELLOR,
+                UserRole.PARISH_SECRETARY,
+            ]
+        )
     ),
 ):
     page = await db.get(ScannedPage, page_id)
@@ -169,10 +181,14 @@ async def replace_page_scan(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(
-        require_roles([
-            UserRole.SUPER_ADMIN, UserRole.ARCHBISHOP, UserRole.CHANCELLOR,
-            UserRole.PARISH_SECRETARY,
-        ])
+        require_roles(
+            [
+                UserRole.SUPER_ADMIN,
+                UserRole.ARCHBISHOP,
+                UserRole.CHANCELLOR,
+                UserRole.PARISH_SECRETARY,
+            ]
+        )
     ),
 ):
     page = await db.get(ScannedPage, page_id)
@@ -196,20 +212,26 @@ async def trigger_page_ocr(
     page_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(
-        require_roles([
-            UserRole.SUPER_ADMIN, UserRole.ARCHBISHOP, UserRole.CHANCELLOR,
-            UserRole.PARISH_SECRETARY,
-        ])
+        require_roles(
+            [
+                UserRole.SUPER_ADMIN,
+                UserRole.ARCHBISHOP,
+                UserRole.CHANCELLOR,
+                UserRole.PARISH_SECRETARY,
+            ]
+        )
     ),
 ):
-    book_id = await db.scalar(
-        select(ScannedPage.ledger_book_id).where(ScannedPage.id == page_id)
-    )
-    parish_id = await db.scalar(
-        select(ArchiveLedgerBook.parish_id).where(
-            ArchiveLedgerBook.id == book_id, ArchiveLedgerBook.is_deleted.is_(False)
+    book_id = await db.scalar(select(ScannedPage.ledger_book_id).where(ScannedPage.id == page_id))
+    parish_id = (
+        await db.scalar(
+            select(ArchiveLedgerBook.parish_id).where(
+                ArchiveLedgerBook.id == book_id, ArchiveLedgerBook.is_deleted.is_(False)
+            )
         )
-    ) if book_id else None
+        if book_id
+        else None
+    )
     if parish_id is None:
         raise EntityNotFoundException("errors.scanned_page_not_found")
     await enforce_parish_scope(current_user, db, parish_id)

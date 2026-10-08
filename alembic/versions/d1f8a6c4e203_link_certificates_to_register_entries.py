@@ -30,7 +30,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index(
-        "ix_certificate_issues_source_record_id", table_name="certificate_issues"
-    )
+    op.drop_index("ix_certificate_issues_source_record_id", table_name="certificate_issues")
     op.drop_column("certificate_issues", "source_record_id")

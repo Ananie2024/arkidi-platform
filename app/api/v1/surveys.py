@@ -115,12 +115,17 @@ async def list_surveys(
     service = SurveyService(db)
     if user.get("parish_id"):
         assigned_parish_id = uuid.UUID(user["parish_id"])
-        deanery_id = await db.scalar(select(Parish.deanery_id).where(Parish.id == assigned_parish_id))
-        archdiocese_id_for_scope = await db.scalar(
-            select(Deanery.archdiocese_id).where(Deanery.id == deanery_id)
+        deanery_id = await db.scalar(
+            select(Parish.deanery_id).where(Parish.id == assigned_parish_id)
         )
+        archdiocese_id_for_scope = (
+            await db.scalar(select(Deanery.archdiocese_id).where(Deanery.id == deanery_id))
+            if deanery_id
+            else None
+        )
+        deanery_ids = [deanery_id] if deanery_id else []
         items = await service.list_surveys_in_jurisdiction(
-            [assigned_parish_id], [deanery_id], archdiocese_id_for_scope, survey_status
+            [assigned_parish_id], deanery_ids, archdiocese_id_for_scope, survey_status
         )
     elif user.get("deanery_id"):
         assigned_deanery_id = uuid.UUID(user["deanery_id"])

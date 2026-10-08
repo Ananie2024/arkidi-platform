@@ -68,13 +68,19 @@ async def _scope_meeting(
     ):
         if item_id is None:
             continue
-        parent_parish_id = await db.scalar(select(model.parish_id).where(model.id == item_id))
-        if parent_parish_id is None and parish_id is not None and (
-            user.get("parish_id") or user.get("deanery_id")
+        parent_parish_id = await db.scalar(
+            select(getattr(model, "parish_id")).where(getattr(model, "id") == item_id)
+        )
+        if (
+            parent_parish_id is None
+            and parish_id is not None
+            and (user.get("parish_id") or user.get("deanery_id"))
         ):
             from app.core.exceptions import PermissionDeniedException
 
-            raise PermissionDeniedException(f"Parish users cannot attach a meeting to a global {label}.")
+            raise PermissionDeniedException(
+                f"Parish users cannot attach a meeting to a global {label}."
+            )
         if parent_parish_id is not None:
             if parish_id is not None and parish_id != parent_parish_id:
                 from app.core.exceptions import ValidationException
@@ -380,13 +386,17 @@ async def update_meeting(
 
         raise PermissionDeniedException("Parish users cannot remove the meeting parish scope.")
     if "council_id" in data.model_fields_set and data.council_id is not None:
-        parent_parish = await db.scalar(select(Council.parish_id).where(Council.id == data.council_id))
+        parent_parish = await db.scalar(
+            select(Council.parish_id).where(Council.id == data.council_id)
+        )
         if parent_parish is not None:
             await enforce_parish_scope(user, db, parent_parish)
         elif user.get("parish_id") or user.get("deanery_id"):
             from app.core.exceptions import PermissionDeniedException
 
-            raise PermissionDeniedException("Parish users cannot attach a meeting to a global council.")
+            raise PermissionDeniedException(
+                "Parish users cannot attach a meeting to a global council."
+            )
     if "commission_id" in data.model_fields_set and data.commission_id is not None:
         parent_parish = await db.scalar(
             select(Commission.parish_id).where(Commission.id == data.commission_id)
@@ -396,7 +406,9 @@ async def update_meeting(
         elif user.get("parish_id") or user.get("deanery_id"):
             from app.core.exceptions import PermissionDeniedException
 
-            raise PermissionDeniedException("Parish users cannot attach a meeting to a global commission.")
+            raise PermissionDeniedException(
+                "Parish users cannot attach a meeting to a global commission."
+            )
     updated = await service.update_meeting(meeting_id, data)
     return ApiResponse.ok(data=updated, message="success.meeting_updated")
 

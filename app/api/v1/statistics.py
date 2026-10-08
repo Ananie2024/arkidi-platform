@@ -5,7 +5,7 @@ Statistics Module FastAPI Endpoints - Annual Reports & Annuario Pontificio
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import enforce_parish_scope, get_db, require_roles
@@ -49,9 +49,7 @@ async def list_parish_reports(
     if user.get("parish_id"):
         parish_ids = [uuid.UUID(user["parish_id"])]
     elif user.get("deanery_id"):
-        parish_ids = await get_descendant_parish_ids(
-            db, deanery_id=uuid.UUID(user["deanery_id"])
-        )
+        parish_ids = await get_descendant_parish_ids(db, deanery_id=uuid.UUID(user["deanery_id"]))
     else:
         await enforce_parish_scope(user, db, None)
         parish_ids = None
@@ -80,7 +78,7 @@ async def annuario_pontificio(
 )
 async def reconcile_parish_report(
     parish_id: uuid.UUID,
-    year: int = Query(ge=1900, le=2200),
+    year: int = Path(..., ge=1900, le=2200),
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_roles([UserRole.READ_ONLY_AUDITOR])),
 ):
@@ -132,17 +130,23 @@ async def compute_indicator(
     if user.get("parish_id"):
         from app.core.exceptions import PermissionDeniedException
 
-        raise PermissionDeniedException("Parish-wide indicator output is outside this account scope.")
+        raise PermissionDeniedException(
+            "Parish-wide indicator output is outside this account scope."
+        )
     if user.get("deanery_id"):
         assigned_deanery_id = uuid.UUID(user["deanery_id"])
         if deanery_id is not None and deanery_id != assigned_deanery_id:
             from app.core.exceptions import PermissionDeniedException
 
-            raise PermissionDeniedException("Requested deanery is outside the assigned jurisdiction.")
+            raise PermissionDeniedException(
+                "Requested deanery is outside the assigned jurisdiction."
+            )
         if archdiocese_id is not None:
             from app.core.exceptions import PermissionDeniedException
 
-            raise PermissionDeniedException("Archdiocesan indicator output is outside this account scope.")
+            raise PermissionDeniedException(
+                "Archdiocesan indicator output is outside this account scope."
+            )
         deanery_id = assigned_deanery_id
     else:
         await enforce_parish_scope(user, db, None)
@@ -151,7 +155,9 @@ async def compute_indicator(
     if year is not None and indicator.period_field != "report_year":
         from app.core.exceptions import ValidationException
 
-        raise ValidationException("A reporting year filter is supported only for annual return indicators.")
+        raise ValidationException(
+            "A reporting year filter is supported only for annual return indicators."
+        )
     param_filters: dict = {}
     if year is not None:
         param_filters["report_year"] = year

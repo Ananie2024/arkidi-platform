@@ -41,15 +41,16 @@ class FinanceService:
             details={
                 "parish_id": str(donation.parish_id),
                 "amount": float(donation.amount),
-                "donation_type": donation.donation_type.value
-                if hasattr(donation.donation_type, "value")
-                else str(donation.donation_type),
+                "donation_type": (
+                    donation.donation_type.value
+                    if hasattr(donation.donation_type, "value")
+                    else str(donation.donation_type)
+                ),
                 "receipt_number": donation.receipt_number,
             },
         )
         self.repo.db.add(audit)
         return DonationResponse.model_validate(donation)
-
 
     async def list_donations(
         self, parish_id: uuid.UUID, start_date: date | None = None, end_date: date | None = None

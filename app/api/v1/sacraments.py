@@ -4,6 +4,7 @@ Sacraments Module FastAPI Endpoints
 
 import io
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import StreamingResponse
@@ -111,7 +112,9 @@ async def record_confirmation(
     await enforce_parish_scope(current_user, db, data.parish_id)
     await enforce_faithful_parish(db, data.faithful_id, data.parish_id)
     service = SacramentsService(db)
-    created = await service.record_confirmation(data, created_by_user_id=uuid.UUID(current_user["sub"]))
+    created = await service.record_confirmation(
+        data, created_by_user_id=uuid.UUID(current_user["sub"])
+    )
     return ApiResponse.ok(data=created, message="success.confirmation_recorded")
 
 
@@ -128,7 +131,9 @@ async def record_matrimony(
     await enforce_faithful_parish(db, data.groom_faithful_id, data.parish_id)
     await enforce_faithful_parish(db, data.bride_faithful_id, data.parish_id)
     service = SacramentsService(db)
-    created = await service.record_matrimony(data, created_by_user_id=uuid.UUID(current_user["sub"]))
+    created = await service.record_matrimony(
+        data, created_by_user_id=uuid.UUID(current_user["sub"])
+    )
     return ApiResponse.ok(data=created, message="success.matrimony_recorded")
 
 
@@ -146,7 +151,9 @@ async def record_first_communion(
     await enforce_parish_scope(current_user, db, data.parish_id)
     await enforce_faithful_parish(db, data.faithful_id, data.parish_id)
     service = SacramentsService(db)
-    created = await service.record_first_communion(data, created_by_user_id=uuid.UUID(current_user["sub"]))
+    created = await service.record_first_communion(
+        data, created_by_user_id=uuid.UUID(current_user["sub"])
+    )
     return ApiResponse.ok(data=created, message="success.first_communion_recorded")
 
 
@@ -164,7 +171,9 @@ async def record_holy_orders(
     await enforce_parish_scope(current_user, db, data.parish_id)
     await enforce_faithful_parish(db, data.ordained_faithful_id, data.parish_id)
     service = SacramentsService(db)
-    created = await service.record_holy_orders(data, created_by_user_id=uuid.UUID(current_user["sub"]))
+    created = await service.record_holy_orders(
+        data, created_by_user_id=uuid.UUID(current_user["sub"])
+    )
     return ApiResponse.ok(data=created, message="success.holy_orders_recorded")
 
 
@@ -182,7 +191,9 @@ async def record_religious_profession(
     await enforce_parish_scope(current_user, db, data.parish_id)
     await enforce_faithful_parish(db, data.professed_faithful_id, data.parish_id)
     service = SacramentsService(db)
-    created = await service.record_religious_profession(data, created_by_user_id=uuid.UUID(current_user["sub"]))
+    created = await service.record_religious_profession(
+        data, created_by_user_id=uuid.UUID(current_user["sub"])
+    )
     return ApiResponse.ok(data=created, message="success.religious_profession_recorded")
 
 
@@ -200,7 +211,9 @@ async def record_anointing(
     await enforce_parish_scope(current_user, db, data.parish_id)
     await enforce_faithful_parish(db, data.faithful_id, data.parish_id)
     service = SacramentsService(db)
-    created = await service.record_anointing_of_the_sick(data, created_by_user_id=uuid.UUID(current_user["sub"]))
+    created = await service.record_anointing_of_the_sick(
+        data, created_by_user_id=uuid.UUID(current_user["sub"])
+    )
     return ApiResponse.ok(data=created, message="success.anointing_recorded")
 
 
@@ -218,7 +231,9 @@ async def record_christian_funeral(
     await enforce_parish_scope(current_user, db, data.parish_id)
     await enforce_faithful_parish(db, data.deceased_faithful_id, data.parish_id)
     service = SacramentsService(db)
-    created = await service.record_christian_funeral(data, created_by_user_id=uuid.UUID(current_user["sub"]))
+    created = await service.record_christian_funeral(
+        data, created_by_user_id=uuid.UUID(current_user["sub"])
+    )
     return ApiResponse.ok(data=created, message="success.funeral_recorded")
 
 
@@ -398,7 +413,7 @@ async def get_sacramental_record(
     if record is None:
         raise EntityNotFoundException("errors.target_record_not_found")
     await enforce_parish_scope(current_user, db, record.parish_id)
-    response_models = {
+    response_models: dict[SacramentType, Any] = {
         SacramentType.BAPTISM: BaptismResponse,
         SacramentType.FIRST_COMMUNION: FirstCommunionResponse,
         SacramentType.CONFIRMATION: ConfirmationResponse,
@@ -408,4 +423,6 @@ async def get_sacramental_record(
         SacramentType.ANOINTING_OF_THE_SICK: AnointingOfTheSickResponse,
         SacramentType.CHRISTIAN_FUNERAL: ChristianFuneralResponse,
     }
-    return ApiResponse.ok(data=response_models[sacrament_type].model_validate(record).model_dump(mode="json"))
+    return ApiResponse.ok(
+        data=response_models[sacrament_type].model_validate(record).model_dump(mode="json")
+    )

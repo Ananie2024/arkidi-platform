@@ -46,7 +46,15 @@ class BaptismRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     __tablename__ = "baptism_records"
     __table_args__ = (
-        Index("uq_baptism_register_reference_active", "parish_id", "registry_year", "volume_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_baptism_register_reference_active",
+            "parish_id",
+            "registry_year",
+            "volume_number",
+            "act_number",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
     )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
@@ -77,7 +85,15 @@ class ConfirmationRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMi
 
     __tablename__ = "confirmation_records"
     __table_args__ = (
-        Index("uq_confirmation_register_reference_active", "parish_id", "registry_year", "volume_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_confirmation_register_reference_active",
+            "parish_id",
+            "registry_year",
+            "volume_number",
+            "act_number",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
     )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
@@ -102,7 +118,15 @@ class MatrimonyRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin
 
     __tablename__ = "matrimony_records"
     __table_args__ = (
-        Index("uq_matrimony_register_reference_active", "parish_id", "registry_year", "volume_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_matrimony_register_reference_active",
+            "parish_id",
+            "registry_year",
+            "volume_number",
+            "act_number",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
     )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
@@ -134,7 +158,15 @@ class FirstCommunionRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDelete
 
     __tablename__ = "first_communion_records"
     __table_args__ = (
-        Index("uq_first_communion_register_reference_active", "parish_id", "registry_year", "volume_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_first_communion_register_reference_active",
+            "parish_id",
+            "registry_year",
+            "volume_number",
+            "act_number",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
     )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
@@ -167,7 +199,15 @@ class HolyOrdersRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
 
     __tablename__ = "holy_orders_records"
     __table_args__ = (
-        Index("uq_holy_orders_register_reference_active", "parish_id", "register_book", "page_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_holy_orders_register_reference_active",
+            "parish_id",
+            "register_book",
+            "page_number",
+            "act_number",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
     )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(
@@ -202,7 +242,15 @@ class ReligiousProfessionRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftD
 
     __tablename__ = "religious_profession_records"
     __table_args__ = (
-        Index("uq_religious_profession_register_reference_active", "parish_id", "register_book", "page_number", "act_number", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_religious_profession_register_reference_active",
+            "parish_id",
+            "register_book",
+            "page_number",
+            "act_number",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
     )
 
     parish_id: Mapped[uuid.UUID] = mapped_column(

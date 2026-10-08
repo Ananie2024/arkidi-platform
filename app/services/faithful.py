@@ -88,7 +88,10 @@ class FaithfulService:
         )
         await self.repo.update_faithful(faithful, data)
         record_audit_event(
-            self.repo.db, action="FAITHFUL_UPDATED", entity_name="faithful", entity_id=faithful.id,
+            self.repo.db,
+            action="FAITHFUL_UPDATED",
+            entity_name="faithful",
+            entity_id=faithful.id,
             details={"changed_fields": sorted(changes)},
         )
         return FaithfulResponse.model_validate(faithful)
@@ -96,7 +99,10 @@ class FaithfulService:
     async def list_families(
         self, parish_id: uuid.UUID | None = None, search: str | None = None
     ) -> list[FamilyResponse]:
-        return [FamilyResponse.model_validate(f) for f in await self.repo.list_families(parish_id, search)]
+        return [
+            FamilyResponse.model_validate(f)
+            for f in await self.repo.list_families(parish_id, search)
+        ]
 
     async def get_family(self, family_id: uuid.UUID) -> FamilyResponse:
         family = await self.repo.get_family_by_id(family_id)
@@ -116,12 +122,17 @@ class FaithfulService:
             raise EntityNotFoundException("errors.family_not_found")
         changes = data.model_dump(exclude_unset=True)
         await self._validate_assignments(
-            family.parish_id, None, changes.get("scc_id", family.scc_id),
+            family.parish_id,
+            None,
+            changes.get("scc_id", family.scc_id),
             centrale_id=changes.get("centrale_id", family.centrale_id),
         )
         await self.repo.update_family(family, data)
         record_audit_event(
-            self.repo.db, action="FAMILY_UPDATED", entity_name="family", entity_id=family.id,
+            self.repo.db,
+            action="FAMILY_UPDATED",
+            entity_name="family",
+            entity_id=family.id,
             details={"changed_fields": sorted(changes)},
         )
         return FamilyResponse.model_validate(family)

@@ -38,7 +38,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def get_current_user_payload(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
-    request: Request = None,
+    request: Request = None,  # type: ignore[assignment]
 ) -> dict:
     """Extract and validate the active user claims from JWT bearer token."""
     try:

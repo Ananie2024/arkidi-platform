@@ -94,10 +94,15 @@ class ArchiveService:
                 )
             raise
         record_audit_event(
-            self.db, action="ARCHIVE_LEDGER_BOOK_CREATED", entity_name="archive_ledger_book",
+            self.db,
+            action="ARCHIVE_LEDGER_BOOK_CREATED",
+            entity_name="archive_ledger_book",
             entity_id=book.id,
-            details={"parish_id": str(book.parish_id), "sacrament_type": book.sacrament_type.value,
-                     "volume_number": book.volume_number},
+            details={
+                "parish_id": str(book.parish_id),
+                "sacrament_type": book.sacrament_type.value,
+                "volume_number": book.volume_number,
+            },
         )
         return ArchiveLedgerBookResponse.model_validate(book)
 
@@ -114,7 +119,9 @@ class ArchiveService:
         if not content:
             raise ValidationException("The uploaded archive scan is empty.")
         if len(content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
-            raise ValidationException("The uploaded archive scan exceeds the configured size limit.")
+            raise ValidationException(
+                "The uploaded archive scan exceeds the configured size limit."
+            )
         checksum = hashlib.sha256(content).hexdigest()
         await file.seek(0)
         relative_path = await storage_service.save_file(
@@ -130,7 +137,10 @@ class ArchiveService:
             raise
         page.ocr_metadata = {"status": "queued", "indexed": False}
         record_audit_event(
-            self.db, action="ARCHIVE_PAGE_ADDED", entity_name="scanned_page", entity_id=page.id,
+            self.db,
+            action="ARCHIVE_PAGE_ADDED",
+            entity_name="scanned_page",
+            entity_id=page.id,
             details={"ledger_book_id": str(page.ledger_book_id), "page_number": page.page_number},
         )
         # Kick off the real Tesseract OCR extraction asynchronously so the
@@ -152,7 +162,9 @@ class ArchiveService:
         if not page:
             raise EntityNotFoundException("errors.scanned_page_not_found")
         record_audit_event(
-            self.db, action="ARCHIVE_PAGE_VIEWED", entity_name="scanned_page",
+            self.db,
+            action="ARCHIVE_PAGE_VIEWED",
+            entity_name="scanned_page",
             entity_id=page.id,
         )
         return ScannedPageResponse.model_validate(page)
@@ -169,15 +181,15 @@ class ArchiveService:
         page.review_notes = review.notes
         await self.db.flush()
         record_audit_event(
-            self.db, action="ARCHIVE_PAGE_REVIEWED", entity_name="scanned_page",
+            self.db,
+            action="ARCHIVE_PAGE_REVIEWED",
+            entity_name="scanned_page",
             entity_id=page.id,
             details={"review_status": review.status, "notes_provided": bool(review.notes)},
         )
         return ScannedPageResponse.model_validate(page)
 
-    async def replace_page_scan(
-        self, page_id: uuid.UUID, file: UploadFile
-    ) -> ScannedPageResponse:
+    async def replace_page_scan(self, page_id: uuid.UUID, file: UploadFile) -> ScannedPageResponse:
         page = await self.repo.get_page_by_id(page_id)
         if page is None:
             raise EntityNotFoundException("errors.scanned_page_not_found")
@@ -190,7 +202,9 @@ class ArchiveService:
         if not content:
             raise ValidationException("The uploaded archive scan is empty.")
         if len(content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
-            raise ValidationException("The uploaded archive scan exceeds the configured size limit.")
+            raise ValidationException(
+                "The uploaded archive scan exceeds the configured size limit."
+            )
         old_path = page.image_file_path
         checksum = hashlib.sha256(content).hexdigest()
         await file.seek(0)
@@ -205,14 +219,18 @@ class ArchiveService:
         page.review_notes = None
         await self.db.flush()
         record_audit_event(
-            self.db, action="ARCHIVE_PAGE_RESCAN_UPLOADED", entity_name="scanned_page",
+            self.db,
+            action="ARCHIVE_PAGE_RESCAN_UPLOADED",
+            entity_name="scanned_page",
             entity_id=page.id,
             details={"previous_file_path": old_path, "new_file_path": page.image_file_path},
         )
         try:
             process_ocr_page.delay(str(page.id))
         except Exception:  # noqa: BLE001 - OCR remains retryable from the page workflow
-            logger.warning("Could not enqueue OCR task for rescanned page %s", page.id, exc_info=True)
+            logger.warning(
+                "Could not enqueue OCR task for rescanned page %s", page.id, exc_info=True
+            )
         return ScannedPageResponse.model_validate(page)
 
     async def get_page_file_path(self, page_id: uuid.UUID) -> str:
@@ -227,7 +245,9 @@ class ArchiveService:
         if not os.path.isfile(path):
             raise EntityNotFoundException("errors.physical_file_not_found")
         record_audit_event(
-            self.db, action="ARCHIVE_PAGE_IMAGE_DOWNLOADED", entity_name="scanned_page",
+            self.db,
+            action="ARCHIVE_PAGE_IMAGE_DOWNLOADED",
+            entity_name="scanned_page",
             entity_id=page.id,
         )
         return path
@@ -249,8 +269,11 @@ class ArchiveService:
             logger.warning("Could not enqueue OCR task for scanned page %s: %s", page.id, exc)
             status_msg = "enqueue_failed"
         record_audit_event(
-            self.db, action="ARCHIVE_PAGE_OCR_REQUESTED", entity_name="scanned_page",
-            entity_id=page.id, details={"enqueue_status": status_msg},
+            self.db,
+            action="ARCHIVE_PAGE_OCR_REQUESTED",
+            entity_name="scanned_page",
+            entity_id=page.id,
+            details={"enqueue_status": status_msg},
         )
         return {"scanned_page_id": str(page.id), "status": status_msg}
 
@@ -289,8 +312,11 @@ class DocumentService:
             )
         doc_type = await self.repo.create_document_type(data)
         record_audit_event(
-            self.db, action="DOCUMENT_TYPE_CREATED", entity_name="document_type",
-            entity_id=doc_type.id, details={"code": doc_type.code},
+            self.db,
+            action="DOCUMENT_TYPE_CREATED",
+            entity_name="document_type",
+            entity_id=doc_type.id,
+            details={"code": doc_type.code},
         )
         return DocumentTypeResponse.model_validate(doc_type)
 
@@ -316,8 +342,11 @@ class DocumentService:
             raise EntityNotFoundException("errors.document_type_not_found")
         updated = await self.repo.update_document_type(doc_type, data)
         record_audit_event(
-            self.db, action="DOCUMENT_TYPE_UPDATED", entity_name="document_type",
-            entity_id=doc_type.id, details={"changed_fields": sorted(data.model_fields_set)},
+            self.db,
+            action="DOCUMENT_TYPE_UPDATED",
+            entity_name="document_type",
+            entity_id=doc_type.id,
+            details={"changed_fields": sorted(data.model_fields_set)},
         )
         return DocumentTypeResponse.model_validate(updated)
 
@@ -383,10 +412,16 @@ class DocumentService:
                 raise DuplicateDocumentException(checksum)
             raise
         record_audit_event(
-            self.db, action="DOCUMENT_UPLOADED", entity_name="document", entity_id=doc.id,
-            details={"classification": doc.classification, "file_size_bytes": file_size,
-                     "parish_id": str(doc.parish_id) if doc.parish_id else None,
-                     "checksum_sha256": checksum},
+            self.db,
+            action="DOCUMENT_UPLOADED",
+            entity_name="document",
+            entity_id=doc.id,
+            details={
+                "classification": doc.classification,
+                "file_size_bytes": file_size,
+                "parish_id": str(doc.parish_id) if doc.parish_id else None,
+                "checksum_sha256": checksum,
+            },
             user_id=uploaded_by_user_id,
         )
         return DocumentResponse.model_validate(doc)
@@ -399,7 +434,9 @@ class DocumentService:
         try:
             full_path = storage_service.get_full_path(data.file_path)
         except ValueError as exc:
-            raise ValidationException("Document path must point inside managed file storage.") from exc
+            raise ValidationException(
+                "Document path must point inside managed file storage."
+            ) from exc
         if not os.path.isfile(full_path):
             raise EntityNotFoundException("errors.physical_file_not_found")
         if data.checksum_sha256:
@@ -421,9 +458,14 @@ class DocumentService:
                 raise DuplicateDocumentException(data.checksum_sha256)
             raise
         record_audit_event(
-            self.db, action="DOCUMENT_REGISTERED", entity_name="document", entity_id=doc.id,
-            details={"classification": doc.classification,
-                     "parish_id": str(doc.parish_id) if doc.parish_id else None},
+            self.db,
+            action="DOCUMENT_REGISTERED",
+            entity_name="document",
+            entity_id=doc.id,
+            details={
+                "classification": doc.classification,
+                "parish_id": str(doc.parish_id) if doc.parish_id else None,
+            },
             user_id=uploaded_by_user_id,
         )
         return DocumentResponse.model_validate(doc)
@@ -473,7 +515,10 @@ class DocumentService:
             raise EntityNotFoundException("errors.document_not_found")
         updated = await self.repo.update_document(doc, data)
         record_audit_event(
-            self.db, action="DOCUMENT_UPDATED", entity_name="document", entity_id=doc.id,
+            self.db,
+            action="DOCUMENT_UPDATED",
+            entity_name="document",
+            entity_id=doc.id,
             details={"changed_fields": sorted(data.model_fields_set)},
         )
         return DocumentResponse.model_validate(updated)
@@ -484,7 +529,10 @@ class DocumentService:
             raise EntityNotFoundException("errors.document_not_found")
         await self.repo.delete_document(doc)
         record_audit_event(
-            self.db, action="DOCUMENT_DELETED", entity_name="document", entity_id=doc.id,
+            self.db,
+            action="DOCUMENT_DELETED",
+            entity_name="document",
+            entity_id=doc.id,
             details={"parish_id": str(doc.parish_id) if doc.parish_id else None},
         )
 

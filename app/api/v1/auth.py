@@ -2,6 +2,8 @@
 Auth Module FastAPI Endpoints
 """
 
+import uuid
+
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -67,7 +69,6 @@ async def register(
     creator_id = uuid.UUID(current_user["sub"]) if current_user.get("sub") else None
     created = await service.register_user(data, creator_user_id=creator_id)
     return ApiResponse.ok(data=created, message="success.user_registered")
-
 
 
 @router.get(

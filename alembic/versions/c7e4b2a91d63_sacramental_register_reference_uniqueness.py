@@ -23,9 +23,7 @@ REGISTER_REFERENCES = {
     "matrimony_records": ("parish_id", "registry_year", "volume_number", "act_number"),
     "first_communion_records": ("parish_id", "registry_year", "volume_number", "act_number"),
     "holy_orders_records": ("parish_id", "register_book", "page_number", "act_number"),
-    "religious_profession_records": (
-        "parish_id", "register_book", "page_number", "act_number"
-    ),
+    "religious_profession_records": ("parish_id", "register_book", "page_number", "act_number"),
 }
 
 
@@ -34,12 +32,16 @@ def upgrade() -> None:
     conflicts = []
     for table, fields in REGISTER_REFERENCES.items():
         columns = ", ".join(fields)
-        duplicate_rows = connection.execute(
-            sa.text(
-                f"SELECT {columns}, COUNT(*) AS count FROM {table} "
-                f"WHERE is_deleted = false GROUP BY {columns} HAVING COUNT(*) > 1 LIMIT 10"
+        duplicate_rows = (
+            connection.execute(
+                sa.text(
+                    f"SELECT {columns}, COUNT(*) AS count FROM {table} "
+                    f"WHERE is_deleted = false GROUP BY {columns} HAVING COUNT(*) > 1 LIMIT 10"
+                )
             )
-        ).mappings().all()
+            .mappings()
+            .all()
+        )
         if duplicate_rows:
             conflicts.append(f"{table}: {duplicate_rows}")
 

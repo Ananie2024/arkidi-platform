@@ -93,12 +93,20 @@ class IndicatorRepository:
         if model is AnnualParishStatistic:
             latest_returns = select(
                 AnnualParishStatistic.id.label("id"),
-                func.row_number().over(
-                    partition_by=(AnnualParishStatistic.parish_id, AnnualParishStatistic.report_year),
-                    order_by=(AnnualParishStatistic.created_at.desc(), AnnualParishStatistic.id.desc()),
-                ).label("row_number"),
+                func.row_number()
+                .over(
+                    partition_by=(
+                        AnnualParishStatistic.parish_id,
+                        AnnualParishStatistic.report_year,
+                    ),
+                    order_by=(
+                        AnnualParishStatistic.created_at.desc(),
+                        AnnualParishStatistic.id.desc(),
+                    ),
+                )
+                .label("row_number"),
             ).subquery()
-            stmt = stmt.join(latest_returns, latest_returns.c.id == model.id).where(
+            stmt = stmt.join(latest_returns, latest_returns.c.id == AnnualParishStatistic.id).where(
                 latest_returns.c.row_number == 1
             )
 

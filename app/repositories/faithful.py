@@ -28,9 +28,9 @@ class FaithfulRepository:
         return result.scalar_one_or_none()
 
     async def get_family_by_id(self, family_id: uuid.UUID) -> Family | None:
-        return await self.db.scalar(
-            select(Family).where(Family.id == family_id, Family.is_deleted.is_(False))
-        )
+        stmt = select(Family).where(Family.id == family_id, Family.is_deleted.is_(False))
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def list_families(
         self, parish_id: uuid.UUID | None = None, search: str | None = None
@@ -40,14 +40,18 @@ class FaithfulRepository:
             stmt = stmt.where(Family.parish_id == parish_id)
         if search:
             stmt = stmt.where(
-                or_(Family.family_code.ilike(f"%{search}%"), Family.family_name.ilike(f"%{search}%"))
+                or_(
+                    Family.family_code.ilike(f"%{search}%"), Family.family_name.ilike(f"%{search}%")
+                )
             )
         return list((await self.db.scalars(stmt.order_by(Family.family_name))).all())
 
     async def list_family_members(self, family_id: uuid.UUID) -> list[Faithful]:
-        stmt = select(Faithful).where(
-            Faithful.family_id == family_id, Faithful.is_deleted.is_(False)
-        ).order_by(Faithful.last_name, Faithful.first_name)
+        stmt = (
+            select(Faithful)
+            .where(Faithful.family_id == family_id, Faithful.is_deleted.is_(False))
+            .order_by(Faithful.last_name, Faithful.first_name)
+        )
         return list((await self.db.scalars(stmt)).all())
 
     async def list_faithful(

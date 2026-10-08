@@ -166,8 +166,11 @@ def process_ocr_page(task, scanned_page_id: str) -> dict:
                     "error": "OCR_ENGINE_UNAVAILABLE",
                 }
                 record_audit_event(
-                    db, action="ARCHIVE_PAGE_OCR_FAILED", entity_name="scanned_page",
-                    entity_id=page.id, details={"status": "ocr_unavailable"},
+                    db,
+                    action="ARCHIVE_PAGE_OCR_FAILED",
+                    entity_name="scanned_page",
+                    entity_id=page.id,
+                    details={"status": "ocr_unavailable"},
                 )
                 await db.commit()
                 return {
@@ -184,8 +187,11 @@ def process_ocr_page(task, scanned_page_id: str) -> dict:
                     "error": "IMAGE_NOT_FOUND",
                 }
                 record_audit_event(
-                    db, action="ARCHIVE_PAGE_OCR_FAILED", entity_name="scanned_page",
-                    entity_id=page.id, details={"status": "image_not_found"},
+                    db,
+                    action="ARCHIVE_PAGE_OCR_FAILED",
+                    entity_name="scanned_page",
+                    entity_id=page.id,
+                    details={"status": "image_not_found"},
                 )
                 await db.commit()
                 return {
@@ -202,8 +208,11 @@ def process_ocr_page(task, scanned_page_id: str) -> dict:
                     "error": "OCR_PROCESSING_FAILED",
                 }
                 record_audit_event(
-                    db, action="ARCHIVE_PAGE_OCR_FAILED", entity_name="scanned_page",
-                    entity_id=page.id, details={"status": "ocr_failed"},
+                    db,
+                    action="ARCHIVE_PAGE_OCR_FAILED",
+                    entity_name="scanned_page",
+                    entity_id=page.id,
+                    details={"status": "ocr_failed"},
                 )
                 await db.commit()
                 return {
